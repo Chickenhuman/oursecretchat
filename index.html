@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2076/2076218.png">
+    <link rel="manifest" href="manifest.json">
+
+    <title>Our Secret Chat</title>
+    <style>
+        /* [기본 설정] */
+        body { font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #f0f0f0; margin: 0; display: flex; justify-content: center; height: 100dvh; overflow: hidden; touch-action: manipulation; }
+        
+        #app { 
+            width: 100%; max-width: 450px; background: white; 
+            display: flex; flex-direction: column; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.1); 
+            height: 100%; position: relative; 
+        }
+        
+        .screen { display: none; flex-direction: column; height: 100%; box-sizing: border-box; background: white; }
+        .active { display: flex; }
+
+        .auth-container { padding: 40px; display: flex; flex-direction: column; justify-content: center; height: 100%; text-align: center; }
+        input { padding: 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; width: 100%; box-sizing: border-box; }
+        .btn-primary { padding: 15px; background-color: #ff6b6b; color: white; border: none; border-radius: 12px; font-size: 16px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
+        
+        #chat-header { 
+            padding-top: calc(15px + env(safe-area-inset-top)); padding-bottom: 15px; padding-left: 20px; padding-right: 20px;
+            background: #ff6b6b; color: white; display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; flex-shrink: 0; 
+        }
+        .header-left { display: flex; flex-direction: column; }
+        #chat-title { font-weight: bold; font-size: 16px; }
+        #status-area { font-size: 12px; margin-top: 3px; display: flex; align-items: center; gap: 5px; opacity: 0.9; }
+        .online-dot { width: 8px; height: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 5px #00ff00; }
+        .offline-dot { width: 8px; height: 8px; background-color: #ccc; border-radius: 50%; display: inline-block; }
+        .header-icons { display: flex; gap: 10px; }
+        .icon-btn { font-size: 20px; cursor: pointer; background: none; border: none; color: white; padding: 0; }
+        
+        #search-container { display: none; padding: 10px; background: #fff0f0; border-bottom: 1px solid #ffcccc; flex-shrink: 0; }
+        #search-input { width: 100%; padding: 10px; border: 1px solid #ff6b6b; border-radius: 8px; }
+        
+        #messages { flex: 1; overflow-y: auto; padding: 20px; background: #fafafa; display: flex; flex-direction: column; gap: 15px; }
+        .date-divider { text-align: center; margin: 15px 0; }
+        .date-divider span { background: rgba(0,0,0,0.1); color: white; padding: 4px 12px; border-radius: 10px; font-size: 11px; }
+        #top-loading { text-align: center; padding: 10px; font-size: 12px; color: #888; display: none; }
+
+        #input-area { 
+            padding: 10px; padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            background: white; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; 
+            position: relative; flex-shrink: 0; 
+        }
+        #msg-input { flex: 1; margin: 0; padding: 12px; border-radius: 20px; border: 1px solid #ddd; background: #f8f8f8; }
+        #send-btn { width: 50px; height: 40px; border: none; background: #333; color: white; border-radius: 12px; cursor: pointer; }
+        .tool-btn { cursor: pointer; font-size: 24px; padding: 0 5px; color: #888; background: none; border: none; }
+        #photo-input { position: absolute; top: -9999px; left: -9999px; opacity: 0; pointer-events: none; }
+
+        #emoji-picker { display: none; position: absolute; bottom: 90px; left: 10px; background: white; border: 1px solid #ddd; border-radius: 10px; padding: 10px; grid-template-columns: repeat(6, 1fr); gap: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 20; width: 90%; max-width: 300px; }
+        .emoji-item { font-size: 24px; cursor: pointer; text-align: center; padding: 5px; border-radius: 5px; }
+
+        #drawing-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+        .drawing-container { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
+        #canvas-area { border: 2px dashed #ddd; border-radius: 10px; cursor: crosshair; touch-action: none; background-color: white; }
+        .drawing-controls { margin-top: 15px; display: flex; gap: 10px; width: 100%; }
+        .draw-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        #clear-btn { background: #eee; color: #333; }
+        #send-draw-btn { background: #ff6b6b; color: white; }
+        .close-draw { align-self: flex-end; font-size: 24px; color: #999; cursor: pointer; margin-bottom: 10px; }
+
+        .message { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.5; position: relative; word-wrap: break-word; }
+        .my-msg { align-self: flex-end; background-color: #ff6b6b; color: white; border-bottom-right-radius: 4px; }
+        .other-msg { align-self: flex-start; background-color: white; color: #333; border: 1px solid #eee; border-bottom-left-radius: 4px; }
+        .msg-info { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px; gap: 5px; min-width: 45px; }
+        .sender { font-size: 11px; font-weight: bold; opacity: 0.7; }
+        .time { font-size: 10px; opacity: 0.6; }
+        .unread-mark { font-size: 12px; margin-right: auto; display: none; }
+        .my-msg .msg-info .unread-mark { display: inline; } 
+        .chat-img { max-width: 100%; border-radius: 10px; margin-bottom: 5px; cursor: pointer; }
+        .message a { color: #007bff; text-decoration: underline; }
+        .my-msg a { color: white; }
+
+        #settings-screen { background: #f9f9f9; overflow-y: auto; display: none; flex-direction: column; height: 100%; }
+        #settings-screen.active { display: flex; }
+        .settings-header { 
+            padding-top: calc(20px + env(safe-area-inset-top)); padding-bottom: 20px; padding-left: 20px; padding-right: 20px;
+            background: white; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; flex-shrink: 0; 
+        }
+        .back-btn { font-size: 24px; cursor: pointer; border: none; background: none; }
+        .gallery-section { background: white; padding: 15px; margin-top: 10px; }
+        .gallery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .view-all-btn { font-size: 13px; color: #ff6b6b; cursor: pointer; text-decoration: none; font-weight: bold; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+        .gallery-item { width: 100%; aspect-ratio: 1/1; object-fit: cover; cursor: pointer; border-radius: 8px; border: 1px solid #eee; }
+        .settings-menu { padding: 20px; background: white; margin-top: 10px; flex: 1; padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+        .menu-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
+        .color-options { display: flex; gap: 10px; }
+        .color-circle { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid white; box-shadow: 0 0 3px rgba(0,0,0,0.2); }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #ff6b6b; }
+        input:checked + .slider:before { transform: translateX(18px); }
+        
+        /* 🔥 버전 정보 스타일 추가 */
+        .version-info { text-align: center; color: #aaa; font-size: 11px; margin-top: 20px; padding-bottom: 20px; }
+
+        #full-gallery-screen { background: white; overflow-y: auto; }
+        #full-gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+        #full-gallery-grid .gallery-item { border-radius: 0; border: none; }
+
+        #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; flex-direction: column; color: white; }
+        .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="loading"><div class="spinner"></div><span>전송 중...</span></div>
+
+    <div id="drawing-modal">
+        <div class="drawing-container">
+            <span class="close-draw" onclick="toggleDrawingPad()">×</span>
+            <canvas id="canvas-area" width="300" height="300"></canvas>
+            <div class="drawing-controls">
+                <button id="clear-btn" class="draw-btn" onclick="clearCanvas()">지우기</button>
+                <button id="send-draw-btn" class="draw-btn" onclick="sendDrawing()">보내기</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="login-screen" class="screen active">
+        <div class="auth-container">
+            <h2 style="color:#ff6b6b;">🔒 Secret Access</h2>
+            <p style="color:#666; margin-bottom:30px;">우리만의 비밀 공간</p>
+            <input type="password" id="password-input" placeholder="비밀번호 입력">
+            <button class="btn-primary" onclick="checkPassword()">입장하기</button>
+            <p style="font-size:12px; color:#aaa; margin-top:20px;">힌트: 0726</p>
+        </div>
+    </div>
+
+    <div id="name-screen" class="screen">
+        <div class="auth-container">
+            <h2>반가워요! 👋</h2>
+            <p>채팅방에서 쓸 이름을 정해주세요.</p>
+            <input type="text" id="name-input" placeholder="예: 재똥장군, 잰">
+            <button class="btn-primary" onclick="setName()">시작하기</button>
+        </div>
+    </div>
+
+    <div id="chat-screen" class="screen" style="padding:0;">
+        <div id="chat-header">
+            <div class="header-left">
+                <div id="chat-title">❤️ 우리만의 채팅방</div>
+                <div id="status-area">접속 확인 중...</div>
+            </div>
+            <div class="header-icons">
+                <button class="icon-btn" onclick="location.href='gamelist.html'" style="margin-right:5px;">🎮</button>
+                <button class="icon-btn" onclick="toggleSearch()">🔍</button>
+                <button class="icon-btn" onclick="openSettings()">⚙️</button>
+            </div>
+        </div>
+        
+        <div id="search-container">
+            <input type="text" id="search-input" placeholder="대화 내용 검색..." onkeyup="filterMessages()" disabled>
+        </div>
+        
+        <div id="messages">
+            <div id="top-loading">불러오는 중... ⏳</div>
+        </div>
+        
+        <div id="emoji-picker"></div>
+        
+        <div id="input-area">
+            <button class="tool-btn" onclick="toggleEmoji()">😊</button>
+            <button class="tool-btn" onclick="toggleDrawingPad()">🖌️</button>
+            <button class="tool-btn" onclick="triggerFileUpload()">📷</button>
+            
+            <input type="text" id="msg-input" placeholder="메시지..." onkeypress="if(event.keyCode==13) sendMessage()">
+            <button id="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+        
+        <input type="file" id="photo-input" accept="image/*" onchange="uploadImage(this.files[0])" disabled>
+    </div>
+
+    <div id="settings-screen" class="screen">
+        <div class="settings-header"><button class="back-btn" onclick="closeSettings()">←</button><h2 style="margin:0;">설정 & 추억함</h2></div>
+        
+        <div class="gallery-section">
+            <div class="gallery-header">
+                <h3 style="margin:0; font-size:16px;">📂 최근 사진 (3장)</h3>
+                <span class="view-all-btn" onclick="openFullGallery()">전체 모아보기 ></span>
+            </div>
+            <div id="gallery-preview" class="gallery-grid"></div>
+        </div>
+        
+        <div class="settings-menu">
+            <div class="menu-item">
+                <span class="menu-label">🔔 알림 받기</span>
+                <label class="switch"><input type="checkbox" id="noti-enable" onchange="saveSettings()"><span class="slider"></span></label>
+            </div>
+            <div class="menu-item">
+                <span class="menu-label">👁️ 알림 내용 미리보기</span>
+                <label class="switch"><input type="checkbox" id="noti-preview" onchange="saveSettings()"><span class="slider"></span></label>
+            </div>
+            <div class="menu-item"><span class="menu-label">🎨 배경색 변경</span>
+                <div class="color-options">
+                    <div class="color-circle" style="background:#fafafa;" onclick="changeBg('#fafafa')"></div>
+                    <div class="color-circle" style="background:#fff0f0;" onclick="changeBg('#fff0f0')"></div>
+                    <div class="color-circle" style="background:#e3f2fd;" onclick="changeBg('#e3f2fd')"></div>
+                    <div class="color-circle" style="background:#f3e5f5;" onclick="changeBg('#f3e5f5')"></div>
+                </div>
+            </div>
+            <div class="menu-item" style="flex-direction:column; align-items:flex-start; gap:5px;">
+                <span class="menu-label">📅 사귄 날짜 설정</span>
+                <div style="display:flex; gap:5px; width:100%;">
+                    <input type="date" id="d-day-input" style="flex:1;" onkeypress="if(event.keyCode==13) saveDday()">
+                    <button onclick="saveDday()" style="background:#333; color:white; border:none; border-radius:5px; padding:0 15px; cursor:pointer;">저장</button>
+                </div>
+            </div>
+            <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃 (자동로그인 해제)</span></div>
+            
+            <div class="version-info">Ver 15.2 (Latest Patch)</div>
+        </div>
+    </div>
+
+    <div id="full-gallery-screen" class="screen">
+        <div class="settings-header">
+            <button class="back-btn" onclick="closeFullGallery()">←</button>
+            <h2 style="margin:0;">모든 추억들</h2>
+        </div>
+        <div id="full-gallery-grid"></div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, doc, setDoc, query, orderBy, onSnapshot, serverTimestamp, limitToLast, getDocs, startAfter, limit } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+    // 🔴 [필수] 본인의 firebaseConfig로 수정해주세요!
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
+      authDomain: "lovechatproject-2db11.firebaseapp.com",
+      projectId: "lovechatproject-2db11",
+      storageBucket: "lovechatproject-2db11.firebasestorage.app",
+      messagingSenderId: "1069136590072",
+      appId: "1:1069136590072:web:7712e718db03c70bff370d",
+      measurementId: "G-ERG2LL283F"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    let myName = localStorage.getItem('chat_nickname');
+    let myId = localStorage.getItem('chat_uid');
+    if (!myId) { myId = 'user_' + Date.now() + Math.floor(Math.random() * 1000); localStorage.setItem('chat_uid', myId); }
+
+    let savedBg = localStorage.getItem('chat_bg') || '#fafafa';
+    applyBg(savedBg);
+
+    // 알림 권한 요청 함수 추가 (누락되었던 부분)
+    window.requestNotiPermission = () => {
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+    };
+
+    const savedPassword = localStorage.getItem('chat_auth_pw');
+    if (savedPassword === '0726') {
+        if (myName) { showScreen('chat-screen'); loadMessages(); startPresenceSystem(); window.requestNotiPermission(); } 
+        else { showScreen('name-screen'); }
+    }
+
+    if(localStorage.getItem('noti_enabled') === null) localStorage.setItem('noti_enabled', 'true');
+    if(localStorage.getItem('noti_preview') === null) localStorage.setItem('noti_preview', 'true');
+    document.getElementById('noti-enable').checked = localStorage.getItem('noti_enabled') !== 'false';
+    document.getElementById('noti-preview').checked = localStorage.getItem('noti_preview') !== 'false';
+    
+    window.saveSettings = () => {
+        localStorage.setItem('noti_enabled', document.getElementById('noti-enable').checked);
+        localStorage.setItem('noti_preview', document.getElementById('noti-preview').checked);
+    };
+
+    const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
+    const emojiPicker = document.getElementById('emoji-picker');
+    emojiList.forEach(emo => {
+        const span = document.createElement('span'); span.className = 'emoji-item'; span.innerText = emo;
+        span.onclick = () => { document.getElementById('msg-input').value += emo; emojiPicker.style.display = 'none'; };
+        emojiPicker.appendChild(span);
+    });
+    window.toggleEmoji = () => { picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid'; }
+    const picker = document.getElementById('emoji-picker');
+
+    window.triggerFileUpload = () => {
+        const fileInput = document.getElementById('photo-input');
+        fileInput.disabled = false; fileInput.click(); setTimeout(() => { fileInput.disabled = true; }, 1000); 
+    };
+
+    window.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file' && items[i].type.includes('image/')) {
+                if(confirm("클립보드의 이미지를 전송할까요?")) uploadImage(items[i].getAsFile());
+            }
+        }
+    });
+
+    const canvas = document.getElementById('canvas-area');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false; let lastX = 0; let lastY = 0;
+    
+    function initCanvas() { ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = '#333'; }
+    initCanvas();
+
+    function draw(e) { if (!isDrawing) return; e.preventDefault(); let clientX = e.clientX || e.touches[0].clientX; let clientY = e.clientY || e.touches[0].clientY; const rect = canvas.getBoundingClientRect(); const x = clientX - rect.left; const y = clientY - rect.top; ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke(); lastX = x; lastY = y; }
+    canvas.addEventListener('mousedown', (e) => { isDrawing = true; lastX = e.offsetX; lastY = e.offsetY; }); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', () => isDrawing = false); canvas.addEventListener('mouseout', () => isDrawing = false);
+    canvas.addEventListener('touchstart', (e) => { isDrawing = true; const rect = canvas.getBoundingClientRect(); lastX = e.touches[0].clientX - rect.left; lastY = e.touches[0].clientY - rect.top; }); canvas.addEventListener('touchmove', draw); canvas.addEventListener('touchend', () => isDrawing = false);
+    
+    window.toggleDrawingPad = () => { const m = document.getElementById('drawing-modal'); if(m.style.display !== 'flex') { m.style.display = 'flex'; } else { m.style.display = 'none'; } };
+    window.clearCanvas = () => initCanvas();
+    window.sendDrawing = () => { canvas.toBlob((blob) => { if(blob) { uploadImage(blob, true); toggleDrawingPad(); initCanvas(); } }, 'image/png'); };
+
+    let otherUserReadTime = 0;
+    let lastPartnerMsgTime = 0;
+
+    function markAsRead() { if(!myName) return; setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp(), lastRead: serverTimestamp() }, { merge: true }); }
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === 'visible') markAsRead(); });
+    window.onclick = markAsRead;
+
+    function startPresenceSystem() {
+        if(!myName) return;
+        markAsRead();
+        setInterval(async () => { 
+            try { 
+                const data = { name: myName, lastSeen: serverTimestamp() };
+                if (!document.hidden) data.lastRead = serverTimestamp(); 
+                await setDoc(doc(db, "presence", myId), data, { merge: true }); 
+            } catch(e) {} 
+        }, 5000);
+        
+        onSnapshot(query(collection(db, "presence")), (snapshot) => {
+            let onlineUsers = [];
+            let maxReadTime = 0; 
+
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                if(docSnap.id !== myId && data.name !== myName) {
+                    if (data.lastRead) {
+                        const time = data.lastRead.toMillis();
+                        if (time > maxReadTime) maxReadTime = time;
+                    }
+                    if(data.lastSeen && (new Date() - data.lastSeen.toDate()) / 1000 < 60) {
+                        onlineUsers.push(data.name);
+                    }
+                }
+            });
+            
+            otherUserReadTime = maxReadTime;
+            document.getElementById('status-area').innerHTML = onlineUsers.length > 0 ? `<span class="online-dot"></span> ${onlineUsers.join(', ')} 접속 중` : `<span class="offline-dot"></span> 상대방 기다리는 중...`;
+            updateReadStatus();
+        });
+    }
+
+    function updateReadStatus() {
+        const effectiveReadTime = Math.max(otherUserReadTime, lastPartnerMsgTime);
+        document.querySelectorAll('.my-msg').forEach(msgDiv => {
+            const timestamp = msgDiv.getAttribute('data-timestamp');
+            const unreadMark = msgDiv.querySelector('.unread-mark');
+            if (timestamp && unreadMark) {
+                if (Number(timestamp) <= effectiveReadTime) {
+                    unreadMark.style.display = 'none'; 
+                } else {
+                    unreadMark.style.display = 'inline'; 
+                }
+            }
+        });
+    }
+
+    function linkify(text) {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return text.replace(urlRegex, function(url) {
+            return `<a href="${url}" target="_blank">${url}</a>`;
+        });
+    }
+
+    window.checkPassword = function() { 
+        if (document.getElementById('password-input').value === '0726') { 
+            localStorage.setItem('chat_auth_pw', '0726'); 
+            if (myName) { showScreen('chat-screen'); loadMessages(); startPresenceSystem(); window.requestNotiPermission(); } 
+            else { showScreen('name-screen'); } 
+        } else { alert('비밀번호가 틀립니다!'); } 
+    };
+
+    window.setName = function() { 
+        const name = document.getElementById('name-input').value; 
+        if (!name) return alert("이름 입력"); 
+        myName = name; 
+        localStorage.setItem('chat_nickname', name); 
+        showScreen('chat-screen'); 
+        loadMessages(); 
+        startPresenceSystem(); 
+        window.requestNotiPermission(); 
+    };
+
+    window.sendMessage = async function() { const input = document.getElementById('msg-input'); const text = input.value; if (text.trim() === "") return; try { await addDoc(collection(db, "chats"), { text: text, sender: myName, timestamp: serverTimestamp(), type: 'text' }); input.value = ""; markAsRead(); scrollToBottom(); } catch (e) { alert("전송 실패"); } };
+    window.uploadImage = async function(fileOrBlob, isDrawing = false) { if (!fileOrBlob) return; document.getElementById('loading').style.display = 'flex'; try { const fileName = Date.now() + (isDrawing ? '_draw.png' : '_' + fileOrBlob.name); const storageRef = ref(storage, 'images/' + fileName); await uploadBytes(storageRef, fileOrBlob); const url = await getDownloadURL(storageRef); await addDoc(collection(db, "chats"), { text: isDrawing ? "그림을 보냈습니다." : "사진을 보냈습니다.", imageUrl: url, sender: myName, timestamp: serverTimestamp(), type: 'image' }); markAsRead(); scrollToBottom(); } catch (e) { alert("전송 실패"); } finally { document.getElementById('loading').style.display = 'none'; document.getElementById('photo-input').value = ''; } };
+
+    let isInitialLoad = true;
+    let allImages = [];
+    let oldestMessageSnap = null; 
+    let isFetchingOlder = false; 
+
+    function loadMessages() {
+        const q = query(collection(db, "chats"), orderBy("timestamp", "asc"), limitToLast(30));
+        
+        onSnapshot(q, (snapshot) => {
+            const msgBox = document.getElementById('messages');
+            if (isInitialLoad && snapshot.docs.length > 0) oldestMessageSnap = snapshot.docs[0];
+
+            if (!isInitialLoad) {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        const data = change.doc.data();
+                        const isNotiEnabled = localStorage.getItem('noti_enabled') !== 'false';
+                        const isPreviewEnabled = localStorage.getItem('noti_preview') !== 'false';
+                        
+                        // 🔥 수정된 부분: 괄호와 로직 정리 완료
+                        if (data.sender !== myName) {
+                            // 1. 탭 깜빡임
+                            window.triggerTabAlert();
+                            
+                            // 2. 푸시 알림
+                            if (document.hidden && isNotiEnabled && Notification.permission === "granted") {
+                                let bodyText = "비밀 메시지가 도착했습니다. 🔒";
+                                if (isPreviewEnabled) bodyText = data.type === 'image' ? '사진/그림이 도착했습니다.' : data.text;
+                                new Notification(`💌 ${data.sender}`, { body: bodyText, icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png' });
+                            }
+                        }
+                    } // 여기가 닫는 괄호가 빠져있었습니다!
+                });
+            }
+
+            if (isInitialLoad) { 
+                msgBox.innerHTML = '<div id="top-loading"></div>'; 
+                allImages = []; 
+                lastPartnerMsgTime = 0; 
+            }
+
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const data = change.doc.data();
+                    const msgHTML = createMessageHTML(data);
+                    msgBox.insertAdjacentHTML('beforeend', msgHTML); 
+                    if(data.type === 'image') allImages.push(data.imageUrl);
+                    if(isInitialLoad) oldestMessageSnap = change.doc; 
+                    
+                    if(data.sender !== myName && data.timestamp) {
+                        const time = data.timestamp.toMillis();
+                        if(time > lastPartnerMsgTime) lastPartnerMsgTime = time;
+                    }
+                }
+            });
+
+            if (isInitialLoad) { scrollToBottom(); isInitialLoad = false; if(snapshot.docs.length > 0) oldestMessageSnap = snapshot.docs[0]; } 
+            else { scrollToBottom(); }
+            
+            updateReadStatus();
+            updateGalleryUI(); 
+        });
+
+        const msgBox = document.getElementById('messages');
+        msgBox.addEventListener('scroll', () => {
+            if (msgBox.scrollTop === 0 && !isFetchingOlder && oldestMessageSnap) { loadMoreMessages(); }
+        });
+    }
+
+    async function loadMoreMessages() {
+        if (isFetchingOlder) return;
+        isFetchingOlder = true;
+        document.getElementById('top-loading').style.display = 'block';
+        const q = query(collection(db, "chats"), orderBy("timestamp", "desc"), startAfter(oldestMessageSnap), limit(30));
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+            const oldHeight = document.getElementById('messages').scrollHeight;
+            const docs = snapshot.docs.reverse();
+            oldestMessageSnap = docs[0]; 
+            let html = "";
+            docs.forEach(doc => { 
+                html += createMessageHTML(doc.data()); 
+                if(doc.data().type === 'image') allImages.unshift(doc.data().imageUrl); 
+                
+                if(doc.data().sender !== myName && doc.data().timestamp) {
+                    const time = doc.data().timestamp.toMillis();
+                    if(time > lastPartnerMsgTime) lastPartnerMsgTime = time;
+                }
+            });
+            document.getElementById('top-loading').insertAdjacentHTML('afterend', html);
+            const newHeight = document.getElementById('messages').scrollHeight;
+            document.getElementById('messages').scrollTop = newHeight - oldHeight;
+            updateReadStatus(); 
+        } else { document.getElementById('top-loading').innerText = "대화의 시작입니다."; }
+        document.getElementById('top-loading').style.display = 'none';
+        isFetchingOlder = false;
+    }
+
+function createMessageHTML(data) {
+        const isMe = data.sender === myName;
+        
+        // 1. 메시지 정렬용 시간값 (타임스탬프가 없으면 현재 시간 사용)
+        const msgTime = data.timestamp ? data.timestamp.toMillis() : Date.now();
+        
+        // 2. 화면에 표시할 시간 문자열 (여기가 문제였음!)
+        // 서버 시간이 아직 없으면(null), 내 컴퓨터의 현재 시간(new Date)을 씁니다.
+        const date = data.timestamp ? data.timestamp.toDate() : new Date();
+        const timeStr = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+        
+        let contentHtml = linkify(data.text);
+        if(data.type === 'image') { contentHtml = `<img src="${data.imageUrl}" class="chat-img" onclick="window.open(this.src)" onload="scrollToBottom()">`; }
+        
+        const unreadHtml = isMe ? `<span class="unread-mark">😪</span>` : '';
+        
+        return `<div class="message ${isMe?'my-msg':'other-msg'}" data-text="${data.text}" data-timestamp="${msgTime}">${contentHtml}<div class="msg-info">${unreadHtml}${!isMe?`<span class="sender">${data.sender}</span>`:''}<span class="time">${timeStr}</span></div></div>`;
+    }
+
+    function scrollToBottom() { const msgBox = document.getElementById('messages'); msgBox.scrollTop = msgBox.scrollHeight; }
+
+    function updateGalleryUI() {
+        const previewGrid = document.getElementById('gallery-preview');
+        const fullGrid = document.getElementById('full-gallery-grid');
+        const recentImages = allImages.slice(-3).reverse();
+        previewGrid.innerHTML = recentImages.map(src => `<img src="${src}" class="gallery-item" onclick="window.open(this.src)">`).join('');
+        if(recentImages.length === 0) previewGrid.innerHTML = '<span style="grid-column:span 3; text-align:center; color:#ccc; font-size:12px;">사진 없음</span>';
+        const allReversed = [...allImages].reverse();
+        fullGrid.innerHTML = allReversed.map(src => `<img src="${src}" class="gallery-item" onclick="window.open(this.src)">`).join('');
+    }
+
+    window.openFullGallery = () => showScreen('full-gallery-screen');
+    window.closeFullGallery = () => showScreen('settings-screen');
+
+    window.toggleSearch = () => { 
+        const sb = document.getElementById('search-container'); 
+        const input = document.getElementById('search-input');
+        if (sb.style.display === 'block') { sb.style.display = 'none'; input.value = ''; input.disabled = true; filterMessages(); } 
+        else { sb.style.display = 'block'; input.disabled = false; input.focus(); }
+    };
+    
+    window.filterMessages = () => { const q = document.getElementById('search-input').value.toLowerCase(); document.querySelectorAll('.message').forEach(msg => msg.style.display = (msg.getAttribute('data-text')||"").toLowerCase().includes(q)?'block':'none'); };
+    window.openSettings = () => showScreen('settings-screen'); window.closeSettings = () => showScreen('chat-screen');
+    window.changeBg = (c) => { localStorage.setItem('chat_bg', c); applyBg(c); }; function applyBg(c) { document.getElementById('messages').style.backgroundColor = c; }
+    
+    function showScreen(id) { 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById(id).classList.add('active'); 
+        if(id === 'chat-screen') setTimeout(scrollToBottom, 100);
+    }
+    
+    window.logout = () => { localStorage.removeItem('chat_nickname'); localStorage.removeItem('chat_auth_pw'); location.reload(); }
+// ==========================================
+    // 🔔 [해결책] 유령 알림으로 깜빡임만 유도하기
+    // ==========================================
+    
+    let isWindowFocused = true;
+    let flashTimer = null;
+    const defaultTitle = "Our Secret Chat"; 
+
+    window.addEventListener('focus', () => { 
+        isWindowFocused = true;
+        clearInterval(flashTimer);
+        flashTimer = null;
+        document.title = defaultTitle; 
+    });
+    
+    window.addEventListener('blur', () => { isWindowFocused = false; });
+
+    // 알림 권한 요청 (권한이 있어야 윈도우를 깨울 수 있습니다)
+    if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+
+    window.triggerTabAlert = () => {
+        if (!isWindowFocused) {
+            
+            // 1. 제목을 요란하게 바꿔서 시각적 알림 (브라우저 탭용)
+            if (!flashTimer) {
+                let state = 0;
+                flashTimer = setInterval(() => {
+                    document.title = (state === 0) ? "🔴메시지 도착!!" : "🔴메시지 도착!!";
+                    state = 1 - state;
+                }, 500);
+            }
+
+            // 2. [핵심] 윈도우를 속이는 '유령 알림' 발송
+            // 알림을 띄워서 윈도우가 '깜빡임'을 켜게 만들고, 바로 삭제해서 배너는 숨김
+            if (Notification.permission === "granted") {
+                const ghostNoti = new Notification("새 메시지", {
+                    body: "...", 
+                    silent: true, // 소리 끔
+                    tag: 'flash-trigger' // 중복 방지 태그
+                });
+                
+                // ⚡ 0.2초 뒤에 알림창을 강제로 닫아버림 (배너는 안보이고 깜빡임만 남음)
+                setTimeout(() => {
+                    ghostNoti.close();
+                }, 200); 
+            }
+        }
+    };
+</script>
+</body>
+</html>

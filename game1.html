@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>실시간 오목</title>
+<link rel="apple-touch-icon" href="icon.png">
+
+<link rel="icon" href="icon.png">
+
+<link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #fff0f0; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow-y: auto; touch-action: pan-y; }
+        
+        .main-wrapper { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 450px; padding: 15px 0; }
+
+        /* 참가자 정보 */
+        .player-board { display: flex; justify-content: space-between; width: 90%; margin-bottom: 10px; gap: 10px; }
+        .player-card { flex: 1; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; border: 2px solid transparent; opacity: 0.5; transition: 0.3s; }
+        .player-card.active { opacity: 1; border-color: #ff6b6b; background: #fff5f5; transform: scale(1.02); }
+        .player-card.filled { opacity: 1; } 
+        .role-badge { font-size: 11px; color: white; padding: 2px 8px; border-radius: 10px; margin-bottom: 5px; background: #bbb; display: inline-block;}
+        .player-card.active .role-badge { background: #ff6b6b; }
+        .player-name { font-weight: bold; font-size: 14px; color: #333; }
+
+        /* 오목판 */
+        #board-area { position: relative; margin-bottom: 10px; }
+        #board-container { background: #eecfa1; padding: 10px; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        canvas { background: #eecfa1; cursor: pointer; display: block; }
+
+        /* 역할 선택 오버레이 */
+        #role-selection { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 10; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; border-radius: 5px; backdrop-filter: blur(2px); }
+        .select-btn { width: 180px; padding: 15px; border: none; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .select-btn:hover { transform: scale(1.05); }
+        .btn-black { background: #333; color: white; }
+        .btn-white { background: white; color: #333; border: 1px solid #ddd; }
+        .btn-disabled { background: #ccc; cursor: not-allowed; color: #666; }
+
+        /* 상태 메시지 */
+        #game-status { font-size: 16px; font-weight: bold; color: #555; margin-bottom: 10px; height: 20px; text-align: center; }
+
+        /* 버튼 그룹 & 알림 뱃지 */
+        .btn-group { display: flex; gap: 10px; margin-bottom: 15px; width: 90%; justify-content: center; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; }
+        .btn-reset { background: #ff6b6b; color: white; }
+        .btn-back { background: white; color: #555; text-decoration: none; display: flex; align-items: center; }
+        
+        /* 🔴 채팅방 새 메시지 알림 점 */
+        .new-msg-badge { position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; background: red; border-radius: 50%; border: 2px solid white; display: none; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* 🔥 인게임 미니 채팅 */
+        .mini-chat-container { width: 90%; background: white; border-radius: 12px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; flex-direction: column; height: 180px; }
+        .chat-title { font-size: 12px; font-weight: bold; color: #888; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px; }
+        .chat-list { flex: 1; overflow-y: auto; font-size: 13px; display: flex; flex-direction: column; gap: 5px; }
+        .chat-item { padding: 4px 8px; border-radius: 8px; max-width: 80%; word-wrap: break-word; }
+        .chat-my { align-self: flex-end; background: #ffeb33; color: #333; }
+        .chat-other { align-self: flex-start; background: #f0f0f0; color: #333; }
+        .chat-system { align-self: center; font-size: 11px; color: #aaa; background: none; }
+        .chat-input-area { display: flex; gap: 5px; margin-top: 5px; border-top: 1px solid #eee; padding-top: 5px; }
+        #mini-input { flex: 1; border: 1px solid #ddd; border-radius: 15px; padding: 5px 10px; font-size: 13px; }
+        #mini-send { background: #333; color: white; border: none; border-radius: 15px; padding: 5px 12px; font-size: 12px; cursor: pointer; }
+
+        /* 전적 기록 */
+        .history-container { width: 90%; background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .history-title { font-size: 14px; font-weight: bold; color: #888; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .history-list { max-height: 100px; overflow-y: auto; font-size: 13px; }
+        .history-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f9f9f9; }
+        .winner-mark { font-weight: bold; }
+        .win-black { color: #333; }
+        .win-white { color: #888; }
+        .history-time { color: #aaa; font-size: 11px; }
+
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; display: flex; justify-content: center; align-items: center; color: white; flex-direction: column; }
+    </style>
+</head>
+<body>
+
+    <div id="loading">오목판 불러오는 중...</div>
+
+    <div class="main-wrapper">
+        <h2>⚫ 실시간 오목 ⚪</h2>
+
+        <div class="player-board">
+            <div id="p1-card" class="player-card">
+                <span class="role-badge">흑돌 (선공)</span>
+                <div class="player-name" id="p1-name">선택 대기...</div>
+            </div>
+            <div id="p2-card" class="player-card">
+                <span class="role-badge">백돌 (후공)</span>
+                <div class="player-name" id="p2-name">선택 대기...</div>
+            </div>
+        </div>
+
+        <div id="game-status">역할을 선택해주세요!</div>
+
+        <div id="board-area">
+            <div id="role-selection">
+                <h3>플레이 할 돌을 선택하세요</h3>
+                <button class="select-btn btn-black" id="btn-select-black" onclick="selectRole('black')">
+                    <span style="width:12px;height:12px;background:white;border-radius:50%;"></span> 흑돌 잡기
+                </button>
+                <button class="select-btn btn-white" id="btn-select-white" onclick="selectRole('white')">
+                    <span style="width:12px;height:12px;background:black;border-radius:50%;"></span> 백돌 잡기
+                </button>
+            </div>
+            <div id="board-container">
+                <canvas id="omokBoard"></canvas>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <a href="index.html" class="btn btn-back">
+                💬 채팅방
+                <span id="new-msg-badge" class="new-msg-badge"></span>
+            </a>
+            <button class="btn btn-reset" onclick="resetGame()">🔄 판 엎기 (역할 초기화)</button>
+        </div>
+
+        <div class="mini-chat-container">
+            <div class="chat-title">💬 게임 채팅</div>
+            <div id="mini-chat-list" class="chat-list"></div>
+            <div class="chat-input-area">
+                <input type="text" id="mini-input" placeholder="대화하기..." onkeypress="if(event.keyCode==13) sendGameMsg()">
+                <button id="mini-send" onclick="sendGameMsg()">전송</button>
+            </div>
+        </div>
+
+        <div class="history-container">
+            <div class="history-title">📜 경기 기록</div>
+            <div id="history-list" class="history-list">
+                <div style="text-align:center; color:#ccc; padding:10px;">아직 기록이 없습니다.</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc, arrayUnion, addDoc, collection, query, orderBy, limit, deleteDoc, getDocs, serverTimestamp } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 🔴 [필수] 본인의 firebaseConfig로 교체하세요!
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
+      authDomain: "lovechatproject-2db11.firebaseapp.com",
+      projectId: "lovechatproject-2db11",
+      storageBucket: "lovechatproject-2db11.firebasestorage.app",
+      messagingSenderId: "1069136590072",
+      appId: "1:1069136590072:web:7712e718db03c70bff370d",
+      measurementId: "G-ERG2LL283F"
+    };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const gameDocRef = doc(db, "games", "couple_omok");
+        // 인게임 채팅용 컬렉션 (게임 문서 하위가 아닌 별도 컬렉션으로 관리)
+        const gameChatRef = collection(db, "game_chats");
+
+        let myId = localStorage.getItem('chat_uid');
+        let myName = localStorage.getItem('chat_nickname') || "익명"; 
+        if(!myId) { myId = 'user_' + Date.now(); localStorage.setItem('chat_uid', myId); }
+
+        let myColor = 0; 
+        let currentTurn = 1; 
+        let board = [];
+        const size = 15; 
+        let boardSize = 300; 
+        let cellSize = 20;
+        let pageLoadTime = new Date(); // 페이지 로드 시간 (알림용)
+
+        const canvas = document.getElementById('omokBoard');
+        const ctx = canvas.getContext('2d');
+
+        // 1. 게임 접속
+        async function joinGame() {
+            const docSnap = await getDoc(gameDocRef);
+            if (!docSnap.exists()) {
+                await setDoc(gameDocRef, {
+                    board: Array(size * size).fill(0), turn: 1, status: 'waiting',
+                    black: "", blackName: "", white: "", whiteName: "", winner: 0, history: []
+                });
+            }
+            document.getElementById('loading').style.display = 'none';
+            resizeBoard();
+            
+            // 메인 채팅방 새 메시지 감시
+            watchMainChat();
+            // 인게임 채팅 감시
+            watchGameChat();
+        }
+
+        // 2. 오목 데이터 동기화
+        onSnapshot(gameDocRef, (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                board = [];
+                for(let i=0; i<size; i++) board.push(data.board.slice(i*size, (i+1)*size));
+                currentTurn = data.turn;
+
+                // 내 색깔 확인
+                if (data.black === myId) myColor = 1;
+                else if (data.white === myId) myColor = 2;
+                else myColor = 0;
+
+                updateUI(data);
+                drawBoard();
+                drawAllStones();
+                renderHistory(data.history || []);
+            }
+        });
+
+        // 3. UI 업데이트
+        function updateUI(data) {
+            const overlay = document.getElementById('role-selection');
+            const p1Card = document.getElementById('p1-card');
+            const p2Card = document.getElementById('p2-card');
+            const statusDiv = document.getElementById('game-status');
+            const btnBlack = document.getElementById('btn-select-black');
+            const btnWhite = document.getElementById('btn-select-white');
+
+            document.getElementById('p1-name').innerText = data.blackName || "선택 대기...";
+            document.getElementById('p2-name').innerText = data.whiteName || "선택 대기...";
+
+            p1Card.className = data.black ? "player-card filled" : "player-card";
+            p2Card.className = data.white ? "player-card filled" : "player-card";
+
+            // 버튼 상태 (내가 선택했으면 활성, 남이 했으면 비활성)
+            btnBlack.className = (data.black && data.black !== myId) ? "select-btn btn-disabled" : "select-btn btn-black";
+            btnBlack.innerHTML = data.black ? (data.black === myId ? "✅ 흑돌 (나)" : `${data.blackName}`) : `<span style="width:12px;height:12px;background:white;border-radius:50%;"></span> 흑돌 잡기`;
+            
+            btnWhite.className = (data.white && data.white !== myId) ? "select-btn btn-disabled" : "select-btn btn-white";
+            btnWhite.innerHTML = data.white ? (data.white === myId ? "✅ 백돌 (나)" : `${data.whiteName}`) : `<span style="width:12px;height:12px;background:black;border-radius:50%;"></span> 백돌 잡기`;
+
+            if (data.black && data.white) {
+                overlay.style.display = 'none'; 
+                if (data.winner !== 0) {
+                    statusDiv.innerText = (data.winner === 1 ? "⚫ 흑돌" : "⚪ 백돌") + " 승리! 🎉";
+                    statusDiv.style.color = "#ff6b6b";
+                } else {
+                    if (data.turn === 1) {
+                        p1Card.classList.add('active'); p2Card.classList.remove('active');
+                        statusDiv.innerText = (myColor === 1) ? "👉 당신 차례입니다!" : "⚫ 흑돌 차례입니다";
+                        statusDiv.style.color = (myColor === 1) ? "#ff6b6b" : "#333";
+                    } else {
+                        p2Card.classList.add('active'); p1Card.classList.remove('active');
+                        statusDiv.innerText = (myColor === 2) ? "👉 당신 차례입니다!" : "⚪ 백돌 차례입니다";
+                        statusDiv.style.color = (myColor === 2) ? "#ff6b6b" : "#333";
+                    }
+                }
+            } else {
+                overlay.style.display = 'flex';
+                statusDiv.innerText = "역할을 선택해주세요!";
+            }
+        }
+
+        // 4. [수정됨] 역할 선택 (스위칭 기능)
+        window.selectRole = async function(role) {
+            const docSnap = await getDoc(gameDocRef);
+            const data = docSnap.data();
+            const updates = {};
+
+            // 1. 내가 이미 다른 역할을 맡고 있다면 그 자리를 비움 (스위칭)
+            if (role === 'black' && data.white === myId) { updates.white = ""; updates.whiteName = ""; }
+            if (role === 'white' && data.black === myId) { updates.black = ""; updates.blackName = ""; }
+
+            // 2. 새 역할 배정
+            if (role === 'black') {
+                if (!data.black || data.black === myId) { updates.black = myId; updates.blackName = myName; }
+                else return alert("이미 흑돌이 선택되었습니다.");
+            } else {
+                if (!data.white || data.white === myId) { updates.white = myId; updates.whiteName = myName; }
+                else return alert("이미 백돌이 선택되었습니다.");
+            }
+
+            await updateDoc(gameDocRef, updates);
+        };
+
+        // 5. 돌 두기
+        canvas.addEventListener('mousedown', handleInput);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, { passive: false });
+
+        async function handleInput(e) {
+            if (myColor === 0) return; 
+            const statusText = document.getElementById('game-status').innerText;
+            if (statusText.includes("승리") || statusText.includes("선택")) return;
+            if (currentTurn !== myColor) { alert("상대방 차례입니다."); return; }
+
+            const rect = canvas.getBoundingClientRect();
+            let clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            let clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            const x = Math.round((clientX - rect.left - cellSize) / cellSize);
+            const y = Math.round((clientY - rect.top - cellSize) / cellSize);
+
+            if (x >= 0 && x < size && y >= 0 && y < size) {
+                if (board[y][x] === 0) await makeMove(x, y);
+            }
+        }
+
+        async function makeMove(x, y) {
+            board[y][x] = myColor;
+            const flatBoard = board.flat();
+            let winner = 0;
+            
+            if (checkWin(x, y, myColor)) {
+                winner = myColor;
+                const winName = myColor === 1 ? document.getElementById('p1-name').innerText : document.getElementById('p2-name').innerText;
+                const winColorStr = myColor === 1 ? "흑돌" : "백돌";
+                const today = new Date();
+                const dateStr = `${today.getMonth()+1}/${today.getDate()} ${today.getHours()}:${String(today.getMinutes()).padStart(2,'0')}`;
+                
+                await updateDoc(gameDocRef, {
+                    board: flatBoard, turn: myColor === 1 ? 2 : 1, winner: winner,
+                    history: arrayUnion({ winnerName: winName, winnerColor: winColorStr, date: dateStr })
+                });
+            } else {
+                await updateDoc(gameDocRef, { board: flatBoard, turn: myColor === 1 ? 2 : 1, winner: winner });
+            }
+        }
+
+        window.resetGame = async function() {
+            if (confirm("판을 엎고 역할을 다시 정하시겠습니까?")) {
+                await updateDoc(gameDocRef, {
+                    board: Array(size * size).fill(0), turn: 1, winner: 0,
+                    black: "", blackName: "", white: "", whiteName: ""
+                });
+            }
+        };
+
+        // --- 인게임 채팅 기능 (최대 10개 유지) ---
+        window.sendGameMsg = async function() {
+            const input = document.getElementById('mini-input');
+            const text = input.value;
+            if(!text.trim()) return;
+
+            // 1. 메시지 추가
+            await addDoc(gameChatRef, {
+                text: text, sender: myName, timestamp: serverTimestamp()
+            });
+            input.value = '';
+
+            // 2. 10개 넘으면 오래된 것 삭제
+            const q = query(gameChatRef, orderBy("timestamp", "asc"));
+            const snapshot = await getDocs(q);
+            if(snapshot.size > 10) {
+                // 가장 오래된 문서 삭제
+                await deleteDoc(snapshot.docs[0].ref); 
+            }
+        };
+
+        function watchGameChat() {
+            const q = query(gameChatRef, orderBy("timestamp", "asc"));
+            onSnapshot(q, (snapshot) => {
+                const list = document.getElementById('mini-chat-list');
+                list.innerHTML = "";
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const isMe = data.sender === myName;
+                    list.innerHTML += `
+                        <div class="chat-item ${isMe ? 'chat-my' : 'chat-other'}">
+                            <b>${isMe ? '' : data.sender + ': '}</b>${data.text}
+                        </div>`;
+                });
+                list.scrollTop = list.scrollHeight;
+            });
+        }
+
+        // --- 메인 채팅방 알림 감시 ---
+        function watchMainChat() {
+            // 최근 1개 메시지만 감시
+            const q = query(collection(db, "chats"), orderBy("timestamp", "desc"), limit(1));
+            onSnapshot(q, (snapshot) => {
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if(data.timestamp) {
+                        const msgTime = data.timestamp.toDate();
+                        // 페이지 로드 이후에 온 메시지면서 + 내가 보낸게 아니면 알림
+                        if (msgTime > pageLoadTime && data.sender !== myName) {
+                            document.getElementById('new-msg-badge').style.display = 'block';
+                        }
+                    }
+                });
+            });
+        }
+
+        // --- 렌더링 헬퍼 ---
+        function renderHistory(history) {
+            const list = document.getElementById('history-list');
+            if (history.length === 0) { list.innerHTML = '<div style="text-align:center; color:#ccc; padding:10px;">아직 기록이 없습니다.</div>'; return; }
+            const reversed = [...history].reverse();
+            list.innerHTML = reversed.map(item => `
+                <div class="history-item"><span class="winner-mark ${item.winnerColor === '흑돌' ? 'win-black' : 'win-white'}">${item.winnerColor === '흑돌' ? '⚫' : '⚪'} ${item.winnerName} 승리!</span><span class="history-time">${item.date}</span></div>`).join('');
+        }
+
+        function resizeBoard() {
+            const screenWidth = Math.min(window.innerWidth - 40, 400);
+            boardSize = screenWidth; cellSize = boardSize / (size + 1);
+            canvas.width = boardSize; canvas.height = boardSize;
+            drawBoard(); drawAllStones();
+        }
+        function drawBoard() {
+            ctx.fillStyle = "#eecfa1"; ctx.fillRect(0, 0, boardSize, boardSize); ctx.strokeStyle = "#555"; ctx.lineWidth = 1;
+            for (let i = 0; i < size; i++) {
+                ctx.beginPath(); ctx.moveTo(cellSize, (i+1) * cellSize); ctx.lineTo(boardSize - cellSize, (i+1) * cellSize); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo((i+1) * cellSize, cellSize); ctx.lineTo((i+1) * cellSize, boardSize - cellSize); ctx.stroke();
+            }
+            drawDot(3, 3); drawDot(11, 3); drawDot(7, 7); drawDot(3, 11); drawDot(11, 11);
+        }
+        function drawDot(x, y) { ctx.fillStyle = "#555"; ctx.beginPath(); ctx.arc((x+1) * cellSize, (y+1) * cellSize, 3, 0, Math.PI * 2); ctx.fill(); }
+        function drawStone(x, y, color) {
+            const cx = (x+1) * cellSize; const cy = (y+1) * cellSize; const r = cellSize * 0.4;
+            ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            const grad = ctx.createRadialGradient(cx - r/3, cy - r/3, r/10, cx, cy, r);
+            if (color === 1) { grad.addColorStop(0, "#555"); grad.addColorStop(1, "black"); } else { grad.addColorStop(0, "white"); grad.addColorStop(1, "#ddd"); }
+            ctx.fillStyle = grad; ctx.fill();
+        }
+        function drawAllStones() { if(!board || board.length === 0) return; for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (board[y][x] !== 0) drawStone(x, y, board[y][x]); }
+        function checkWin(x, y, color) {
+            const directions = [[1, 0], [0, 1], [1, 1], [1, -1]];
+            for (let [dx, dy] of directions) {
+                let count = 1;
+                for (let i = 1; i < 5; i++) { if (isValid(x + dx * i, y + dy * i) && board[y + dy * i][x + dx * i] === color) count++; else break; }
+                for (let i = 1; i < 5; i++) { if (isValid(x - dx * i, y - dy * i) && board[y - dy * i][x - dx * i] === color) count++; else break; }
+                if (count >= 5) return true;
+            } return false;
+        }
+        function isValid(x, y) { return x >= 0 && x < size && y >= 0 && y < size; }
+
+        window.addEventListener('resize', resizeBoard);
+        joinGame();
+    </script>
+</body>
+</html>
