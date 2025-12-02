@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="LoveChat">
 
     <link id="favicon" rel="icon" href="https://cdn-icons-png.flaticon.com/512/2076/2076218.png">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2076/2076218.png">
-    
     <link rel="manifest" href="manifest.json">
 
     <title>Our Secret Chat</title>
@@ -237,7 +237,7 @@
             </div>
 
             <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃 (자동로그인 해제)</span></div>
-            <div class="version-info">Ver 1.70 (Bug Fixed)</div>
+            <div class="version-info">Ver 1.70 (Fix Complete)</div>
         </div>
     </div>
 
@@ -274,13 +274,48 @@
     const storage = getStorage(app);
 
     // ==========================================
-    // 🛠️ [중요] 삭제 기능 관련 변수를 최상단으로 이동
+    // 🛠️ [Fix] 모든 전역 변수를 최상단으로 이동 (에러 원인 해결)
     // ==========================================
     const deleteReqRef = doc(db, "settings", "delete_request");
     let myId = localStorage.getItem('chat_uid');
     if (!myId) { myId = 'user_' + Date.now() + Math.floor(Math.random() * 1000); localStorage.setItem('chat_uid', myId); }
+    let myName = localStorage.getItem('chat_nickname');
+    let flashInterval; 
+    const originalTitle = document.title;
+    const originalFavicon = document.getElementById('favicon').href;
+    const alertFavicon = "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"; 
 
-    // 삭제 동의 모니터링 함수 (선언을 위로 올림)
+    // 탭 알림 관련 함수 (최상단 정의)
+    function startTabNotification() {
+        if(flashInterval) return;
+        let toggle = false;
+        const link = document.getElementById('favicon');
+        
+        flashInterval = setInterval(() => {
+            document.title = toggle ? "💌 (1) 새 메시지!" : originalTitle;
+            link.href = toggle ? alertFavicon : originalFavicon;
+            toggle = !toggle;
+        }, 1000);
+    }
+
+    function stopTabNotification() {
+        clearInterval(flashInterval);
+        flashInterval = null;
+        document.title = originalTitle;
+        document.getElementById('favicon').href = originalFavicon;
+    }
+
+    // 🛠️ [Fix] 화면 전환 함수 최상단 정의 (호이스팅 문제 해결)
+    function showScreen(id) { 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById(id).classList.add('active'); 
+        if(id === 'chat-screen') {
+            setTimeout(scrollToBottom, 100);
+            stopTabNotification(); 
+        }
+    }
+
+    // 삭제 동의 모니터링 함수 (최상단 정의)
     function monitorDeletionVotes() {
         onSnapshot(deleteReqRef, async (snap) => {
             if(snap.exists()) {
@@ -313,7 +348,7 @@
         });
     }
 
-    let myName = localStorage.getItem('chat_nickname');
+    // 배경색 적용
     let savedBg = localStorage.getItem('chat_bg') || '#fafafa';
     applyBg(savedBg);
 
@@ -324,14 +359,16 @@
         }
     };
 
-    // 자동 로그인 로직
+    // ==========================================
+    // 🚀 실행 로직 (변수 선언 이후 실행)
+    // ==========================================
     const savedPassword = localStorage.getItem('chat_auth_pw');
     if (savedPassword === '0726') {
         if (myName) { 
             showScreen('chat-screen'); 
             loadMessages(); 
             startPresenceSystem(); 
-            monitorDeletionVotes(); // 이제 위에서 정의했으므로 오류 안 남
+            monitorDeletionVotes();
             window.requestNotiPermission(); 
         } 
         else { showScreen('name-screen'); }
@@ -393,30 +430,6 @@
         }
     });
     window.onclick = markAsRead;
-
-    let flashInterval;
-    const originalTitle = document.title;
-    const originalFavicon = document.getElementById('favicon').href;
-    const alertFavicon = "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"; 
-
-    function startTabNotification() {
-        if(flashInterval) return;
-        let toggle = false;
-        const link = document.getElementById('favicon');
-        
-        flashInterval = setInterval(() => {
-            document.title = toggle ? "💌 (1) 새 메시지!" : originalTitle;
-            link.href = toggle ? alertFavicon : originalFavicon;
-            toggle = !toggle;
-        }, 1000);
-    }
-
-    function stopTabNotification() {
-        clearInterval(flashInterval);
-        flashInterval = null;
-        document.title = originalTitle;
-        document.getElementById('favicon').href = originalFavicon;
-    }
 
     function startPresenceSystem() {
         if(!myName) return;
@@ -745,15 +758,6 @@
     window.filterMessages = () => { const q = document.getElementById('search-input').value.toLowerCase(); document.querySelectorAll('.message').forEach(msg => msg.style.display = (msg.getAttribute('data-text')||"").toLowerCase().includes(q)?'block':'none'); };
     window.openSettings = () => showScreen('settings-screen'); window.closeSettings = () => showScreen('chat-screen');
     window.changeBg = (c) => { localStorage.setItem('chat_bg', c); applyBg(c); }; function applyBg(c) { document.getElementById('messages').style.backgroundColor = c; }
-    
-    function showScreen(id) { 
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
-        document.getElementById(id).classList.add('active'); 
-        if(id === 'chat-screen') {
-            setTimeout(scrollToBottom, 100);
-            stopTabNotification(); 
-        }
-    }
     
     window.logout = () => { localStorage.removeItem('chat_nickname'); localStorage.removeItem('chat_auth_pw'); location.reload(); }
 </script>
