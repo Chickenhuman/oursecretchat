@@ -237,7 +237,7 @@
             </div>
 
             <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃 (자동로그인 해제)</span></div>
-            <div class="version-info">Ver 1.70 (Final Fixed)</div>
+            <div class="version-info">Ver 1.70 (Bug Fixed)</div>
         </div>
     </div>
 
@@ -274,16 +274,17 @@
     const storage = getStorage(app);
 
     // ==========================================
-    // ⭐️ [중요] 모든 변수 선언을 맨 위로 이동!
+    // ⭐️ [중요] 모든 변수 선언을 최상단으로 이동 (에러 완전 해결)
     // ==========================================
     
-    // 1. 사용자 정보 관련
+    // 1. 사용자 정보
     let myName = localStorage.getItem('chat_nickname');
     let myId = localStorage.getItem('chat_uid');
     if (!myId) { myId = 'user_' + Date.now() + Math.floor(Math.random() * 1000); localStorage.setItem('chat_uid', myId); }
     let savedBg = localStorage.getItem('chat_bg') || '#fafafa';
 
-    // 2. 삭제 기능 관련
+    // 2. 이모티콘 및 기능 관련
+    const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
     const deleteReqRef = doc(db, "settings", "delete_request");
     
     // 3. 접속 상태 관련
@@ -295,7 +296,7 @@
     const originalFavicon = document.getElementById('favicon').href;
     const alertFavicon = "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"; 
 
-    // 4. 메시지 및 갤러리 로딩 관련
+    // 4. 로딩 상태 관련
     let isInitialLoad = true;
     let allImages = [];
     let oldestMessageSnap = null; 
@@ -309,6 +310,19 @@
     // ==========================================
 
     applyBg(savedBg);
+
+    // 이모티콘 셋팅 (변수 선언 후에 실행)
+    const emojiPicker = document.getElementById('emoji-picker');
+    emojiList.forEach(emo => {
+        const span = document.createElement('span'); span.className = 'emoji-item'; span.innerText = emo;
+        span.onclick = () => { document.getElementById('msg-input').value += emo; emojiPicker.style.display = 'none'; };
+        emojiPicker.appendChild(span);
+    });
+    
+    window.toggleEmoji = () => { 
+        const picker = document.getElementById('emoji-picker'); 
+        picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid'; 
+    };
 
     // 화면 전환 함수
     function showScreen(id) { 
@@ -726,15 +740,6 @@
         localStorage.setItem('noti_preview', document.getElementById('noti-preview').checked);
     };
 
-    const emojiPicker = document.getElementById('emoji-picker');
-    emojiList.forEach(emo => {
-        const span = document.createElement('span'); span.className = 'emoji-item'; span.innerText = emo;
-        span.onclick = () => { document.getElementById('msg-input').value += emo; emojiPicker.style.display = 'none'; };
-        emojiPicker.appendChild(span);
-    });
-    window.toggleEmoji = () => { picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid'; }
-    const picker = document.getElementById('emoji-picker');
-
     window.triggerFileUpload = () => {
         const fileInput = document.getElementById('photo-input');
         fileInput.disabled = false; fileInput.click(); setTimeout(() => { fileInput.disabled = true; }, 1000); 
@@ -758,8 +763,8 @@
     // ==========================================
     // 🚀 [실행 시작] 자동 로그인 및 초기화
     // ==========================================
-    const savedPassword = localStorage.getItem('chat_auth_pw');
-    if (savedPassword === '0726') {
+    const savedPasswordFinal = localStorage.getItem('chat_auth_pw');
+    if (savedPasswordFinal === '0726') {
         if (myName) { 
             showScreen('chat-screen'); 
             loadMessages(); 
