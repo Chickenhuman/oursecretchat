@@ -237,7 +237,7 @@
             </div>
 
             <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃 (자동로그인 해제)</span></div>
-            <div class="version-info">Ver 1.70 (Fix Complete)</div>
+            <div class="version-info">Ver 1.70 (Final Fixed)</div>
         </div>
     </div>
 
@@ -274,18 +274,53 @@
     const storage = getStorage(app);
 
     // ==========================================
-    // 🛠️ [Fix] 모든 전역 변수를 최상단으로 이동 (에러 원인 해결)
+    // ⭐️ [중요] 모든 변수 선언을 맨 위로 이동!
     // ==========================================
-    const deleteReqRef = doc(db, "settings", "delete_request");
+    
+    // 1. 사용자 정보 관련
+    let myName = localStorage.getItem('chat_nickname');
     let myId = localStorage.getItem('chat_uid');
     if (!myId) { myId = 'user_' + Date.now() + Math.floor(Math.random() * 1000); localStorage.setItem('chat_uid', myId); }
-    let myName = localStorage.getItem('chat_nickname');
+    let savedBg = localStorage.getItem('chat_bg') || '#fafafa';
+
+    // 2. 삭제 기능 관련
+    const deleteReqRef = doc(db, "settings", "delete_request");
+    
+    // 3. 접속 상태 관련
+    let presenceUnsub = null;
+    let otherUserReadTime = 0;
+    let lastPartnerMsgTime = 0; 
     let flashInterval; 
     const originalTitle = document.title;
     const originalFavicon = document.getElementById('favicon').href;
     const alertFavicon = "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"; 
 
-    // 탭 알림 관련 함수 (최상단 정의)
+    // 4. 메시지 및 갤러리 로딩 관련
+    let isInitialLoad = true;
+    let allImages = [];
+    let oldestMessageSnap = null; 
+    let isFetchingOlder = false; 
+    let galleryLastSnap = null;
+    let isGalleryLoading = false;
+    let isGalleryEnd = false;
+
+    // ==========================================
+    // ⚙️ 기능 함수 정의 (변수 선언 이후에 배치)
+    // ==========================================
+
+    applyBg(savedBg);
+
+    // 화면 전환 함수
+    function showScreen(id) { 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById(id).classList.add('active'); 
+        if(id === 'chat-screen') {
+            setTimeout(scrollToBottom, 100);
+            stopTabNotification(); 
+        }
+    }
+
+    // 탭 알림 관련 함수
     function startTabNotification() {
         if(flashInterval) return;
         let toggle = false;
@@ -305,17 +340,7 @@
         document.getElementById('favicon').href = originalFavicon;
     }
 
-    // 🛠️ [Fix] 화면 전환 함수 최상단 정의 (호이스팅 문제 해결)
-    function showScreen(id) { 
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
-        document.getElementById(id).classList.add('active'); 
-        if(id === 'chat-screen') {
-            setTimeout(scrollToBottom, 100);
-            stopTabNotification(); 
-        }
-    }
-
-    // 삭제 동의 모니터링 함수 (최상단 정의)
+    // 삭제 동의 모니터링 함수
     function monitorDeletionVotes() {
         onSnapshot(deleteReqRef, async (snap) => {
             if(snap.exists()) {
@@ -348,88 +373,12 @@
         });
     }
 
-    // 배경색 적용
-    let savedBg = localStorage.getItem('chat_bg') || '#fafafa';
-    applyBg(savedBg);
-
     // 알림 권한 요청 함수
     window.requestNotiPermission = () => {
         if ("Notification" in window && Notification.permission !== "granted") {
             Notification.requestPermission();
         }
     };
-
-    // ==========================================
-    // 🚀 실행 로직 (변수 선언 이후 실행)
-    // ==========================================
-    const savedPassword = localStorage.getItem('chat_auth_pw');
-    if (savedPassword === '0726') {
-        if (myName) { 
-            showScreen('chat-screen'); 
-            loadMessages(); 
-            startPresenceSystem(); 
-            monitorDeletionVotes();
-            window.requestNotiPermission(); 
-        } 
-        else { showScreen('name-screen'); }
-    }
-
-    if(localStorage.getItem('noti_enabled') === null) localStorage.setItem('noti_enabled', 'true');
-    if(localStorage.getItem('noti_preview') === null) localStorage.setItem('noti_preview', 'true');
-    document.getElementById('noti-enable').checked = localStorage.getItem('noti_enabled') !== 'false';
-    document.getElementById('noti-preview').checked = localStorage.getItem('noti_preview') !== 'false';
-    
-    window.saveSettings = () => {
-        localStorage.setItem('noti_enabled', document.getElementById('noti-enable').checked);
-        localStorage.setItem('noti_preview', document.getElementById('noti-preview').checked);
-    };
-
-    const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
-    const emojiPicker = document.getElementById('emoji-picker');
-    emojiList.forEach(emo => {
-        const span = document.createElement('span'); span.className = 'emoji-item'; span.innerText = emo;
-        span.onclick = () => { document.getElementById('msg-input').value += emo; emojiPicker.style.display = 'none'; };
-        emojiPicker.appendChild(span);
-    });
-    window.toggleEmoji = () => { picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid'; }
-    const picker = document.getElementById('emoji-picker');
-
-    window.triggerFileUpload = () => {
-        const fileInput = document.getElementById('photo-input');
-        fileInput.disabled = false; fileInput.click(); setTimeout(() => { fileInput.disabled = true; }, 1000); 
-    };
-
-    const canvas = document.getElementById('canvas-area');
-    const ctx = canvas.getContext('2d');
-    let isDrawing = false; let lastX = 0; let lastY = 0;
-    
-    function initCanvas() { ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = '#333'; }
-    initCanvas();
-
-    function draw(e) { if (!isDrawing) return; e.preventDefault(); let clientX = e.clientX || e.touches[0].clientX; let clientY = e.clientY || e.touches[0].clientY; const rect = canvas.getBoundingClientRect(); const x = clientX - rect.left; const y = clientY - rect.top; ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke(); lastX = x; lastY = y; }
-    canvas.addEventListener('mousedown', (e) => { isDrawing = true; lastX = e.offsetX; lastY = e.offsetY; }); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', () => isDrawing = false); canvas.addEventListener('mouseout', () => isDrawing = false);
-    canvas.addEventListener('touchstart', (e) => { isDrawing = true; const rect = canvas.getBoundingClientRect(); lastX = e.touches[0].clientX - rect.left; lastY = e.touches[0].clientY - rect.top; }); canvas.addEventListener('touchmove', draw); canvas.addEventListener('touchend', () => isDrawing = false);
-    
-    window.toggleDrawingPad = () => { const m = document.getElementById('drawing-modal'); if(m.style.display !== 'flex') { m.style.display = 'flex'; } else { m.style.display = 'none'; } };
-    window.clearCanvas = () => initCanvas();
-    window.sendDrawing = () => { canvas.toBlob((blob) => { if(blob) { uploadImage(blob, true); toggleDrawingPad(); initCanvas(); } }, 'image/png'); };
-
-    let otherUserReadTime = 0;
-    let lastPartnerMsgTime = 0; 
-    let presenceUnsub = null;
-
-    function markAsRead() { if(!myName) return; setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp(), lastRead: serverTimestamp() }, { merge: true }); }
-    
-    document.addEventListener("visibilitychange", () => { 
-        if (document.visibilityState === 'visible') {
-            markAsRead();
-            stopTabNotification(); 
-            togglePresenceListener(true); 
-        } else {
-            togglePresenceListener(false); 
-        }
-    });
-    window.onclick = markAsRead;
 
     function startPresenceSystem() {
         if(!myName) return;
@@ -484,6 +433,19 @@
         }
     }
 
+    function markAsRead() { if(!myName) return; setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp(), lastRead: serverTimestamp() }, { merge: true }); }
+    
+    document.addEventListener("visibilitychange", () => { 
+        if (document.visibilityState === 'visible') {
+            markAsRead();
+            stopTabNotification(); 
+            togglePresenceListener(true); 
+        } else {
+            togglePresenceListener(false); 
+        }
+    });
+    window.onclick = markAsRead;
+
     function updateReadStatus() {
         const effectiveReadTime = Math.max(otherUserReadTime, lastPartnerMsgTime);
         document.querySelectorAll('.my-msg').forEach(msgDiv => {
@@ -503,6 +465,7 @@
         });
     }
 
+    // 로그인 및 이름 설정
     window.checkPassword = function() { 
         if (document.getElementById('password-input').value === '0726') { 
             localStorage.setItem('chat_auth_pw', '0726'); 
@@ -529,13 +492,9 @@
         window.requestNotiPermission(); 
     };
 
+    // 메시지 전송 및 로드
     window.sendMessage = async function() { const input = document.getElementById('msg-input'); const text = input.value; if (text.trim() === "") return; try { await addDoc(collection(db, "chats"), { text: text, sender: myName, timestamp: serverTimestamp(), type: 'text' }); input.value = ""; markAsRead(); scrollToBottom(); } catch (e) { alert("전송 실패"); } };
     window.uploadImage = async function(fileOrBlob, isDrawing = false) { if (!fileOrBlob) return; document.getElementById('loading').style.display = 'flex'; try { const fileName = Date.now() + (isDrawing ? '_draw.png' : '_' + fileOrBlob.name); const storageRef = ref(storage, 'images/' + fileName); await uploadBytes(storageRef, fileOrBlob); const url = await getDownloadURL(storageRef); await addDoc(collection(db, "chats"), { text: isDrawing ? "그림을 보냈습니다." : "사진을 보냈습니다.", imageUrl: url, sender: myName, timestamp: serverTimestamp(), type: 'image' }); markAsRead(); scrollToBottom(); } catch (e) { alert("전송 실패"); } finally { document.getElementById('loading').style.display = 'none'; document.getElementById('photo-input').value = ''; } };
-
-    let isInitialLoad = true;
-    let allImages = [];
-    let oldestMessageSnap = null; 
-    let isFetchingOlder = false; 
 
     function loadMessages() {
         const q = query(collection(db, "chats"), orderBy("timestamp", "asc"), limitToLast(30));
@@ -646,10 +605,7 @@
         if(recentImages.length === 0) previewGrid.innerHTML = '<span style="grid-column:span 3; text-align:center; color:#ccc; font-size:12px;">사진 없음</span>';
     }
 
-    let galleryLastSnap = null;
-    let isGalleryLoading = false;
-    let isGalleryEnd = false;
-
+    // 갤러리 관련 함수
     window.openFullGallery = () => {
         showScreen('full-gallery-screen');
         if(document.getElementById('full-gallery-grid').children.length === 0) {
@@ -694,6 +650,7 @@
         }
     });
 
+    // 기타 유틸리티 및 설정 저장
     window.clearCache = () => {
         if(confirm("캐시를 삭제하면 자동 로그인 정보가 지워집니다. 진행할까요?")) {
             localStorage.clear();
@@ -701,7 +658,6 @@
         }
     };
 
-    // 1. 삭제 요청 버튼 클릭 시
     window.requestDeleteHistory = async () => {
         if(!confirm("⚠️ 모든 대화와 사진이 삭제됩니다. 복구 불가!\n\n동의하시겠습니까? (상대방도 동의해야 최종 삭제됩니다)")) return;
 
@@ -717,7 +673,6 @@
         }
     };
 
-    // 3. 실제 삭제 함수 (배치 삭제)
     async function performFullDeletion() {
         try {
             const q = query(collection(db, "chats"));
@@ -760,6 +715,60 @@
     window.changeBg = (c) => { localStorage.setItem('chat_bg', c); applyBg(c); }; function applyBg(c) { document.getElementById('messages').style.backgroundColor = c; }
     
     window.logout = () => { localStorage.removeItem('chat_nickname'); localStorage.removeItem('chat_auth_pw'); location.reload(); }
+
+    if(localStorage.getItem('noti_enabled') === null) localStorage.setItem('noti_enabled', 'true');
+    if(localStorage.getItem('noti_preview') === null) localStorage.setItem('noti_preview', 'true');
+    document.getElementById('noti-enable').checked = localStorage.getItem('noti_enabled') !== 'false';
+    document.getElementById('noti-preview').checked = localStorage.getItem('noti_preview') !== 'false';
+    
+    window.saveSettings = () => {
+        localStorage.setItem('noti_enabled', document.getElementById('noti-enable').checked);
+        localStorage.setItem('noti_preview', document.getElementById('noti-preview').checked);
+    };
+
+    const emojiPicker = document.getElementById('emoji-picker');
+    emojiList.forEach(emo => {
+        const span = document.createElement('span'); span.className = 'emoji-item'; span.innerText = emo;
+        span.onclick = () => { document.getElementById('msg-input').value += emo; emojiPicker.style.display = 'none'; };
+        emojiPicker.appendChild(span);
+    });
+    window.toggleEmoji = () => { picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid'; }
+    const picker = document.getElementById('emoji-picker');
+
+    window.triggerFileUpload = () => {
+        const fileInput = document.getElementById('photo-input');
+        fileInput.disabled = false; fileInput.click(); setTimeout(() => { fileInput.disabled = true; }, 1000); 
+    };
+
+    const canvas = document.getElementById('canvas-area');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false; let lastX = 0; let lastY = 0;
+    
+    function initCanvas() { ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = '#333'; }
+    initCanvas();
+
+    function draw(e) { if (!isDrawing) return; e.preventDefault(); let clientX = e.clientX || e.touches[0].clientX; let clientY = e.clientY || e.touches[0].clientY; const rect = canvas.getBoundingClientRect(); const x = clientX - rect.left; const y = clientY - rect.top; ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke(); lastX = x; lastY = y; }
+    canvas.addEventListener('mousedown', (e) => { isDrawing = true; lastX = e.offsetX; lastY = e.offsetY; }); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', () => isDrawing = false); canvas.addEventListener('mouseout', () => isDrawing = false);
+    canvas.addEventListener('touchstart', (e) => { isDrawing = true; const rect = canvas.getBoundingClientRect(); lastX = e.touches[0].clientX - rect.left; lastY = e.touches[0].clientY - rect.top; }); canvas.addEventListener('touchmove', draw); canvas.addEventListener('touchend', () => isDrawing = false);
+    
+    window.toggleDrawingPad = () => { const m = document.getElementById('drawing-modal'); if(m.style.display !== 'flex') { m.style.display = 'flex'; } else { m.style.display = 'none'; } };
+    window.clearCanvas = () => initCanvas();
+    window.sendDrawing = () => { canvas.toBlob((blob) => { if(blob) { uploadImage(blob, true); toggleDrawingPad(); initCanvas(); } }, 'image/png'); };
+
+    // ==========================================
+    // 🚀 [실행 시작] 자동 로그인 및 초기화
+    // ==========================================
+    const savedPassword = localStorage.getItem('chat_auth_pw');
+    if (savedPassword === '0726') {
+        if (myName) { 
+            showScreen('chat-screen'); 
+            loadMessages(); 
+            startPresenceSystem(); 
+            monitorDeletionVotes();
+            window.requestNotiPermission(); 
+        } 
+        else { showScreen('name-screen'); }
+    }
 </script>
 </body>
 </html>
