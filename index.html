@@ -237,7 +237,7 @@
             </div>
 
             <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃 (자동로그인 해제)</span></div>
-            <div class="version-info">Ver 1.70 (Bug Fixed)</div>
+            <div class="version-info">Ver 1.71 (25/12/2 14:06)</div>
         </div>
     </div>
 
@@ -287,14 +287,14 @@
     const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
     const deleteReqRef = doc(db, "settings", "delete_request");
     
-    // 3. 접속 상태 관련
+    // 3. 접속 상태 및 탭 알림 관련 변수
     let presenceUnsub = null;
     let otherUserReadTime = 0;
     let lastPartnerMsgTime = 0; 
-    let flashInterval; 
-    const originalTitle = document.title;
-    const originalFavicon = document.getElementById('favicon').href;
-    const alertFavicon = "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"; 
+    
+    // 🔔 탭 제목 깜빡임 관련 변수
+    let flashInterval = null; 
+    const originalTitle = document.title; 
 
     // 4. 로딩 상태 관련
     let isInitialLoad = true;
@@ -324,34 +324,34 @@
         picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid'; 
     };
 
+    // 🔔 [NEW] 탭 알림 시작 함수
+    function startTabNotification() {
+        if(flashInterval) return; // 이미 돌고 있으면 중복 실행 방지
+        let toggle = false;
+        
+        flashInterval = setInterval(() => {
+            document.title = toggle ? "🔴 메세지가 도착했습니다!" : originalTitle;
+            toggle = !toggle;
+        }, 1000); // 1초마다 깜빡임
+    }
+
+    // 🔔 [NEW] 탭 알림 중지 함수
+    function stopTabNotification() {
+        if(flashInterval) {
+            clearInterval(flashInterval);
+            flashInterval = null;
+        }
+        document.title = originalTitle; // 원래 제목으로 복구
+    }
+
     // 화면 전환 함수
     function showScreen(id) { 
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
         document.getElementById(id).classList.add('active'); 
         if(id === 'chat-screen') {
             setTimeout(scrollToBottom, 100);
-            stopTabNotification(); 
+            stopTabNotification(); // 채팅화면 들어오면 알림 끄기
         }
-    }
-
-    // 탭 알림 관련 함수
-    function startTabNotification() {
-        if(flashInterval) return;
-        let toggle = false;
-        const link = document.getElementById('favicon');
-        
-        flashInterval = setInterval(() => {
-            document.title = toggle ? "💌 (1) 새 메시지!" : originalTitle;
-            link.href = toggle ? alertFavicon : originalFavicon;
-            toggle = !toggle;
-        }, 1000);
-    }
-
-    function stopTabNotification() {
-        clearInterval(flashInterval);
-        flashInterval = null;
-        document.title = originalTitle;
-        document.getElementById('favicon').href = originalFavicon;
     }
 
     // 삭제 동의 모니터링 함수
@@ -449,10 +449,11 @@
 
     function markAsRead() { if(!myName) return; setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp(), lastRead: serverTimestamp() }, { merge: true }); }
     
+    // 🔔 화면 상태 감지 (알림 끄기 기능 연동)
     document.addEventListener("visibilitychange", () => { 
         if (document.visibilityState === 'visible') {
             markAsRead();
-            stopTabNotification(); 
+            stopTabNotification(); // 화면 켜면 탭 알림 중지
             togglePresenceListener(true); 
         } else {
             togglePresenceListener(false); 
@@ -525,10 +526,17 @@
                         const isPreviewEnabled = localStorage.getItem('noti_preview') !== 'false';
                         
                         if (data.sender !== myName) {
-                            if (document.hidden && isNotiEnabled && Notification.permission === "granted") {
-                                let bodyText = "비밀 메시지가 도착했습니다. 🔒";
-                                if (isPreviewEnabled) bodyText = data.type === 'image' ? '사진/그림이 도착했습니다.' : data.text;
-                                new Notification(`💌 ${data.sender}`, { body: bodyText, icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png' });
+                            // 🔔 상대방 메시지 도착 시
+                            if (document.hidden) {
+                                // 1. 탭 알림 시작
+                                startTabNotification();
+
+                                // 2. 브라우저 알림 (기존 기능)
+                                if (isNotiEnabled && Notification.permission === "granted") {
+                                    let bodyText = "비밀 메시지가 도착했습니다. 🔒";
+                                    if (isPreviewEnabled) bodyText = data.type === 'image' ? '사진/그림이 도착했습니다.' : data.text;
+                                    new Notification(`💌 ${data.sender}`, { body: bodyText, icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png' });
+                                }
                             }
                         }
                     }
