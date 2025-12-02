@@ -6,11 +6,9 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LoveChat">
-
-    <link id="favicon" rel="icon" href="https://cdn-icons-png.flaticon.com/512/2076/2076218.png">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2076/2076218.png">
     
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2076/2076218.png">
     <link rel="manifest" href="manifest.json">
 
     <title>Our Secret Chat</title>
@@ -110,24 +108,22 @@
         input:checked + .slider { background-color: #ff6b6b; }
         input:checked + .slider:before { transform: translateX(18px); }
         
+        /* 🔥 버전 정보 스타일 추가 */
         .version-info { text-align: center; color: #aaa; font-size: 11px; margin-top: 20px; padding-bottom: 20px; }
 
         #full-gallery-screen { background: white; overflow-y: auto; }
         #full-gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
         #full-gallery-grid .gallery-item { border-radius: 0; border: none; }
-        #gallery-loading { text-align: center; padding: 20px; color: #999; font-size: 12px; grid-column: span 3; display: none; }
 
         #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; flex-direction: column; color: white; }
         .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .danger-btn { font-size: 12px; color: #ff6b6b; border: 1px solid #ff6b6b; padding: 5px 10px; border-radius: 5px; background: white; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <div id="loading"><div class="spinner"></div><span>처리 중...</span></div>
+    <div id="loading"><div class="spinner"></div><span>전송 중...</span></div>
 
     <div id="drawing-modal">
         <div class="drawing-container">
@@ -222,22 +218,16 @@
                     <div class="color-circle" style="background:#f3e5f5;" onclick="changeBg('#f3e5f5')"></div>
                 </div>
             </div>
-            
-            <div class="menu-item">
-                <span class="menu-label">🧹 캐시 삭제</span>
-                <button class="danger-btn" onclick="clearCache()">실행</button>
-            </div>
-            
-            <div class="menu-item" style="flex-direction:column; align-items:flex-start; gap:8px;">
-                <span class="menu-label" style="color:red;">🔥 대화 내역 전체 삭제</span>
-                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                    <span style="font-size:11px; color:#888;">두 명 모두 동의해야 삭제됩니다.</span>
-                    <button id="delete-chat-btn" class="danger-btn" style="background:#fff5f5; border-color:red;" onclick="requestDeleteHistory()">삭제 요청</button>
+            <div class="menu-item" style="flex-direction:column; align-items:flex-start; gap:5px;">
+                <span class="menu-label">📅 사귄 날짜 설정</span>
+                <div style="display:flex; gap:5px; width:100%;">
+                    <input type="date" id="d-day-input" style="flex:1;" onkeypress="if(event.keyCode==13) saveDday()">
+                    <button onclick="saveDday()" style="background:#333; color:white; border:none; border-radius:5px; padding:0 15px; cursor:pointer;">저장</button>
                 </div>
             </div>
-
             <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃 (자동로그인 해제)</span></div>
-            <div class="version-info">Ver 1.70</div>
+            
+            <div class="version-info">Ver 15.2 (Latest Patch)</div>
         </div>
     </div>
 
@@ -247,13 +237,12 @@
             <h2 style="margin:0;">모든 추억들</h2>
         </div>
         <div id="full-gallery-grid"></div>
-        <div id="gallery-loading">더 불러오는 중...</div>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, doc, setDoc, query, orderBy, onSnapshot, serverTimestamp, limitToLast, getDocs, startAfter, limit, where, deleteDoc, writeBatch, updateDoc, arrayUnion, getDoc } 
+    import { getFirestore, collection, addDoc, doc, setDoc, query, orderBy, onSnapshot, serverTimestamp, limitToLast, getDocs, startAfter, limit } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
@@ -280,7 +269,7 @@
     let savedBg = localStorage.getItem('chat_bg') || '#fafafa';
     applyBg(savedBg);
 
-    // 알림 권한 요청 함수
+    // 알림 권한 요청 함수 추가 (누락되었던 부분)
     window.requestNotiPermission = () => {
         if ("Notification" in window && Notification.permission !== "granted") {
             Notification.requestPermission();
@@ -289,13 +278,7 @@
 
     const savedPassword = localStorage.getItem('chat_auth_pw');
     if (savedPassword === '0726') {
-        if (myName) { 
-            showScreen('chat-screen'); 
-            loadMessages(); 
-            startPresenceSystem(); 
-            monitorDeletionVotes(); // 🔥 삭제 동의 감시 시작
-            window.requestNotiPermission(); 
-        } 
+        if (myName) { showScreen('chat-screen'); loadMessages(); startPresenceSystem(); window.requestNotiPermission(); } 
         else { showScreen('name-screen'); }
     }
 
@@ -324,6 +307,15 @@
         fileInput.disabled = false; fileInput.click(); setTimeout(() => { fileInput.disabled = true; }, 1000); 
     };
 
+    window.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file' && items[i].type.includes('image/')) {
+                if(confirm("클립보드의 이미지를 전송할까요?")) uploadImage(items[i].getAsFile());
+            }
+        }
+    });
+
     const canvas = document.getElementById('canvas-area');
     const ctx = canvas.getContext('2d');
     let isDrawing = false; let lastX = 0; let lastY = 0;
@@ -340,97 +332,44 @@
     window.sendDrawing = () => { canvas.toBlob((blob) => { if(blob) { uploadImage(blob, true); toggleDrawingPad(); initCanvas(); } }, 'image/png'); };
 
     let otherUserReadTime = 0;
-    let lastPartnerMsgTime = 0; 
-    let presenceUnsub = null;
+    let lastPartnerMsgTime = 0;
 
     function markAsRead() { if(!myName) return; setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp(), lastRead: serverTimestamp() }, { merge: true }); }
-    
-    document.addEventListener("visibilitychange", () => { 
-        if (document.visibilityState === 'visible') {
-            markAsRead();
-            stopTabNotification(); 
-            togglePresenceListener(true); 
-        } else {
-            togglePresenceListener(false); 
-        }
-    });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === 'visible') markAsRead(); });
     window.onclick = markAsRead;
-
-    let flashInterval;
-    const originalTitle = document.title;
-    const originalFavicon = document.getElementById('favicon').href;
-    const alertFavicon = "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"; 
-
-    function startTabNotification() {
-        if(flashInterval) return;
-        let toggle = false;
-        const link = document.getElementById('favicon');
-        
-        flashInterval = setInterval(() => {
-            document.title = toggle ? "💌 (1) 새 메시지!" : originalTitle;
-            link.href = toggle ? alertFavicon : originalFavicon;
-            toggle = !toggle;
-        }, 1000);
-    }
-
-    function stopTabNotification() {
-        clearInterval(flashInterval);
-        flashInterval = null;
-        document.title = originalTitle;
-        document.getElementById('favicon').href = originalFavicon;
-    }
 
     function startPresenceSystem() {
         if(!myName) return;
         markAsRead();
-        
         setInterval(async () => { 
-            if(document.hidden) return; 
             try { 
-                await setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp() }, { merge: true }); 
+                const data = { name: myName, lastSeen: serverTimestamp() };
+                if (!document.hidden) data.lastRead = serverTimestamp(); 
+                await setDoc(doc(db, "presence", myId), data, { merge: true }); 
             } catch(e) {} 
-        }, 30000); 
+        }, 5000);
+        
+        onSnapshot(query(collection(db, "presence")), (snapshot) => {
+            let onlineUsers = [];
+            let maxReadTime = 0; 
 
-        if(!document.hidden) {
-            togglePresenceListener(true);
-        }
-    }
-
-    function togglePresenceListener(shouldListen) {
-        if (shouldListen) {
-            if (!presenceUnsub) {
-                const q = query(collection(db, "presence"));
-                presenceUnsub = onSnapshot(q, (snapshot) => {
-                    let onlineUsers = [];
-                    let maxReadTime = 0; 
-
-                    snapshot.forEach((docSnap) => {
-                        const data = docSnap.data();
-                        if(docSnap.id !== myId && data.name !== myName) {
-                            if (data.lastRead) {
-                                const time = data.lastRead.toMillis();
-                                if (time > maxReadTime) maxReadTime = time;
-                            }
-                            if(data.lastSeen && (new Date() - data.lastSeen.toDate()) / 1000 < 60) {
-                                onlineUsers.push(data.name);
-                            }
-                        }
-                    });
-                    
-                    otherUserReadTime = maxReadTime;
-                    const statusArea = document.getElementById('status-area');
-                    if(statusArea) {
-                        statusArea.innerHTML = onlineUsers.length > 0 ? `<span class="online-dot"></span> ${onlineUsers.join(', ')} 접속 중` : `<span class="offline-dot"></span> 상대방 기다리는 중...`;
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                if(docSnap.id !== myId && data.name !== myName) {
+                    if (data.lastRead) {
+                        const time = data.lastRead.toMillis();
+                        if (time > maxReadTime) maxReadTime = time;
                     }
-                    updateReadStatus();
-                });
-            }
-        } else {
-            if (presenceUnsub) {
-                presenceUnsub();
-                presenceUnsub = null;
-            }
-        }
+                    if(data.lastSeen && (new Date() - data.lastSeen.toDate()) / 1000 < 60) {
+                        onlineUsers.push(data.name);
+                    }
+                }
+            });
+            
+            otherUserReadTime = maxReadTime;
+            document.getElementById('status-area').innerHTML = onlineUsers.length > 0 ? `<span class="online-dot"></span> ${onlineUsers.join(', ')} 접속 중` : `<span class="offline-dot"></span> 상대방 기다리는 중...`;
+            updateReadStatus();
+        });
     }
 
     function updateReadStatus() {
@@ -439,8 +378,11 @@
             const timestamp = msgDiv.getAttribute('data-timestamp');
             const unreadMark = msgDiv.querySelector('.unread-mark');
             if (timestamp && unreadMark) {
-                if (Number(timestamp) <= effectiveReadTime) { unreadMark.style.display = 'none'; } 
-                else { unreadMark.style.display = 'inline'; }
+                if (Number(timestamp) <= effectiveReadTime) {
+                    unreadMark.style.display = 'none'; 
+                } else {
+                    unreadMark.style.display = 'inline'; 
+                }
             }
         });
     }
@@ -455,17 +397,11 @@
     window.checkPassword = function() { 
         if (document.getElementById('password-input').value === '0726') { 
             localStorage.setItem('chat_auth_pw', '0726'); 
-            if (myName) { 
-                showScreen('chat-screen'); 
-                loadMessages(); 
-                startPresenceSystem(); 
-                monitorDeletionVotes();
-                window.requestNotiPermission(); 
-            } 
+            if (myName) { showScreen('chat-screen'); loadMessages(); startPresenceSystem(); window.requestNotiPermission(); } 
             else { showScreen('name-screen'); } 
         } else { alert('비밀번호가 틀립니다!'); } 
     };
-    
+
     window.setName = function() { 
         const name = document.getElementById('name-input').value; 
         if (!name) return alert("이름 입력"); 
@@ -474,7 +410,6 @@
         showScreen('chat-screen'); 
         loadMessages(); 
         startPresenceSystem(); 
-        monitorDeletionVotes();
         window.requestNotiPermission(); 
     };
 
@@ -500,14 +435,19 @@
                         const isNotiEnabled = localStorage.getItem('noti_enabled') !== 'false';
                         const isPreviewEnabled = localStorage.getItem('noti_preview') !== 'false';
                         
+                        // 🔥 수정된 부분: 괄호와 로직 정리 완료
                         if (data.sender !== myName) {
+                            // 1. 탭 깜빡임
+                            window.triggerTabAlert();
+                            
+                            // 2. 푸시 알림
                             if (document.hidden && isNotiEnabled && Notification.permission === "granted") {
                                 let bodyText = "비밀 메시지가 도착했습니다. 🔒";
                                 if (isPreviewEnabled) bodyText = data.type === 'image' ? '사진/그림이 도착했습니다.' : data.text;
                                 new Notification(`💌 ${data.sender}`, { body: bodyText, icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png' });
                             }
                         }
-                    }
+                    } // 여기가 닫는 괄호가 빠져있었습니다!
                 });
             }
 
@@ -536,7 +476,7 @@
             else { scrollToBottom(); }
             
             updateReadStatus();
-            updateGalleryPreview(); 
+            updateGalleryUI(); 
         });
 
         const msgBox = document.getElementById('messages');
@@ -559,6 +499,7 @@
             docs.forEach(doc => { 
                 html += createMessageHTML(doc.data()); 
                 if(doc.data().type === 'image') allImages.unshift(doc.data().imageUrl); 
+                
                 if(doc.data().sender !== myName && doc.data().timestamp) {
                     const time = doc.data().timestamp.toMillis();
                     if(time > lastPartnerMsgTime) lastPartnerMsgTime = time;
@@ -573,9 +514,14 @@
         isFetchingOlder = false;
     }
 
-    function createMessageHTML(data) {
+function createMessageHTML(data) {
         const isMe = data.sender === myName;
+        
+        // 1. 메시지 정렬용 시간값 (타임스탬프가 없으면 현재 시간 사용)
         const msgTime = data.timestamp ? data.timestamp.toMillis() : Date.now();
+        
+        // 2. 화면에 표시할 시간 문자열 (여기가 문제였음!)
+        // 서버 시간이 아직 없으면(null), 내 컴퓨터의 현재 시간(new Date)을 씁니다.
         const date = data.timestamp ? data.timestamp.toDate() : new Date();
         const timeStr = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
         
@@ -583,159 +529,24 @@
         if(data.type === 'image') { contentHtml = `<img src="${data.imageUrl}" class="chat-img" onclick="window.open(this.src)" onload="scrollToBottom()">`; }
         
         const unreadHtml = isMe ? `<span class="unread-mark">😪</span>` : '';
+        
         return `<div class="message ${isMe?'my-msg':'other-msg'}" data-text="${data.text}" data-timestamp="${msgTime}">${contentHtml}<div class="msg-info">${unreadHtml}${!isMe?`<span class="sender">${data.sender}</span>`:''}<span class="time">${timeStr}</span></div></div>`;
     }
 
     function scrollToBottom() { const msgBox = document.getElementById('messages'); msgBox.scrollTop = msgBox.scrollHeight; }
 
-    function updateGalleryPreview() {
+    function updateGalleryUI() {
         const previewGrid = document.getElementById('gallery-preview');
+        const fullGrid = document.getElementById('full-gallery-grid');
         const recentImages = allImages.slice(-3).reverse();
         previewGrid.innerHTML = recentImages.map(src => `<img src="${src}" class="gallery-item" onclick="window.open(this.src)">`).join('');
         if(recentImages.length === 0) previewGrid.innerHTML = '<span style="grid-column:span 3; text-align:center; color:#ccc; font-size:12px;">사진 없음</span>';
+        const allReversed = [...allImages].reverse();
+        fullGrid.innerHTML = allReversed.map(src => `<img src="${src}" class="gallery-item" onclick="window.open(this.src)">`).join('');
     }
 
-    let galleryLastSnap = null;
-    let isGalleryLoading = false;
-    let isGalleryEnd = false;
-
-    window.openFullGallery = () => {
-        showScreen('full-gallery-screen');
-        if(document.getElementById('full-gallery-grid').children.length === 0) {
-            loadGalleryImages();
-        }
-    };
+    window.openFullGallery = () => showScreen('full-gallery-screen');
     window.closeFullGallery = () => showScreen('settings-screen');
-
-    async function loadGalleryImages() {
-        if(isGalleryLoading || isGalleryEnd) return;
-        isGalleryLoading = true;
-        document.getElementById('gallery-loading').style.display = 'block';
-
-        let q;
-        if (galleryLastSnap) {
-            q = query(collection(db, "chats"), where("type", "==", "image"), orderBy("timestamp", "desc"), startAfter(galleryLastSnap), limit(15));
-        } else {
-            q = query(collection(db, "chats"), where("type", "==", "image"), orderBy("timestamp", "desc"), limit(15));
-        }
-
-        const snapshot = await getDocs(q);
-        const grid = document.getElementById('full-gallery-grid');
-
-        if(snapshot.empty) {
-            isGalleryEnd = true;
-            document.getElementById('gallery-loading').innerText = "모든 사진을 불러왔습니다.";
-        } else {
-            galleryLastSnap = snapshot.docs[snapshot.docs.length - 1];
-            snapshot.forEach(doc => {
-                const url = doc.data().imageUrl;
-                grid.insertAdjacentHTML('beforeend', `<img src="${url}" class="gallery-item" onclick="window.open(this.src)">`);
-            });
-            document.getElementById('gallery-loading').style.display = 'none';
-        }
-        isGalleryLoading = false;
-    }
-
-    document.getElementById('full-gallery-screen').addEventListener('scroll', (e) => {
-        const { scrollTop, scrollHeight, clientHeight } = e.target;
-        if (scrollTop + clientHeight >= scrollHeight - 50) {
-            loadGalleryImages();
-        }
-    });
-
-    window.clearCache = () => {
-        if(confirm("캐시를 삭제하면 자동 로그인 정보가 지워집니다. 진행할까요?")) {
-            localStorage.clear();
-            location.reload();
-        }
-    };
-
-    // 🔥 [2인 동의 삭제 시스템]
-    const deleteReqRef = doc(db, "settings", "delete_request");
-
-    // 1. 삭제 요청 버튼 클릭 시
-    window.requestDeleteHistory = async () => {
-        if(!confirm("⚠️ 모든 대화와 사진이 삭제됩니다. 복구 불가!\n\n동의하시겠습니까? (상대방도 동의해야 최종 삭제됩니다)")) return;
-
-        try {
-            // Firestore에 내 아이디를 요청자 목록에 추가
-            await setDoc(deleteReqRef, {
-                requestedBy: arrayUnion(myId)
-            }, { merge: true });
-            
-            alert("삭제 요청을 보냈습니다. 상대방도 동의하면 즉시 삭제됩니다.");
-        } catch(e) {
-            console.error(e);
-            alert("요청 중 오류 발생");
-        }
-    };
-
-    // 2. 실시간 감시 및 삭제 실행
-    function monitorDeletionVotes() {
-        onSnapshot(deleteReqRef, async (snap) => {
-            if(snap.exists()) {
-                const data = snap.data();
-                const requests = data.requestedBy || [];
-                const btn = document.getElementById('delete-chat-btn');
-
-                // 버튼 상태 업데이트
-                if (requests.includes(myId)) {
-                    btn.innerText = `상대방 동의 대기중 (${requests.length}/2)`;
-                    btn.disabled = true;
-                    btn.style.opacity = "0.5";
-                } else if (requests.length > 0) {
-                    btn.innerText = `상대방이 삭제 요청함 (1/2) - 눌러서 동의`;
-                    btn.disabled = false;
-                    btn.style.opacity = "1";
-                } else {
-                    btn.innerText = "삭제 요청";
-                    btn.disabled = false;
-                    btn.style.opacity = "1";
-                }
-
-                // 2명 모두 동의했으면 삭제 실행 (중복 실행 방지 위해 한 명이 주도)
-                if (requests.length >= 2) {
-                    document.getElementById('loading').style.display = 'flex';
-                    // 화면을 잠그고 삭제 프로세스 시작
-                    if (requests[0] === myId) { // 첫 번째 요청자가 대표로 삭제 실행
-                        await performFullDeletion();
-                    }
-                }
-            }
-        });
-    }
-
-    // 3. 실제 삭제 함수 (배치 삭제)
-    async function performFullDeletion() {
-        try {
-            const q = query(collection(db, "chats"));
-            const snapshot = await getDocs(q);
-            const batchSize = 500;
-            let batch = writeBatch(db);
-            let count = 0;
-
-            for (const doc of snapshot.docs) {
-                batch.delete(doc.ref);
-                count++;
-                if (count >= batchSize) {
-                    await batch.commit();
-                    batch = writeBatch(db);
-                    count = 0;
-                }
-            }
-            if (count > 0) await batch.commit();
-
-            // 요청 기록 초기화
-            await setDoc(deleteReqRef, { requestedBy: [] });
-            
-            alert("모든 데이터가 안전하게 삭제되었습니다.");
-            location.reload();
-        } catch(e) {
-            console.error(e);
-            alert("삭제 실패");
-            location.reload();
-        }
-    }
 
     window.toggleSearch = () => { 
         const sb = document.getElementById('search-container'); 
@@ -751,13 +562,60 @@
     function showScreen(id) { 
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
         document.getElementById(id).classList.add('active'); 
-        if(id === 'chat-screen') {
-            setTimeout(scrollToBottom, 100);
-            stopTabNotification(); 
-        }
+        if(id === 'chat-screen') setTimeout(scrollToBottom, 100);
     }
     
     window.logout = () => { localStorage.removeItem('chat_nickname'); localStorage.removeItem('chat_auth_pw'); location.reload(); }
+// ==========================================
+    // 🔔 [해결책] 유령 알림으로 깜빡임만 유도하기
+    // ==========================================
+    
+    let isWindowFocused = true;
+    let flashTimer = null;
+    const defaultTitle = "Our Secret Chat"; 
+
+    window.addEventListener('focus', () => { 
+        isWindowFocused = true;
+        clearInterval(flashTimer);
+        flashTimer = null;
+        document.title = defaultTitle; 
+    });
+    
+    window.addEventListener('blur', () => { isWindowFocused = false; });
+
+    // 알림 권한 요청 (권한이 있어야 윈도우를 깨울 수 있습니다)
+    if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+
+    window.triggerTabAlert = () => {
+        if (!isWindowFocused) {
+            
+            // 1. 제목을 요란하게 바꿔서 시각적 알림 (브라우저 탭용)
+            if (!flashTimer) {
+                let state = 0;
+                flashTimer = setInterval(() => {
+                    document.title = (state === 0) ? "🔴메시지 도착!!" : "🔴메시지 도착!!";
+                    state = 1 - state;
+                }, 500);
+            }
+
+            // 2. [핵심] 윈도우를 속이는 '유령 알림' 발송
+            // 알림을 띄워서 윈도우가 '깜빡임'을 켜게 만들고, 바로 삭제해서 배너는 숨김
+            if (Notification.permission === "granted") {
+                const ghostNoti = new Notification("새 메시지", {
+                    body: "...", 
+                    silent: true, // 소리 끔
+                    tag: 'flash-trigger' // 중복 방지 태그
+                });
+                
+                // ⚡ 0.2초 뒤에 알림창을 강제로 닫아버림 (배너는 안보이고 깜빡임만 남음)
+                setTimeout(() => {
+                    ghostNoti.close();
+                }, 200); 
+            }
+        }
+    };
 </script>
 </body>
 </html>
