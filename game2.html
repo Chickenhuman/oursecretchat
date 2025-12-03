@@ -60,20 +60,28 @@
             aspect-ratio: 10/20; object-fit: contain;
         }
 
-        .controls { display: flex; gap: 12px; width: 90%; justify-content: center; margin-bottom: 10px; flex-shrink: 0; }
-        .d-pad { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        /* [컨트롤러 UI 개편] */
+        .controls-wrapper { 
+            display: flex; flex-direction: column; gap: 12px; width: 100%; 
+            align-items: center; margin-bottom: 10px; flex-shrink: 0; 
+        }
+        .control-row { display: flex; gap: 15px; }
+        
         .c-btn { 
-            width: 55px; height: 55px; 
+            width: 60px; height: 60px; /* 버튼 크기 확대 */
             background: white; border: 1px solid #ffccd5; 
-            border-radius: 15px; color: #ff6b6b; 
-            font-size: 22px; font-weight: bold; 
-            box-shadow: 0 4px 0 #ffe0e6; 
+            border-radius: 18px; color: #555; 
+            font-size: 24px; font-weight: bold; 
+            box-shadow: 0 5px 0 #ffe0e6; 
             cursor: pointer; display: flex; align-items: center; justify-content: center; 
             transition: 0.1s;
         }
         .c-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #ffe0e6; background: #fff0f0; }
-        .btn-drop { background: #ffeb3b; color: #f57c00; border-color: #fbc02d; box-shadow: 0 4px 0 #f9a825; }
-        .btn-rot { background: #ff6b6b; color: white; border-color: #ff5252; box-shadow: 0 4px 0 #d32f2f; width: 65px; height: 65px; border-radius: 50%; margin-left: 15px; }
+        
+        /* 버튼별 컬러 */
+        .btn-drop { background: #ffeb3b; color: #f57c00; border-color: #fbc02d; box-shadow: 0 5px 0 #f9a825; }
+        .btn-hard { background: #ff6b6b; color: white; border-color: #ff5252; box-shadow: 0 5px 0 #d32f2f; }
+        .btn-rot { background: #74c0fc; color: white; border-color: #4dabf7; box-shadow: 0 5px 0 #339af0; }
 
         /* 오버레이 & 메뉴 공통 */
         #overlay, #pause-menu, #solo-menu, #vote-screen, #game-over-screen, #ranking-screen { 
@@ -111,30 +119,32 @@
         .rank-item { display: flex; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; font-size: 14px; align-items: center; }
         .rank-item:last-child { border-bottom: none; }
         .rank-rank { width: 25px; font-weight: bold; color: #888; }
-        .rank-name { flex: 1; text-align: left; font-weight: bold; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .rank-name { flex: 1; text-align: left; font-weight: bold; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display:flex; align-items:center; gap:5px;}
         .rank-score { font-weight: bold; color: #ff6b6b; }
-        .rank-mode { font-size: 10px; background: #eee; padding: 2px 5px; border-radius: 4px; margin-right: 5px; color: #666; }
         
-        .rank-1 .rank-rank { color: #ffd700; font-size: 18px; } /* 금 */
-        .rank-2 .rank-rank { color: #c0c0c0; font-size: 16px; } /* 은 */
-        .rank-3 .rank-rank { color: #cd7f32; font-size: 16px; } /* 동 */
+        .rank-mode-badge { font-size: 9px; padding: 2px 5px; border-radius: 4px; color: white; }
+        .rm-easy { background: #4caf50; }
+        .rm-hard { background: #f44336; }
+        
+        .rank-1 .rank-rank { color: #ffd700; font-size: 18px; } 
+        .rank-2 .rank-rank { color: #c0c0c0; font-size: 16px; } 
+        .rank-3 .rank-rank { color: #cd7f32; font-size: 16px; } 
 
-        /* 게임 오버 점수판 */
         .result-box { background: white; padding: 20px; border-radius: 20px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-bottom: 20px; width: 80%; }
         .result-score { font-size: 32px; font-weight: bold; color: #ff6b6b; margin: 10px 0; }
         .result-label { color: #aaa; font-size: 12px; }
 
-        /* 투표 화면 스타일 */
+        /* 투표 화면 */
         .vote-box { background: white; padding: 20px; border-radius: 20px; width: 85%; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .vote-status { display: flex; justify-content: space-between; margin-bottom: 20px; }
         .player-status { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 45%; }
         .p-icon { font-size: 24px; background: #eee; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         .p-name { font-size: 13px; font-weight: bold; color: #333; }
         .p-vote { font-size: 11px; font-weight: bold; color: #888; }
+        
         .voted-easy { color: #2b8a3e; border: 3px solid #b2f2bb; background: #ebfbee; transform: scale(1.1); }
         .voted-hard { color: #c92a2a; border: 3px solid #ff8787; background: #fff5f5; transform: scale(1.1); }
         
-        /* 시작 버튼 */
         .btn-start-game { background: #333; color: white; box-shadow: 0 4px 0 #000; margin-top: 20px; width: 260px; font-size: 18px; }
         .btn-start-game:disabled { background: #ccc; color: #888; box-shadow: none; }
         .btn-start-game.active { background: #ff6b6b; color: white; box-shadow: 0 4px 0 #d32f2f; animation: pulse 1s infinite; }
@@ -164,14 +174,16 @@
             <canvas id="game-board" width="240" height="480"></canvas>
         </div>
 
-        <div class="controls">
-            <div class="d-pad">
-                <button class="c-btn" onclick="inputLeft()">←</button>
-                <button class="c-btn btn-drop" onclick="inputDrop()">⇓</button>
-                <button class="c-btn" onclick="inputRight()">→</button>
-                <button class="c-btn" style="grid-column: 2; grid-row: 1;" onclick="inputRotate()">↻</button>
+        <div class="controls-wrapper">
+            <div class="control-row">
+                <button class="c-btn btn-drop" onclick="inputDrop()">⏬</button>
+                <button class="c-btn btn-hard" onclick="inputHardDrop()">🚀</button>
             </div>
-            <button class="c-btn btn-rot" onclick="inputHardDrop()">🚀</button> 
+            <div class="control-row">
+                <button class="c-btn" onclick="inputLeft()">⬅️</button>
+                <button class="c-btn btn-rot" onclick="inputRotate()">🔄</button>
+                <button class="c-btn" onclick="inputRight()">➡️</button>
+            </div>
         </div>
 
         <div id="overlay">
@@ -293,7 +305,6 @@
         let activePiece = null;
         let animationId = null;
 
-        // --- 🎨 [블록 정의] ---
         const SHAPES = [
             [], 
             [[1, 1, 1, 1]], [[1, 1], [1, 1]], [[0, 1, 0], [1, 1, 1]], 
@@ -319,7 +330,7 @@
         ];
 
         // ===========================================
-        // 🏆 [랭킹 시스템]
+        // 🏆 [랭킹 시스템] - 난이도 표시 추가
         // ===========================================
         window.openRanking = async () => {
             document.getElementById('overlay').style.display = 'none';
@@ -337,11 +348,28 @@
                 querySnapshot.forEach((doc) => {
                     const d = doc.data();
                     const rankClass = rank <= 3 ? `rank-${rank}` : '';
+                    
+                    // 모드/난이도 뱃지 처리
+                    let badgeClass = 'rm-easy';
+                    let badgeText = 'EASY';
+                    
+                    if (d.difficulty) {
+                        badgeText = d.difficulty.toUpperCase();
+                        badgeClass = d.difficulty === 'hard' ? 'rm-hard' : 'rm-easy';
+                    } else if (d.mode && d.mode.includes('HARD')) { // 구버전 호환
+                        badgeText = 'HARD';
+                        badgeClass = 'rm-hard';
+                    }
+
+                    // 솔로/멀티 구분
+                    let typeText = "SOLO";
+                    if(d.mode && d.mode.includes("Co-op")) typeText = "MULTI";
+
                     list.innerHTML += `
                         <div class="rank-item ${rankClass}">
                             <div class="rank-rank">${rank}</div>
                             <div class="rank-name">
-                                <span class="rank-mode">${d.mode}</span>
+                                <span class="rank-mode-badge ${badgeClass}">${typeText}-${badgeText}</span>
                                 ${d.name}
                             </div>
                             <div class="rank-score">${d.score}</div>
@@ -369,15 +397,17 @@
             btn.innerText = "저장 중...";
 
             try {
+                // 저장 시 difficulty 필드 명시적 추가
                 await addDoc(rankColRef, {
                     name: myName,
                     score: score,
                     level: level,
-                    mode: gameMode === 'solo' ? `Solo(${difficulty.toUpperCase()})` : `Co-op`,
+                    difficulty: difficulty,
+                    mode: gameMode === 'solo' ? `SOLO` : `CO-OP`,
                     date: serverTimestamp()
                 });
                 alert("랭킹에 등록되었습니다! 🏆");
-                openRanking(); // 저장 후 랭킹 보여주기
+                openRanking(); 
                 document.getElementById('game-over-screen').style.display = 'none';
             } catch(e) {
                 alert("저장 실패: " + e.message);
@@ -392,9 +422,6 @@
             document.getElementById('final-score').innerText = score;
             const modeText = gameMode === 'solo' ? `SOLO - ${difficulty.toUpperCase()}` : `MULTI - ${difficulty.toUpperCase()}`;
             document.getElementById('final-mode').innerText = modeText;
-            
-            // 멀티모드거나 점수 없으면 저장 버튼 숨기기 (선택 사항)
-            // 여기선 멀티도 저장 가능하게 열어둠
         }
 
         // ===========================================
@@ -586,7 +613,6 @@
                 gameOver = true;
                 if (gameMode === 'multi') { setDoc(gameDocRef, { p1: null, p2: null, status: 'voting', p1Vote:null, p2Vote:null }); }
                 localStorage.removeItem('tetris_solo_save');
-                // 기존 reload 대신 게임 오버 화면 호출
                 showGameOverScreen();
             }
         }
@@ -716,10 +742,10 @@
             score = 0;
             if (difficulty === 'hard') { level = 4; dropInterval = 500; } 
             else { level = 1; dropInterval = 1000; }
-            gameOver = false; // 게임오버 초기화
             updateScoreUI();
         }
 
+        // --- 입력 핸들러 (전역) ---
         window.inputLeft = () => { if(isMyTurn && !isPaused) movePiece(-1, 0); };
         window.inputRight = () => { if(isMyTurn && !isPaused) movePiece(1, 0); };
         window.inputDrop = () => { if(isMyTurn && !isPaused) movePiece(0, 1); }; 
