@@ -8,26 +8,36 @@
     <link rel="icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
     <style>
+        /* [디자인 수정] 전체 배경은 파스텔 핑크 */
         body { 
             font-family: 'Apple SD Gothic Neo', sans-serif; 
-            background-color: #fff5f5; color: #555; margin: 0; 
+            background-color: rgb(255, 240, 245); /* 파스텔 핑크 배경 */
+            color: #555; margin: 0; 
             display: flex; flex-direction: column; align-items: center; 
-            height: 100dvh; overflow: hidden; touch-action: none; 
+            min-height: 100vh; overflow-y: auto; touch-action: pan-y; 
+            padding: 20px 0; /* 상하 여백 추가 */
+            box-sizing: border-box;
         }
         
+        /* [디자인 수정] 메인 컨테이너를 흰색 카드로 만듦 */
         .main-wrapper { 
+            background: white; /* 흰색 배경 */
+            width: 90%; max-width: 450px; 
+            border-radius: 25px; /* 둥근 모서리 */
+            box-shadow: 0 10px 30px rgba(255, 182, 193, 0.2); /* 부드러운 핑크 그림자 */
             display: flex; flex-direction: column; align-items: center; 
-            width: 100%; max-width: 450px; height: 100%; position: relative; 
-            justify-content: space-between; padding-bottom: 20px; box-sizing: border-box;
+            padding: 30px 20px; /* 내부 여백 */
+            box-sizing: border-box;
+            gap: 15px;
+            position: relative;
+            overflow: hidden; /* 내용 넘침 방지 */
         }
 
         /* 헤더 */
         .header { 
-            width: 90%; display: flex; justify-content: space-between; align-items: center; 
-            margin-top: 15px; padding: 10px 20px; 
-            background: white; border-radius: 20px; 
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.15); 
-            flex-shrink: 0; box-sizing: border-box;
+            width: 100%; display: flex; justify-content: space-between; align-items: center; 
+            padding: 10px 5px; 
+            flex-shrink: 0; box-sizing: border-box; z-index: 10;
         }
         .score-box { text-align: center; }
         .label { font-size: 11px; color: #aaa; font-weight: bold; letter-spacing: 1px; }
@@ -38,73 +48,101 @@
         
         .pause-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #ff6b6b; padding: 0 10px; }
 
+        /* 턴 표시기 */
         #turn-indicator { 
-            width: 90%; text-align: center; padding: 8px; 
+            width: 100%; text-align: center; padding: 10px; 
             font-weight: bold; font-size: 15px; 
-            margin: 10px 0; border-radius: 15px; 
+            border-radius: 15px; 
             transition: 0.3s; flex-shrink: 0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            background: #f0f0f0; color: #888;
+            opacity: 0; 
         }
-        .my-turn { background: #ff6b6b !important; color: white; transform: scale(1.02); }
+        #turn-indicator.active { opacity: 1; }
+        .my-turn { background: #ff6b6b !important; color: white; transform: scale(1.02); box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3); }
         .other-turn { background: #eee !important; color: #888; }
 
-        #game-container {
-            flex: 1; display: flex; justify-content: center; align-items: center;
-            width: 100%; overflow: hidden; margin: 5px 0;
+        /* 게임 영역 */
+        #game-area-wrapper {
+            position: relative;
+            display: flex; justify-content: center; align-items: center;
+            width: 100%; margin: 10px 0;
         }
         #game-board { 
             background: #333; 
             border: 4px solid #ffccd5; border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            max-height: 100%; max-width: 90%; height: auto; width: auto;
-            aspect-ratio: 10/20; object-fit: contain;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            width: 240px; height: 480px; 
+            touch-action: none; 
         }
 
-        /* [컨트롤러 UI 개편] */
+        /* 사이드 패널 */
+        .side-panel {
+            position: absolute; top: 10px; display: flex; flex-direction: column; gap: 5px; align-items: center;
+        }
+        .panel-left { left: 0; }
+        .panel-right { right: 0; }
+        
+        .side-label { font-size: 10px; font-weight: bold; color: #aaa; background: white; padding: 2px 5px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .side-canvas { width: 50px; height: 50px; background: white; border: 2px solid #eee; border-radius: 8px; }
+        .btn-hold-mobile {
+            width: 50px; height: 30px; background: #ffd43b; border: none; border-radius: 5px;
+            font-size: 12px; font-weight: bold; color: #e67700; cursor: pointer; margin-top: 5px;
+            box-shadow: 0 2px 0 #fcc419;
+            touch-action: none; 
+        }
+        .btn-hold-mobile:active { transform: translateY(2px); box-shadow: none; }
+
+        /* 컨트롤러 */
         .controls-wrapper { 
             display: flex; flex-direction: column; gap: 12px; width: 100%; 
-            align-items: center; margin-bottom: 10px; flex-shrink: 0; 
+            align-items: center; margin-top: 10px; flex-shrink: 0; 
         }
         .control-row { display: flex; gap: 15px; }
         
         .c-btn { 
-            width: 60px; height: 60px; /* 버튼 크기 확대 */
+            width: 60px; height: 60px; 
             background: white; border: 1px solid #ffccd5; 
             border-radius: 18px; color: #555; 
             font-size: 24px; font-weight: bold; 
             box-shadow: 0 5px 0 #ffe0e6; 
             cursor: pointer; display: flex; align-items: center; justify-content: center; 
             transition: 0.1s;
+            touch-action: none; 
+            user-select: none; -webkit-user-select: none;
         }
         .c-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #ffe0e6; background: #fff0f0; }
         
-        /* 버튼별 컬러 */
         .btn-drop { background: #ffeb3b; color: #f57c00; border-color: #fbc02d; box-shadow: 0 5px 0 #f9a825; }
         .btn-hard { background: #ff6b6b; color: white; border-color: #ff5252; box-shadow: 0 5px 0 #d32f2f; }
         .btn-rot { background: #74c0fc; color: white; border-color: #4dabf7; box-shadow: 0 5px 0 #339af0; }
 
-        /* 오버레이 & 메뉴 공통 */
-        #overlay, #pause-menu, #solo-menu, #vote-screen, #game-over-screen, #ranking-screen { 
+        /* [디자인 수정] 오버레이 배경도 깨끗한 흰색으로 통일 */
+        #overlay, #pause-menu, #solo-menu, #vote-screen, #game-over-screen, #ranking-screen, #manual-screen { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(255,255,255,0.98); 
+            background: rgba(255, 255, 255, 0.98); /* 불투명한 흰색 */
             z-index: 100; display: flex; 
-            justify-content: center; align-items: center; flex-direction: column; gap: 12px;
+            justify-content: center; align-items: center; flex-direction: column; gap: 15px;
+            overflow-y: auto; 
+            border-radius: 25px; /* 컨테이너와 같은 둥근 모서리 */
+            padding: 20px; box-sizing: border-box;
         }
-        #pause-menu, #solo-menu, #vote-screen, #game-over-screen, #ranking-screen { display: none; }
+        #pause-menu, #solo-menu, #vote-screen, #game-over-screen, #ranking-screen, #manual-screen { display: none; }
 
         h2 { color: #ff6b6b; margin-bottom: 10px; font-size: 24px; letter-spacing: -1px; text-align: center; }
         .sub-text { font-size: 13px; color: #888; margin-bottom: 15px; text-align: center; }
 
         .mode-btn { 
-            width: 240px; padding: 12px; border: none; border-radius: 30px; 
+            width: 100%; max-width: 280px; padding: 12px; border: none; border-radius: 30px; 
             font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; 
             display: flex; justify-content: center; align-items: center; gap: 8px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
         }
         .mode-btn:disabled { filter: grayscale(1); cursor: not-allowed; opacity: 0.5; box-shadow: none; }
         
         .btn-solo { background: #a5d8ff; color: #1c7ed6; box-shadow: 0 4px 0 #74c0fc; }
         .btn-multi { background: #ffc9c9; color: #e03131; box-shadow: 0 4px 0 #ffa8a8; }
         .btn-rank { background: #ffd43b; color: #e67700; box-shadow: 0 4px 0 #fcc419; }
+        .btn-manual { background: #ced4da; color: #495057; box-shadow: 0 4px 0 #adb5bd; }
         .btn-easy { background: #b2f2bb; color: #2b8a3e; box-shadow: 0 4px 0 #8ce99a; }
         .btn-hard { background: #ff8787; color: #c92a2a; box-shadow: 0 4px 0 #fa5252; }
         .btn-save { background: #ffe066; color: #e67700; box-shadow: 0 4px 0 #fcc419; }
@@ -112,46 +150,62 @@
         .btn-resume { background: white; color: #555; border: 2px solid #eee; box-shadow: 0 4px 0 #ddd; }
         
         .mode-btn:active { transform: translateY(4px); box-shadow: none; }
-        .btn-back { color: #aaa; margin-top: 5px; font-size: 13px; text-decoration: underline; cursor: pointer; background:none; border:none; }
+        .btn-back { color: #aaa; margin-top: 10px; font-size: 14px; text-decoration: underline; cursor: pointer; background:none; border:none; }
 
         /* 랭킹 스타일 */
-        .rank-list { width: 85%; max-height: 300px; overflow-y: auto; background: white; border-radius: 15px; padding: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .rank-item { display: flex; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; font-size: 14px; align-items: center; }
-        .rank-item:last-child { border-bottom: none; }
+        .rank-list { width: 100%; max-height: 300px; overflow-y: auto; background: #f9f9f9; border-radius: 15px; padding: 10px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); }
+        .rank-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; align-items: center; background: white; border-radius: 10px; margin-bottom: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .rank-item:last-child { margin-bottom: 0; }
         .rank-rank { width: 25px; font-weight: bold; color: #888; }
         .rank-name { flex: 1; text-align: left; font-weight: bold; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display:flex; align-items:center; gap:5px;}
         .rank-score { font-weight: bold; color: #ff6b6b; }
-        
         .rank-mode-badge { font-size: 9px; padding: 2px 5px; border-radius: 4px; color: white; }
-        .rm-easy { background: #4caf50; }
-        .rm-hard { background: #f44336; }
-        
+        .rm-easy { background: #4caf50; } .rm-hard { background: #f44336; }
         .rank-1 .rank-rank { color: #ffd700; font-size: 18px; } 
         .rank-2 .rank-rank { color: #c0c0c0; font-size: 16px; } 
         .rank-3 .rank-rank { color: #cd7f32; font-size: 16px; } 
 
-        .result-box { background: white; padding: 20px; border-radius: 20px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-bottom: 20px; width: 80%; }
-        .result-score { font-size: 32px; font-weight: bold; color: #ff6b6b; margin: 10px 0; }
-        .result-label { color: #aaa; font-size: 12px; }
+        .result-box { background: #fff5f5; padding: 25px; border-radius: 20px; text-align: center; box-shadow: inset 0 2px 10px rgba(255, 107, 107, 0.1); margin-bottom: 20px; width: 100%; box-sizing: border-box; }
+        .result-score { font-size: 36px; font-weight: bold; color: #ff6b6b; margin: 10px 0; }
+        .result-label { color: #aaa; font-size: 13px; }
 
         /* 투표 화면 */
-        .vote-box { background: white; padding: 20px; border-radius: 20px; width: 85%; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .vote-status { display: flex; justify-content: space-between; margin-bottom: 20px; }
-        .player-status { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 45%; }
-        .p-icon { font-size: 24px; background: #eee; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .p-name { font-size: 13px; font-weight: bold; color: #333; }
-        .p-vote { font-size: 11px; font-weight: bold; color: #888; }
+        .vote-box { background: #f9f9f9; padding: 20px; border-radius: 20px; width: 100%; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); box-sizing: border-box; }
+        .vote-status { display: flex; justify-content: space-around; margin-bottom: 20px; }
+        .player-status { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .p-icon { font-size: 28px; background: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.3s; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
+        .p-name { font-size: 14px; font-weight: bold; color: #333; }
+        .p-vote { font-size: 12px; font-weight: bold; color: #888; background: white; padding: 4px 10px; border-radius: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .voted-easy { color: #2b8a3e; border: 3px solid #b2f2bb; background: #ebfbee; transform: scale(1.05); }
+        .voted-hard { color: #c92a2a; border: 3px solid #ff8787; background: #fff5f5; transform: scale(1.05); }
         
-        .voted-easy { color: #2b8a3e; border: 3px solid #b2f2bb; background: #ebfbee; transform: scale(1.1); }
-        .voted-hard { color: #c92a2a; border: 3px solid #ff8787; background: #fff5f5; transform: scale(1.1); }
-        
-        .btn-start-game { background: #333; color: white; box-shadow: 0 4px 0 #000; margin-top: 20px; width: 260px; font-size: 18px; }
+        .btn-start-game { background: #333; color: white; box-shadow: 0 4px 0 #000; margin-top: 10px; width: 100%; max-width: 280px; font-size: 18px; }
         .btn-start-game:disabled { background: #ccc; color: #888; box-shadow: none; }
         .btn-start-game.active { background: #ff6b6b; color: white; box-shadow: 0 4px 0 #d32f2f; animation: pulse 1s infinite; }
+        
+        /* 설명서 */
+        .manual-content { width: 100%; max-height: 400px; overflow-y: auto; background: #f9f9f9; padding: 20px; border-radius: 15px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); text-align: left; font-size: 14px; line-height: 1.6; box-sizing: border-box; }
+        .manual-content h3 { color: #ff6b6b; margin: 20px 0 10px 0; border-bottom: 2px solid #ffccd5; padding-bottom: 5px; font-size: 16px; }
+        .manual-content h3:first-child { margin-top: 0; }
+        .manual-content ul { padding-left: 20px; margin: 10px 0; }
+        .manual-content li { margin-bottom: 5px; }
+        .key-badge { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 2px 6px; font-size: 12px; font-family: monospace; font-weight: bold; box-shadow: 0 2px 0 #eee; }
+
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
+        @keyframes flash { 0% { background: #fff; } 50% { background: #ff6b6b; } 100% { background: #333; } }
+        .explosion-effect { animation: flash 0.3s ease-out; }
+
+        /* 저장 성공 토스트 메시지 */
+        #toast-msg {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); color: white; padding: 12px 25px; border-radius: 25px;
+            font-size: 15px; display: none; z-index: 200; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body>
+
+    <div id="toast-msg">저장되었습니다! 💾</div>
 
     <div class="main-wrapper">
         <div class="header">
@@ -170,8 +224,19 @@
 
         <div id="turn-indicator">게임 준비 중...</div>
 
-        <div id="game-container">
+        <div id="game-area-wrapper">
+            <div class="side-panel panel-left">
+                <div class="side-label">HOLD (Q)</div>
+                <canvas id="hold-canvas" class="side-canvas" width="50" height="50"></canvas>
+                <button class="btn-hold-mobile" onclick="inputHold()">KEEP</button>
+            </div>
+
             <canvas id="game-board" width="240" height="480"></canvas>
+
+            <div class="side-panel panel-right" id="next-panel" style="display:none;">
+                <div class="side-label">NEXT</div>
+                <canvas id="next-canvas" class="side-canvas" width="50" height="50"></canvas>
+            </div>
         </div>
 
         <div class="controls-wrapper">
@@ -187,19 +252,23 @@
         </div>
 
         <div id="overlay">
-            <h2>🧩 PASTEL TETRIS</h2>
+            <div style="text-align:center; margin-bottom:10px;">
+                <span style="font-size:40px;">🧩</span>
+                <h2 style="margin:5px 0 0 0;">PASTEL TETRIS</h2>
+            </div>
             <button class="mode-btn btn-solo" onclick="checkSoloSave()"><span>👤</span> 혼자 하기</button>
             <button class="mode-btn btn-multi" onclick="startMulti()"><span>👥</span> 같이 하기 (2인)</button>
             <button class="mode-btn btn-rank" onclick="openRanking()"><span>🏆</span> 랭킹 보기</button>
+            <button class="mode-btn btn-manual" onclick="openManual()"><span>📜</span> 게임 설명서</button>
             <a href="gamelist.html" class="btn-back">나가기</a>
         </div>
 
         <div id="solo-menu">
             <h2 style="color:#74c0fc;">SOLO MODE</h2>
-            <div id="has-save-msg" style="font-size:12px; color:#aaa; margin-bottom:10px; display:none;">저장된 게임이 있어요!</div>
+            <div id="has-save-msg" style="font-size:14px; color:#555; margin-bottom:15px; display:none; background:#e7f5ff; padding:10px; border-radius:10px;">💾 저장된 게임이 있어요!</div>
             <button id="btn-resume-solo" class="mode-btn btn-resume" onclick="loadSoloGame()" style="display:none;">이어하기</button>
-            <div style="width:100%; border-bottom:1px solid #eee; margin:10px 0;"></div>
-            <div style="font-size:12px; color:#aaa;">새 게임 난이도 선택</div>
+            <div style="width:100%; border-bottom:2px solid #eee; margin:10px 0;"></div>
+            <div style="font-size:14px; color:#888; margin-bottom:10px;">새 게임 난이도 선택</div>
             <button class="mode-btn btn-easy" onclick="startSoloNew('easy')">🌱 EASY (Lv.1)</button>
             <button class="mode-btn btn-hard" onclick="startSoloNew('hard')">🔥 HARD (Lv.4)</button>
             <button class="btn-back" onclick="closeSoloMenu()">취소</button>
@@ -221,11 +290,11 @@
                         <span id="p2-vote-text" class="p-vote">접속 대기...</span>
                     </div>
                 </div>
-                <div class="status-msg" id="vote-msg">난이도를 선택하세요</div>
+                <div class="status-msg" id="vote-msg" style="text-align:center; font-weight:bold; color:#555;">난이도를 선택하세요</div>
             </div>
-            <div style="display:flex; gap:10px;">
-                <button id="vote-btn-easy" class="mode-btn btn-easy" style="width:120px;" onclick="voteDifficulty('easy')">🌱 EASY</button>
-                <button id="vote-btn-hard" class="mode-btn btn-hard" style="width:120px;" onclick="voteDifficulty('hard')">🔥 HARD</button>
+            <div style="display:flex; gap:10px; width:100%; justify-content:center;">
+                <button id="vote-btn-easy" class="mode-btn btn-easy" style="width:48%;" onclick="voteDifficulty('easy')">🌱 EASY</button>
+                <button id="vote-btn-hard" class="mode-btn btn-hard" style="width:48%;" onclick="voteDifficulty('hard')">🔥 HARD</button>
             </div>
             <button id="btn-start-game" class="mode-btn btn-start-game" onclick="startGameNow()" disabled>GAME START</button>
             <button class="btn-back" onclick="location.reload()">나가기</button>
@@ -256,6 +325,34 @@
                 <div style="text-align:center; padding:20px; color:#aaa;">로딩 중...</div>
             </div>
             <button class="btn-back" onclick="closeRanking()">닫기</button>
+        </div>
+
+        <div id="manual-screen">
+            <h2>📜 GAME MANUAL</h2>
+            <div class="manual-content">
+                <h3>🕹️ 조작 방법</h3>
+                <ul>
+                    <li><span class="key-badge">⬅️</span> <span class="key-badge">➡️</span> : 블록 이동</li>
+                    <li><span class="key-badge">⏬</span> : 빠르게 내리기 (Soft Drop)</li>
+                    <li><span class="key-badge">🚀</span> : 한방에 내리기 (Hard Drop, Space)</li>
+                    <li><span class="key-badge">🔄</span> : 블록 회전 (방향키 위)</li>
+                    <li><span class="key-badge">Q</span> : 블록 킵(Hold) / 교체</li>
+                </ul>
+                <h3>💣 특수 블록 (폭탄)</h3>
+                <ul>
+                    <li>💣 <b>1x1 폭탄</b>: 착지 시 주변 3x3 파괴</li>
+                    <li>🧨 <b>2x2 폭탄</b>: 착지 시 주변 4x4 파괴</li>
+                    <li>⚠️ 폭탄은 <b>킵(Hold) 불가</b>. 킵하면 즉시 <b>소멸</b>합니다.</li>
+                    <li>💥 폭탄으로 터진 블록은 점수 없음.</li>
+                </ul>
+                <h3>👥 협력 모드</h3>
+                <ul>
+                    <li>내 턴에 블록을 놓으면 상대방 턴이 됩니다.</li>
+                    <li><b>Next 블록이 안 보입니다.</b> 소통 필수!</li>
+                    <li>둘 중 하나라도 죽으면 게임 오버!</li>
+                </ul>
+            </div>
+            <button class="btn-back" onclick="closeManual()">닫기</button>
         </div>
     </div>
 
@@ -303,6 +400,9 @@
         let dropInterval = 1000;
         let lastDropTime = 0;
         let activePiece = null;
+        let nextPieceType = null; 
+        let holdPieceType = null; 
+        let canHold = true; 
         let animationId = null;
 
         const SHAPES = [
@@ -310,10 +410,8 @@
             [[1, 1, 1, 1]], [[1, 1], [1, 1]], [[0, 1, 0], [1, 1, 1]], 
             [[1, 0, 0], [1, 1, 1]], [[0, 0, 1], [1, 1, 1]], 
             [[0, 1, 1], [1, 1, 0]], [[1, 1, 0], [0, 1, 1]],
-            // 3~5칸 기괴
-            [[1]], [[1, 1, 1]], [[1, 1], [1, 0]], [[1, 1, 1, 1, 1]], 
+            [[1, 1], [1, 0]], [[1, 1, 1]], [[1, 1], [1, 0, 1]], [[1, 1, 1, 1, 1]], 
             [[0, 1, 0], [1, 1, 1], [0, 1, 0]],
-            // 억까 블록
             [[1, 0, 1], [1, 1, 1], [0, 1, 0]], 
             [[0, 1, 0], [1, 1, 1], [1, 0, 1]], 
             [[1, 1, 1, 1], [1, 0, 0, 0]], 
@@ -321,6 +419,8 @@
             [[1, 1, 1], [1, 0, 1], [1, 1, 1]], 
             [[1, 0, 0], [0, 1, 0], [0, 0, 1]]  
         ];
+        const BOMB_1_IDX = 100;
+        const BOMB_2_IDX = 101;
 
         const COLORS = [
             '#333333', 
@@ -329,274 +429,10 @@
             '#ff9aa2', '#e2f0cb', '#b5ead7', '#c7ceea', '#f4f1de', '#e07a5f'
         ];
 
-        // ===========================================
-        // 🏆 [랭킹 시스템] - 난이도 표시 추가
-        // ===========================================
-        window.openRanking = async () => {
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('ranking-screen').style.display = 'flex';
-            
-            const list = document.getElementById('ranking-list');
-            list.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">로딩 중...</div>';
+        function getRandomPieceType() {
+            if (level >= 3 && Math.random() < 0.05) return BOMB_1_IDX;
+            if (level >= 5 && Math.random() < 0.03) return BOMB_2_IDX;
 
-            try {
-                const q = query(rankColRef, orderBy("score", "desc"), limit(20));
-                const querySnapshot = await getDocs(q);
-                list.innerHTML = "";
-                
-                let rank = 1;
-                querySnapshot.forEach((doc) => {
-                    const d = doc.data();
-                    const rankClass = rank <= 3 ? `rank-${rank}` : '';
-                    
-                    // 모드/난이도 뱃지 처리
-                    let badgeClass = 'rm-easy';
-                    let badgeText = 'EASY';
-                    
-                    if (d.difficulty) {
-                        badgeText = d.difficulty.toUpperCase();
-                        badgeClass = d.difficulty === 'hard' ? 'rm-hard' : 'rm-easy';
-                    } else if (d.mode && d.mode.includes('HARD')) { // 구버전 호환
-                        badgeText = 'HARD';
-                        badgeClass = 'rm-hard';
-                    }
-
-                    // 솔로/멀티 구분
-                    let typeText = "SOLO";
-                    if(d.mode && d.mode.includes("Co-op")) typeText = "MULTI";
-
-                    list.innerHTML += `
-                        <div class="rank-item ${rankClass}">
-                            <div class="rank-rank">${rank}</div>
-                            <div class="rank-name">
-                                <span class="rank-mode-badge ${badgeClass}">${typeText}-${badgeText}</span>
-                                ${d.name}
-                            </div>
-                            <div class="rank-score">${d.score}</div>
-                        </div>`;
-                    rank++;
-                });
-
-                if(rank === 1) list.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">아직 기록이 없습니다.</div>';
-
-            } catch(e) {
-                console.error(e);
-                list.innerHTML = '<div style="text-align:center; color:red;">랭킹 로드 실패</div>';
-            }
-        };
-
-        window.closeRanking = () => {
-            document.getElementById('ranking-screen').style.display = 'none';
-            document.getElementById('overlay').style.display = 'flex';
-        };
-
-        window.saveRankToDB = async () => {
-            if(score <= 0) return alert("0점은 저장할 수 없습니다!");
-            const btn = document.getElementById('btn-save-rank');
-            btn.disabled = true;
-            btn.innerText = "저장 중...";
-
-            try {
-                // 저장 시 difficulty 필드 명시적 추가
-                await addDoc(rankColRef, {
-                    name: myName,
-                    score: score,
-                    level: level,
-                    difficulty: difficulty,
-                    mode: gameMode === 'solo' ? `SOLO` : `CO-OP`,
-                    date: serverTimestamp()
-                });
-                alert("랭킹에 등록되었습니다! 🏆");
-                openRanking(); 
-                document.getElementById('game-over-screen').style.display = 'none';
-            } catch(e) {
-                alert("저장 실패: " + e.message);
-                btn.disabled = false;
-                btn.innerText = "📝 랭킹에 저장하기";
-            }
-        };
-
-        function showGameOverScreen() {
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('game-over-screen').style.display = 'flex';
-            document.getElementById('final-score').innerText = score;
-            const modeText = gameMode === 'solo' ? `SOLO - ${difficulty.toUpperCase()}` : `MULTI - ${difficulty.toUpperCase()}`;
-            document.getElementById('final-mode').innerText = modeText;
-        }
-
-        // ===========================================
-        // 💾 [솔로 모드 시스템]
-        // ===========================================
-        window.checkSoloSave = () => {
-            const saveData = localStorage.getItem('tetris_solo_save');
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('solo-menu').style.display = 'flex';
-            
-            if(saveData) {
-                document.getElementById('has-save-msg').style.display = 'block';
-                document.getElementById('btn-resume-solo').style.display = 'flex';
-            } else {
-                document.getElementById('has-save-msg').style.display = 'none';
-                document.getElementById('btn-resume-solo').style.display = 'none';
-            }
-        };
-        window.closeSoloMenu = () => { 
-            document.getElementById('solo-menu').style.display = 'none'; 
-            document.getElementById('overlay').style.display = 'flex';
-        };
-        
-        window.startSoloNew = (diff) => {
-            localStorage.removeItem('tetris_solo_save');
-            gameMode = 'solo'; myRole = 'p1'; currentTurn = 'p1'; isMyTurn = true;
-            difficulty = diff;
-            
-            document.getElementById('solo-menu').style.display = 'none';
-            resetLocalBoard(); spawnPiece(); updateGameLoop();
-        };
-
-        window.loadSoloGame = () => {
-            const saveStr = localStorage.getItem('tetris_solo_save');
-            if(!saveStr) return startSoloNew('easy');
-            const save = JSON.parse(saveStr);
-            board = save.board; score = save.score; level = save.level; difficulty = save.difficulty || 'easy';
-            gameMode = 'solo'; myRole = 'p1'; currentTurn = 'p1'; isMyTurn = true;
-            
-            updateScoreUI(); updateTurnUI();
-            document.getElementById('solo-menu').style.display = 'none';
-            spawnPiece(); updateGameLoop();
-        };
-
-        function saveGameToLocal() {
-            if(gameMode !== 'solo') return;
-            const data = { board: board, score: score, level: level, difficulty: difficulty, date: new Date().getTime() };
-            localStorage.setItem('tetris_solo_save', JSON.stringify(data));
-        }
-
-        // ===========================================
-        // 👥 [멀티플레이 투표: 픽스 버전]
-        // ===========================================
-        window.startMulti = async () => {
-            gameMode = 'multi';
-            const docSnap = await getDoc(gameDocRef);
-            let data = docSnap.exists() ? docSnap.data() : null;
-
-            const updatePayload = {
-                status: 'voting',
-                p1Vote: null, p2Vote: null,
-                score: 0, level: 1,
-                boardStr: JSON.stringify(Array.from({length: ROWS}, () => Array(COLS).fill(0)))
-            };
-
-            if (!data) {
-                updatePayload.p1 = myId; updatePayload.p1Name = myName;
-                updatePayload.p2 = null; updatePayload.p2Name = "";
-                updatePayload.turn = 'p1';
-                await setDoc(gameDocRef, updatePayload);
-                myRole = 'p1';
-            } else {
-                if (data.p1 === myId) { myRole = 'p1'; updatePayload.p1Name = myName; } 
-                else if (data.p2 === myId) { myRole = 'p2'; updatePayload.p2Name = myName; }
-                else if (!data.p1) { updatePayload.p1 = myId; updatePayload.p1Name = myName; myRole = 'p1'; }
-                else if (!data.p2) { updatePayload.p2 = myId; updatePayload.p2Name = myName; myRole = 'p2'; }
-                
-                await updateDoc(gameDocRef, updatePayload);
-            }
-
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('vote-screen').style.display = 'flex';
-
-            onSnapshot(gameDocRef, (snap) => {
-                const d = snap.data();
-                if (!d) return;
-
-                if (d.status === 'voting') {
-                    updateVoteUI(d);
-                }
-
-                if (d.status === 'playing') {
-                    document.getElementById('vote-screen').style.display = 'none';
-                    board = JSON.parse(d.boardStr);
-                    score = d.score; level = d.level; currentTurn = d.turn;
-                    difficulty = d.difficulty || 'easy';
-                    
-                    updateScoreUI(); isMyTurn = (currentTurn === myRole); updateTurnUI();
-
-                    if (isMyTurn && !activePiece) {
-                        spawnPiece(); lastDropTime = Date.now(); if (!animationId) updateGameLoop();
-                    } else if (!isMyTurn) {
-                        if (animationId) cancelAnimationFrame(animationId);
-                        animationId = null; activePiece = null; draw(); 
-                    }
-                }
-            });
-        };
-
-        window.voteDifficulty = async (vote) => {
-            const field = myRole === 'p1' ? 'p1Vote' : 'p2Vote';
-            await updateDoc(gameDocRef, { [field]: vote });
-        };
-
-        window.startGameNow = async () => {
-            const docSnap = await getDoc(gameDocRef);
-            const d = docSnap.data();
-            
-            if (d.p1Vote && d.p2Vote && d.p1Vote === d.p2Vote) {
-                await updateDoc(gameDocRef, { 
-                    status: 'playing', 
-                    difficulty: d.p1Vote,
-                    level: d.p1Vote === 'hard' ? 4 : 1, 
-                    score: 0
-                });
-            } else {
-                alert("아직 두 명의 의견이 일치하지 않았습니다!");
-            }
-        };
-
-        function updateVoteUI(data) {
-            const p1Text = document.getElementById('p1-vote-text');
-            const p2Text = document.getElementById('p2-vote-text');
-            const p1Icon = document.getElementById('p1-icon');
-            const p2Icon = document.getElementById('p2-icon');
-            const p1NameDisp = document.getElementById('p1-name-display');
-            const p2NameDisp = document.getElementById('p2-name-display');
-            const msg = document.getElementById('vote-msg');
-            const startBtn = document.getElementById('btn-start-game');
-
-            const myVote = myRole === 'p1' ? data.p1Vote : data.p2Vote;
-            document.getElementById('vote-btn-easy').classList.toggle('selected', myVote === 'easy');
-            document.getElementById('vote-btn-hard').classList.toggle('selected', myVote === 'hard');
-
-            p1NameDisp.innerText = data.p1Name || "Player 1";
-            if(!data.p1) { p1Text.innerText = "대기 중..."; p1Icon.className = "p-icon"; }
-            else if(!data.p1Vote) { p1Text.innerText = "고민 중..."; p1Icon.className = "p-icon"; }
-            else { p1Text.innerText = data.p1Vote.toUpperCase(); p1Icon.className = `p-icon voted-${data.p1Vote}`; }
-
-            p2NameDisp.innerText = data.p2Name || "Player 2";
-            if(!data.p2) { p2Text.innerText = "접속 대기..."; p2Icon.className = "p-icon"; }
-            else if(!data.p2Vote) { p2Text.innerText = "고민 중..."; p2Icon.className = "p-icon"; }
-            else { p2Text.innerText = data.p2Vote.toUpperCase(); p2Icon.className = `p-icon voted-${data.p2Vote}`; }
-
-            if(data.p1 && data.p2 && data.p1Vote && data.p2Vote) {
-                if(data.p1Vote === data.p2Vote) {
-                    msg.innerText = "준비 완료! 시작 버튼을 누르세요.";
-                    startBtn.disabled = false;
-                    startBtn.classList.add('active');
-                } else {
-                    msg.innerText = "서로 다른 난이도를 골랐어요!";
-                    startBtn.disabled = true;
-                    startBtn.classList.remove('active');
-                }
-            } else {
-                msg.innerText = "모두 난이도를 선택해주세요.";
-                startBtn.disabled = true;
-                startBtn.classList.remove('active');
-            }
-        }
-
-        // ===========================================
-        // 🎮 [게임 메인 로직]
-        // ===========================================
-        function spawnPiece() {
             let minIndex = 1; let maxIndex = 7;
             if (difficulty === 'easy') {
                 if (level >= 3 && level < 6) { maxIndex = 12; } 
@@ -605,9 +441,27 @@
             } else {
                 minIndex = 1; maxIndex = SHAPES.length - 1;
             }
-            const typeId = Math.floor(Math.random() * (maxIndex - minIndex + 1)) + minIndex;
-            const shape = SHAPES[typeId];
-            activePiece = { x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0, shape: shape, color: COLORS[typeId] };
+            return Math.floor(Math.random() * (maxIndex - minIndex + 1)) + minIndex;
+        }
+
+        function spawnPiece(spawnType = null) {
+            let typeId = spawnType;
+            if (typeId === null) {
+                if (nextPieceType === null) nextPieceType = getRandomPieceType();
+                typeId = nextPieceType;
+                nextPieceType = getRandomPieceType(); 
+                drawSideCanvas('next-canvas', nextPieceType);
+            }
+
+            let shape, color;
+            if (typeId === BOMB_1_IDX) { shape = [[2]]; color = '#bomb1'; }
+            else if (typeId === BOMB_2_IDX) { shape = [[2, 2], [2, 2]]; color = '#bomb2'; }
+            else { shape = SHAPES[typeId]; color = COLORS[typeId]; }
+            
+            activePiece = {
+                x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2),
+                y: 0, shape: shape, color: color, typeId: typeId
+            };
 
             if (collision(0, 0, activePiece.shape)) {
                 gameOver = true;
@@ -615,6 +469,7 @@
                 localStorage.removeItem('tetris_solo_save');
                 showGameOverScreen();
             }
+            canHold = true; 
         }
 
         function collision(offsetX, offsetY, pieceShape) {
@@ -631,12 +486,27 @@
             return false;
         }
 
+        function explode(cx, cy, range) {
+            const startX = Math.max(0, cx - Math.floor(range/2));
+            const startY = Math.max(0, cy - Math.floor(range/2));
+            const endX = Math.min(COLS, startX + range);
+            const endY = Math.min(ROWS, startY + range);
+            const boardEl = document.getElementById('game-board');
+            boardEl.classList.add('explosion-effect');
+            setTimeout(() => boardEl.classList.remove('explosion-effect'), 300);
+            for (let y = startY; y < endY; y++) { for (let x = startX; x < endX; x++) { board[y][x] = 0; } }
+        }
+
         function lockPiece() {
-            for (let r = 0; r < activePiece.shape.length; r++) {
-                for (let c = 0; c < activePiece.shape[r].length; c++) {
-                    if (!activePiece.shape[r][c]) continue;
-                    let by = activePiece.y + r; let bx = activePiece.x + c;
-                    if (by >= 0) board[by][bx] = activePiece.color;
+            if (activePiece.color === '#bomb1') { explode(activePiece.x, activePiece.y, 3); } 
+            else if (activePiece.color === '#bomb2') { explode(activePiece.x + 1, activePiece.y + 1, 4); } 
+            else {
+                for (let r = 0; r < activePiece.shape.length; r++) {
+                    for (let c = 0; c < activePiece.shape[r].length; c++) {
+                        if (!activePiece.shape[r][c]) continue;
+                        let by = activePiece.y + r; let bx = activePiece.x + c;
+                        if (by >= 0) board[by][bx] = activePiece.color;
+                    }
                 }
             }
             let linesCleared = 0;
@@ -667,31 +537,17 @@
             }
         }
 
-        function updateGameLoop() {
-            if (isPaused) return;
-            if (!isMyTurn && gameMode === 'multi') return;
-            if (gameOver) return;
-            const now = Date.now();
-            if (now - lastDropTime > dropInterval) { movePiece(0, 1); lastDropTime = now; }
-            draw();
-            animationId = requestAnimationFrame(updateGameLoop);
-        }
-
-        function movePiece(dx, dy) {
-            if (!activePiece) return;
-            if (!collision(dx, dy, activePiece.shape)) { activePiece.x += dx; activePiece.y += dy; } 
-            else if (dy > 0) { lockPiece(); }
-        }
-
-        function rotatePiece() {
-            if (!activePiece) return;
-            const matrix = activePiece.shape;
-            const N = matrix.length; const M = matrix[0].length;
-            let result = Array.from({length: M}, () => Array(N).fill(0));
-            for (let i = 0; i < N; i++) { for (let j = 0; j < M; j++) { result[j][N - 1 - i] = matrix[i][j]; } }
-            if (!collision(0, 0, result)) { activePiece.shape = result; } 
-            else { if (!collision(-1, 0, result)) { activePiece.x -= 1; activePiece.shape = result; } else if (!collision(1, 0, result)) { activePiece.x += 1; activePiece.shape = result; } }
-        }
+        window.inputHold = () => {
+            if (!isMyTurn || isPaused || !canHold || !activePiece) return;
+            if (activePiece.typeId === BOMB_1_IDX || activePiece.typeId === BOMB_2_IDX) {
+                activePiece = null; spawnPiece(); return;
+            }
+            const currentType = activePiece.typeId;
+            if (holdPieceType === null) { holdPieceType = currentType; spawnPiece(); } 
+            else { const temp = holdPieceType; holdPieceType = currentType; spawnPiece(temp); }
+            drawSideCanvas('hold-canvas', holdPieceType);
+            canHold = false;
+        };
 
         function draw() {
             ctx.fillStyle = '#333'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -712,20 +568,120 @@
         }
 
         function drawBlock(x, y, color) {
-            ctx.fillStyle = color; ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-            ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-            ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(x * BLOCK_SIZE + 6, y * BLOCK_SIZE + 6, 2, 0, Math.PI * 2); ctx.fill();
+            // [수정됨] 폭탄 블록: 흰색 배경 위에 이모티콘 그리기
+            if (color === '#bomb1' || color === '#bomb2') {
+                ctx.fillStyle = '#ffffff'; 
+                ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                ctx.strokeStyle = '#ccc'; 
+                ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                ctx.font = '18px serif'; 
+                ctx.textAlign = 'center'; 
+                ctx.textBaseline = 'middle';
+                const emoji = (color === '#bomb1') ? '💣' : '🧨';
+                ctx.fillText(emoji, x * BLOCK_SIZE + 12, y * BLOCK_SIZE + 14);
+                return;
+            }
+            ctx.fillStyle = color; 
+            ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)'; 
+            ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.fillStyle = 'rgba(255,255,255,0.4)'; 
+            ctx.beginPath(); 
+            ctx.arc(x * BLOCK_SIZE + 6, y * BLOCK_SIZE + 6, 2, 0, Math.PI * 2); 
+            ctx.fill();
         }
 
+        function drawSideCanvas(canvasId, typeId) {
+            const cvs = document.getElementById(canvasId);
+            const c = cvs.getContext('2d');
+            c.clearRect(0, 0, cvs.width, cvs.height);
+            if (typeId === null) return;
+            let shape, color;
+            if (typeId === BOMB_1_IDX) { shape = [[1]]; color = '#bomb1'; }
+            else if (typeId === BOMB_2_IDX) { shape = [[1,1],[1,1]]; color = '#bomb2'; }
+            else { shape = SHAPES[typeId]; color = COLORS[typeId]; }
+            const cellSize = 10;
+            const offsetX = (cvs.width - shape[0].length * cellSize) / 2;
+            const offsetY = (cvs.height - shape.length * cellSize) / 2;
+            
+            if (color.startsWith('#bomb')) {
+                c.fillStyle = '#ffffff'; c.strokeStyle = '#ccc';
+            } else {
+                c.fillStyle = color; c.strokeStyle = 'rgba(0,0,0,0.2)';
+            }
+
+            for (let r = 0; r < shape.length; r++) { 
+                for (let col = 0; col < shape[r].length; col++) { 
+                    if (shape[r][col]) { 
+                        if(color.startsWith('#bomb')) { 
+                            c.fillRect(offsetX + col*cellSize, offsetY + r*cellSize, cellSize, cellSize); 
+                            c.strokeRect(offsetX + col*cellSize, offsetY + r*cellSize, cellSize, cellSize);
+                            c.font = '10px serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+                            c.fillStyle = 'black';
+                            c.fillText(typeId===BOMB_1_IDX?'💣':'🧨', offsetX + col*cellSize + 5, offsetY + r*cellSize + 6); 
+                        } else { 
+                            c.fillRect(offsetX + col*cellSize, offsetY + r*cellSize, cellSize, cellSize); 
+                            c.strokeRect(offsetX + col*cellSize, offsetY + r*cellSize, cellSize, cellSize); 
+                        } 
+                    } 
+                } 
+            }
+        }
+
+        window.openManual = () => { document.getElementById('overlay').style.display = 'none'; document.getElementById('manual-screen').style.display = 'flex'; };
+        window.closeManual = () => { document.getElementById('manual-screen').style.display = 'none'; document.getElementById('overlay').style.display = 'flex'; };
+
+        window.inputLeft = () => { if(isMyTurn && !isPaused) movePiece(-1, 0); };
+        window.inputRight = () => { if(isMyTurn && !isPaused) movePiece(1, 0); };
+        window.inputDrop = () => { if(isMyTurn && !isPaused) movePiece(0, 1); }; 
+        window.inputRotate = () => { if(isMyTurn && !isPaused) rotatePiece(); };
+        window.inputHardDrop = () => { if(!isMyTurn || !activePiece || isPaused) return; let dist = 0; while (!collision(0, dist + 1, activePiece.shape)) { dist++; } activePiece.y += dist; draw(); lockPiece(); };
+
+        // [키보드 스크롤 방지 적용]
+        document.addEventListener('keydown', (e) => {
+            if (!isMyTurn || isPaused) return;
+            if (e.keyCode === 37) { e.preventDefault(); inputLeft(); }
+            else if (e.keyCode === 39) { e.preventDefault(); inputRight(); }
+            else if (e.keyCode === 40) { e.preventDefault(); inputDrop(); }
+            else if (e.keyCode === 38) { e.preventDefault(); inputRotate(); }
+            else if (e.keyCode === 32) { e.preventDefault(); inputHardDrop(); }
+            else if (e.keyCode === 81) { e.preventDefault(); inputHold(); } 
+            else if (e.keyCode === 27) openPauseMenu();
+        });
+
+        function updateGameLoop() {
+            if (isPaused) return;
+            if (!isMyTurn && gameMode === 'multi') return;
+            if (gameOver) return;
+            const now = Date.now();
+            if (now - lastDropTime > dropInterval) { movePiece(0, 1); lastDropTime = now; }
+            draw();
+            animationId = requestAnimationFrame(updateGameLoop);
+        }
+        function movePiece(dx, dy) {
+            if (!activePiece) return;
+            if (!collision(dx, dy, activePiece.shape)) { activePiece.x += dx; activePiece.y += dy; } 
+            else if (dy > 0) { lockPiece(); }
+        }
+        function rotatePiece() {
+            if (!activePiece) return;
+            const matrix = activePiece.shape;
+            const N = matrix.length; const M = matrix[0].length;
+            let result = Array.from({length: M}, () => Array(N).fill(0));
+            for (let i = 0; i < N; i++) { for (let j = 0; j < M; j++) { result[j][N - 1 - i] = matrix[i][j]; } }
+            if (!collision(0, 0, result)) { activePiece.shape = result; } 
+            else { if (!collision(-1, 0, result)) { activePiece.x -= 1; activePiece.shape = result; } else if (!collision(1, 0, result)) { activePiece.x += 1; activePiece.shape = result; } }
+        }
         function updateTurnUI() {
             const ind = document.getElementById('turn-indicator');
-            if (gameMode === 'solo') { ind.innerText = "SOLO MODE"; ind.className = 'my-turn'; } 
-            else {
+            if (gameMode === 'solo') { 
+                ind.innerText = "SOLO MODE"; ind.className = 'my-turn'; ind.classList.add('active'); 
+            } else {
+                ind.classList.add('active');
                 if (isMyTurn) { ind.innerText = "👉 당신 차례! (MOVE!)"; ind.className = 'my-turn'; } 
                 else { ind.innerText = "✋ 상대방 차례 (WAIT)"; ind.className = 'other-turn'; }
             }
         }
-
         function updateScoreUI() {
             document.getElementById('score').innerText = score;
             document.getElementById('level').innerText = level;
@@ -736,55 +692,89 @@
             badge.innerText = difficulty.toUpperCase();
             badge.className = `diff-badge badge-${difficulty}`;
         }
-
         function resetLocalBoard() {
             board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
             score = 0;
             if (difficulty === 'hard') { level = 4; dropInterval = 500; } 
             else { level = 1; dropInterval = 1000; }
+            nextPieceType = getRandomPieceType(); 
+            holdPieceType = null;
             updateScoreUI();
+            drawSideCanvas('hold-canvas', null);
         }
 
-        // --- 입력 핸들러 (전역) ---
-        window.inputLeft = () => { if(isMyTurn && !isPaused) movePiece(-1, 0); };
-        window.inputRight = () => { if(isMyTurn && !isPaused) movePiece(1, 0); };
-        window.inputDrop = () => { if(isMyTurn && !isPaused) movePiece(0, 1); }; 
-        window.inputRotate = () => { if(isMyTurn && !isPaused) rotatePiece(); };
-        window.inputHardDrop = () => { 
-            if(!isMyTurn || !activePiece || isPaused) return;
-            let dist = 0; while (!collision(0, dist + 1, activePiece.shape)) { dist++; }
-            activePiece.y += dist; draw(); lockPiece(); 
-        };
+        // [수정] 로컬 저장 기능 구현
+        function saveGameToLocal() {
+            const saveData = {
+                board: board,
+                score: score,
+                level: level,
+                difficulty: difficulty,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('tetris_solo_save', JSON.stringify(saveData));
+        }
 
-        window.openPauseMenu = () => {
-            if(gameOver) return;
-            isPaused = true;
-            if(animationId) cancelAnimationFrame(animationId);
-            const saveBtn = document.getElementById('btn-save-manual');
-            if(gameMode === 'multi') { saveBtn.innerText = "멀티는 자동저장됨"; saveBtn.disabled = true; saveBtn.style.opacity = "0.5"; } 
-            else { saveBtn.innerText = "저장하기"; saveBtn.disabled = false; saveBtn.style.opacity = "1"; }
-            document.getElementById('pause-menu').style.display = 'flex';
+        window.startSoloNew = (diff) => {
+            localStorage.removeItem('tetris_solo_save');
+            gameMode = 'solo'; myRole = 'p1'; currentTurn = 'p1'; isMyTurn = true;
+            difficulty = diff;
+            document.getElementById('solo-menu').style.display = 'none';
+            document.getElementById('next-panel').style.display = 'flex'; 
+            resetLocalBoard(); spawnPiece(); updateGameLoop();
+            updateTurnUI();
         };
-
-        window.resumeGame = () => {
-            isPaused = false;
-            document.getElementById('pause-menu').style.display = 'none';
-            lastDropTime = Date.now();
-            updateGameLoop();
+        window.startMulti = async () => {
+            gameMode = 'multi';
+            document.getElementById('next-panel').style.display = 'none'; 
+            const docSnap = await getDoc(gameDocRef);
+            let data = docSnap.exists() ? docSnap.data() : null;
+            const updatePayload = { status: 'voting', p1Vote: null, p2Vote: null, score: 0, level: 1, boardStr: JSON.stringify(Array.from({length: ROWS}, () => Array(COLS).fill(0))) };
+            if (!data) { updatePayload.p1 = myId; updatePayload.p1Name = myName; updatePayload.p2 = null; updatePayload.p2Name = ""; updatePayload.turn = 'p1'; await setDoc(gameDocRef, updatePayload); myRole = 'p1'; } 
+            else { if (data.p1 === myId) { myRole = 'p1'; updatePayload.p1Name = myName; } else if (data.p2 === myId) { myRole = 'p2'; updatePayload.p2Name = myName; } else if (!data.p1) { updatePayload.p1 = myId; updatePayload.p1Name = myName; myRole = 'p1'; } else if (!data.p2) { updatePayload.p2 = myId; updatePayload.p2Name = myName; myRole = 'p2'; } await updateDoc(gameDocRef, updatePayload); }
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('vote-screen').style.display = 'flex';
+            onSnapshot(gameDocRef, (snap) => {
+                const d = snap.data();
+                if (!d) return;
+                if (d.status === 'voting') { updateVoteUI(d); if (myRole === 'p1' && d.p1Vote && d.p2Vote && d.p1Vote === d.p2Vote) { setTimeout(() => { updateDoc(gameDocRef, { status: 'playing', difficulty: d.p1Vote, level: d.p1Vote === 'hard' ? 4 : 1, score: 0 }); }, 1500); } }
+                if (d.status === 'playing') {
+                    document.getElementById('vote-screen').style.display = 'none';
+                    board = JSON.parse(d.boardStr); score = d.score; level = d.level; currentTurn = d.turn; difficulty = d.difficulty || 'easy';
+                    updateScoreUI(); isMyTurn = (currentTurn === myRole); updateTurnUI();
+                    if (isMyTurn && !activePiece) { spawnPiece(); lastDropTime = Date.now(); if (!animationId) updateGameLoop(); } 
+                    else if (!isMyTurn) { if (animationId) cancelAnimationFrame(animationId); animationId = null; activePiece = null; draw(); }
+                }
+            });
         };
-
-        window.saveAndAlert = () => { if(gameMode === 'solo') { saveGameToLocal(); alert("게임이 저장되었습니다! 💾"); } };
+        window.voteDifficulty = async (vote) => { const field = myRole === 'p1' ? 'p1Vote' : 'p2Vote'; await updateDoc(gameDocRef, { [field]: vote }); };
+        window.startGameNow = async () => { const docSnap = await getDoc(gameDocRef); const d = docSnap.data(); if (d.p1Vote && d.p2Vote && d.p1Vote === d.p2Vote) { await updateDoc(gameDocRef, { status: 'playing', difficulty: d.p1Vote, level: d.p1Vote === 'hard' ? 4 : 1, score: 0 }); } else { alert("아직 두 명의 의견이 일치하지 않았습니다!"); } };
+        function updateVoteUI(data) {
+            const p1Text = document.getElementById('p1-vote-text'); const p2Text = document.getElementById('p2-vote-text'); const p1Icon = document.getElementById('p1-icon'); const p2Icon = document.getElementById('p2-icon'); const p1NameDisp = document.getElementById('p1-name-display'); const p2NameDisp = document.getElementById('p2-name-display'); const msg = document.getElementById('vote-msg'); const startBtn = document.getElementById('btn-start-game');
+            const myVote = myRole === 'p1' ? data.p1Vote : data.p2Vote; document.getElementById('vote-btn-easy').classList.toggle('selected', myVote === 'easy'); document.getElementById('vote-btn-hard').classList.toggle('selected', myVote === 'hard');
+            p1NameDisp.innerText = data.p1Name || "Player 1"; if(!data.p1) { p1Text.innerText = "대기 중..."; p1Icon.className = "p-icon"; } else if(!data.p1Vote) { p1Text.innerText = "고민 중..."; p1Icon.className = "p-icon"; } else { p1Text.innerText = data.p1Vote.toUpperCase(); p1Icon.className = `p-icon voted-${data.p1Vote}`; }
+            p2NameDisp.innerText = data.p2Name || "Player 2"; if(!data.p2) { p2Text.innerText = "접속 대기..."; p2Icon.className = "p-icon"; } else if(!data.p2Vote) { p2Text.innerText = "고민 중..."; p2Icon.className = "p-icon"; } else { p2Text.innerText = data.p2Vote.toUpperCase(); p2Icon.className = `p-icon voted-${data.p2Vote}`; }
+            if(data.p1 && data.p2 && data.p1Vote && data.p2Vote) { if(data.p1Vote === data.p2Vote) { msg.innerText = "준비 완료! 시작 버튼을 누르세요."; startBtn.disabled = false; startBtn.classList.add('active'); } else { msg.innerText = "서로 다른 난이도를 골랐어요!"; startBtn.disabled = true; startBtn.classList.remove('active'); } } else { msg.innerText = "모두 난이도를 선택해주세요."; startBtn.disabled = true; startBtn.classList.remove('active'); }
+        }
+        window.openRanking = async () => { document.getElementById('overlay').style.display = 'none'; document.getElementById('ranking-screen').style.display = 'flex'; const list = document.getElementById('ranking-list'); list.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">로딩 중...</div>'; try { const q = query(rankColRef, orderBy("score", "desc"), limit(20)); const querySnapshot = await getDocs(q); list.innerHTML = ""; let rank = 1; querySnapshot.forEach((doc) => { const d = doc.data(); const rankClass = rank <= 3 ? `rank-${rank}` : ''; let badgeClass = 'rm-easy'; let badgeText = 'EASY'; if (d.difficulty) { badgeText = d.difficulty.toUpperCase(); badgeClass = d.difficulty === 'hard' ? 'rm-hard' : 'rm-easy'; } else if (d.mode && d.mode.includes('HARD')) { badgeText = 'HARD'; badgeClass = 'rm-hard'; } let typeText = "SOLO"; if(d.mode && d.mode.includes("CO-OP")) typeText = "MULTI"; else if(d.mode && d.mode.includes("Co-op")) typeText = "MULTI"; list.innerHTML += `<div class="rank-item ${rankClass}"><div class="rank-rank">${rank}</div><div class="rank-name"><span class="rank-mode-badge ${badgeClass}">${typeText}-${badgeText}</span>${d.name}</div><div class="rank-score">${d.score}</div></div>`; rank++; }); if(rank === 1) list.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">아직 기록이 없습니다.</div>'; } catch(e) { console.error(e); list.innerHTML = '<div style="text-align:center; color:red;">랭킹 로드 실패</div>'; } };
+        window.closeRanking = () => { document.getElementById('ranking-screen').style.display = 'none'; document.getElementById('overlay').style.display = 'flex'; };
+        window.saveRankToDB = async () => { if(score <= 0) return alert("0점은 저장할 수 없습니다!"); const btn = document.getElementById('btn-save-rank'); btn.disabled = true; btn.innerText = "저장 중..."; try { await addDoc(rankColRef, { name: myName, score: score, level: level, difficulty: difficulty, mode: gameMode === 'solo' ? `SOLO` : `CO-OP`, date: serverTimestamp() }); alert("랭킹에 등록되었습니다! 🏆"); openRanking(); document.getElementById('game-over-screen').style.display = 'none'; } catch(e) { alert("저장 실패: " + e.message); btn.disabled = false; btn.innerText = "📝 랭킹에 저장하기"; } };
+        function showGameOverScreen() { document.getElementById('overlay').style.display = 'none'; document.getElementById('game-over-screen').style.display = 'flex'; document.getElementById('final-score').innerText = score; const modeText = gameMode === 'solo' ? `SOLO - ${difficulty.toUpperCase()}` : `MULTI - ${difficulty.toUpperCase()}`; document.getElementById('final-mode').innerText = modeText; }
+        window.checkSoloSave = () => { const saveData = localStorage.getItem('tetris_solo_save'); document.getElementById('overlay').style.display = 'none'; document.getElementById('solo-menu').style.display = 'flex'; if(saveData) { document.getElementById('has-save-msg').style.display = 'block'; document.getElementById('btn-resume-solo').style.display = 'flex'; } else { document.getElementById('has-save-msg').style.display = 'none'; document.getElementById('btn-resume-solo').style.display = 'none'; } };
+        window.closeSoloMenu = () => { document.getElementById('solo-menu').style.display = 'none'; document.getElementById('overlay').style.display = 'flex'; };
+        window.loadSoloGame = () => { const saveStr = localStorage.getItem('tetris_solo_save'); if(!saveStr) return startSoloNew('easy'); const save = JSON.parse(saveStr); board = save.board; score = save.score; level = save.level; difficulty = save.difficulty || 'easy'; gameMode = 'solo'; myRole = 'p1'; currentTurn = 'p1'; isMyTurn = true; updateScoreUI(); updateTurnUI(); document.getElementById('solo-menu').style.display = 'none'; document.getElementById('next-panel').style.display = 'flex'; spawnPiece(); updateGameLoop(); };
+        window.openPauseMenu = () => { if(gameOver) return; isPaused = true; if(animationId) cancelAnimationFrame(animationId); const saveBtn = document.getElementById('btn-save-manual'); if(gameMode === 'multi') { saveBtn.innerText = "멀티는 자동저장됨"; saveBtn.disabled = true; saveBtn.style.opacity = "0.5"; } else { saveBtn.innerText = "저장하기"; saveBtn.disabled = false; saveBtn.style.opacity = "1"; } document.getElementById('pause-menu').style.display = 'flex'; };
+        window.resumeGame = () => { isPaused = false; document.getElementById('pause-menu').style.display = 'none'; lastDropTime = Date.now(); updateGameLoop(); };
+        window.saveAndAlert = () => { 
+            if(gameMode === 'solo') { 
+                saveGameToLocal(); 
+                // [Fix] alert 대신 토스트 메시지 띄우기
+                const toast = document.getElementById('toast-msg');
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 2000);
+            } 
+        };
         window.saveAndExit = () => { if(gameMode === 'solo') { saveGameToLocal(); } location.href = "gamelist.html"; };
-
-        document.addEventListener('keydown', (e) => {
-            if (!isMyTurn || isPaused) return;
-            if (e.keyCode === 37) inputLeft();
-            else if (e.keyCode === 39) inputRight();
-            else if (e.keyCode === 40) inputDrop();
-            else if (e.keyCode === 38) inputRotate();
-            else if (e.keyCode === 32) { e.preventDefault(); inputHardDrop(); }
-            else if (e.keyCode === 27) openPauseMenu();
-        });
     </script>
 </body>
 </html>
