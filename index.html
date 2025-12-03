@@ -48,10 +48,20 @@
         #search-container { display: none; padding: 10px; background: #fff0f0; border-bottom: 1px solid #ffcccc; flex-shrink: 0; }
         #search-input { width: 100%; padding: 10px; border: 1px solid #ff6b6b; border-radius: 8px; }
         
-        #messages { flex: 1; overflow-y: auto; padding: 20px; background: #fafafa; display: flex; flex-direction: column; gap: 15px; }
+        #messages { flex: 1; overflow-y: auto; padding: 20px; background: #fafafa; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
         .date-divider { text-align: center; margin: 15px 0; }
         .date-divider span { background: rgba(0,0,0,0.1); color: white; padding: 4px 12px; border-radius: 10px; font-size: 11px; }
         #top-loading { text-align: center; padding: 10px; font-size: 12px; color: #888; display: none; }
+
+        /* 답장 미리보기 바 */
+        #reply-preview-bar { 
+            display: none; background: #fff; border-top: 1px solid #eee; padding: 10px 15px; 
+            border-left: 4px solid #ff6b6b; justify-content: space-between; align-items: center; flex-shrink: 0; 
+        }
+        .reply-preview-content { display: flex; flex-direction: column; width: 90%; }
+        .reply-to-name { font-size: 12px; font-weight: bold; color: #ff6b6b; margin-bottom: 2px; }
+        .reply-to-text { font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .close-reply-btn { font-size: 20px; color: #999; cursor: pointer; background: none; border: none; padding: 5px; }
 
         #input-area { 
             padding: 10px; padding-bottom: calc(20px + env(safe-area-inset-bottom));
@@ -66,14 +76,24 @@
         #emoji-picker { display: none; position: absolute; bottom: 90px; left: 10px; background: white; border: 1px solid #ddd; border-radius: 10px; padding: 10px; grid-template-columns: repeat(6, 1fr); gap: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 20; width: 90%; max-width: 300px; }
         .emoji-item { font-size: 24px; cursor: pointer; text-align: center; padding: 5px; border-radius: 5px; }
 
-        #drawing-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
-        .drawing-container { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
-        #canvas-area { border: 2px dashed #ddd; border-radius: 10px; cursor: crosshair; touch-action: none; background-color: white; }
-        .drawing-controls { margin-top: 15px; display: flex; gap: 10px; width: 100%; }
-        .draw-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        #clear-btn { background: #eee; color: #333; }
-        #send-draw-btn { background: #ff6b6b; color: white; }
-        .close-draw { align-self: flex-end; font-size: 24px; color: #999; cursor: pointer; margin-bottom: 10px; }
+        /* 답장 스타일 */
+        .reply-btn { 
+            font-size: 12px; margin-left: 5px; cursor: pointer; opacity: 0.5; color: #888; 
+            transition: 0.2s; vertical-align: middle; 
+        }
+        .my-msg .reply-btn { color: rgba(255,255,255,0.7); }
+        .quote-block {
+            background: rgba(0,0,0,0.05); border-left: 3px solid #999; padding: 5px 8px;
+            margin-bottom: 5px; border-radius: 4px; cursor: pointer; font-size: 12px;
+            display: flex; flex-direction: column; text-align: left;
+        }
+        .my-msg .quote-block { background: rgba(0,0,0,0.1); border-left-color: rgba(255,255,255,0.5); color: #f0f0f0; }
+        .quote-sender { font-weight: bold; margin-bottom: 2px; opacity: 0.8; font-size: 11px; }
+        .quote-text { opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* 메시지 하이라이트 애니메이션 */
+        @keyframes highlightFade { 0% { background-color: rgba(255, 235, 59, 0.5); transform: scale(1.02); } 100% { background-color: transparent; transform: scale(1); } }
+        .highlight-anim { animation: highlightFade 1.5s ease-out; }
 
         .message { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.5; position: relative; word-wrap: break-word; }
         .my-msg { align-self: flex-end; background-color: #ff6b6b; color: white; border-bottom-right-radius: 4px; }
@@ -86,6 +106,15 @@
         .chat-img { max-width: 100%; border-radius: 10px; margin-bottom: 5px; cursor: pointer; }
         .message a { color: #007bff; text-decoration: underline; }
         .my-msg a { color: white; }
+
+        #drawing-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+        .drawing-container { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
+        #canvas-area { border: 2px dashed #ddd; border-radius: 10px; cursor: crosshair; touch-action: none; background-color: white; }
+        .drawing-controls { margin-top: 15px; display: flex; gap: 10px; width: 100%; }
+        .draw-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        #clear-btn { background: #eee; color: #333; }
+        #send-draw-btn { background: #ff6b6b; color: white; }
+        .close-draw { align-self: flex-end; font-size: 24px; color: #999; cursor: pointer; margin-bottom: 10px; }
 
         #settings-screen { background: #f9f9f9; overflow-y: auto; display: none; flex-direction: column; height: 100%; }
         #settings-screen.active { display: flex; }
@@ -182,6 +211,14 @@
         
         <div id="emoji-picker"></div>
         
+        <div id="reply-preview-bar">
+            <div class="reply-preview-content">
+                <span class="reply-to-name" id="reply-target-name"></span>
+                <span class="reply-to-text" id="reply-target-text"></span>
+            </div>
+            <button class="close-reply-btn" onclick="cancelReply()">×</button>
+        </div>
+
         <div id="input-area">
             <button class="tool-btn" onclick="toggleEmoji()">😊</button>
             <button class="tool-btn" onclick="toggleDrawingPad()">🖌️</button>
@@ -237,7 +274,7 @@
             </div>
 
             <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃 (자동로그인 해제)</span></div>
-            <div class="version-info">Ver 1.72 (Copy & Paste Added)</div>
+            <div class="version-info">Ver 1.73 (Reply Feature Added) - 25/12/3</div>
         </div>
     </div>
 
@@ -274,7 +311,7 @@
     const storage = getStorage(app);
 
     // ==========================================
-    // ⭐️ [중요] 모든 변수 선언을 최상단으로 이동 (에러 완전 해결)
+    // ⭐️ [중요] 모든 변수 선언을 최상단으로 이동
     // ==========================================
     
     // 1. 사용자 정보
@@ -291,10 +328,10 @@
     let presenceUnsub = null;
     let otherUserReadTime = 0;
     let lastPartnerMsgTime = 0; 
-    
-    // 🔔 탭 제목 깜빡임 관련 변수
     let flashInterval = null; 
     const originalTitle = document.title; 
+    const originalFavicon = document.getElementById('favicon').href;
+    const alertFavicon = "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"; 
 
     // 4. 로딩 상태 관련
     let isInitialLoad = true;
@@ -305,13 +342,42 @@
     let isGalleryLoading = false;
     let isGalleryEnd = false;
 
+    // 5. [NEW] 답장 기능 관련 변수
+    let currentReplyTarget = null; // { id: "msgId", text: "내용", sender: "보낸이" }
+
     // ==========================================
-    // ⚙️ 기능 함수 정의 (변수 선언 이후에 배치)
+    // ⚙️ 기능 함수 정의
     // ==========================================
 
     applyBg(savedBg);
 
-    // 이모티콘 셋팅 (변수 선언 후에 실행)
+    // 답장 설정 함수
+    window.setReply = (id, text, sender) => {
+        currentReplyTarget = { id, text, sender };
+        document.getElementById('reply-preview-bar').style.display = 'flex';
+        document.getElementById('reply-target-name').innerText = `To. ${sender}`;
+        document.getElementById('reply-target-text').innerText = text;
+        document.getElementById('msg-input').focus();
+    };
+
+    // 답장 취소 함수
+    window.cancelReply = () => {
+        currentReplyTarget = null;
+        document.getElementById('reply-preview-bar').style.display = 'none';
+    };
+
+    // 원본 메시지로 이동 함수
+    window.scrollToMessage = (msgId) => {
+        const target = document.getElementById('msg-' + msgId);
+        if(target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.classList.add('highlight-anim');
+            setTimeout(() => target.classList.remove('highlight-anim'), 1500);
+        } else {
+            alert("원본 메시지를 찾을 수 없습니다. (너무 오래된 메시지일 수 있습니다)");
+        }
+    };
+
     const emojiPicker = document.getElementById('emoji-picker');
     emojiList.forEach(emo => {
         const span = document.createElement('span'); span.className = 'emoji-item'; span.innerText = emo;
@@ -324,37 +390,29 @@
         picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid'; 
     };
 
-    // 🔔 [NEW] 탭 알림 시작 함수
     function startTabNotification() {
-        if(flashInterval) return; // 이미 돌고 있으면 중복 실행 방지
+        if(flashInterval) return; 
         let toggle = false;
-        
         flashInterval = setInterval(() => {
             document.title = toggle ? "🔴 메세지가 도착했습니다!" : originalTitle;
             toggle = !toggle;
-        }, 1000); // 1초마다 깜빡임
+        }, 1000); 
     }
 
-    // 🔔 [NEW] 탭 알림 중지 함수
     function stopTabNotification() {
-        if(flashInterval) {
-            clearInterval(flashInterval);
-            flashInterval = null;
-        }
-        document.title = originalTitle; // 원래 제목으로 복구
+        if(flashInterval) { clearInterval(flashInterval); flashInterval = null; }
+        document.title = originalTitle; 
     }
 
-    // 화면 전환 함수
     function showScreen(id) { 
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
         document.getElementById(id).classList.add('active'); 
         if(id === 'chat-screen') {
             setTimeout(scrollToBottom, 100);
-            stopTabNotification(); // 채팅화면 들어오면 알림 끄기
+            stopTabNotification(); 
         }
     }
 
-    // 삭제 동의 모니터링 함수
     function monitorDeletionVotes() {
         onSnapshot(deleteReqRef, async (snap) => {
             if(snap.exists()) {
@@ -379,15 +437,12 @@
 
                 if (requests.length >= 2) {
                     document.getElementById('loading').style.display = 'flex';
-                    if (requests[0] === myId) { 
-                        await performFullDeletion();
-                    }
+                    if (requests[0] === myId) { await performFullDeletion(); }
                 }
             }
         });
     }
 
-    // 알림 권한 요청 함수
     window.requestNotiPermission = () => {
         if ("Notification" in window && Notification.permission !== "granted") {
             Notification.requestPermission();
@@ -397,17 +452,11 @@
     function startPresenceSystem() {
         if(!myName) return;
         markAsRead();
-        
         setInterval(async () => { 
             if(document.hidden) return; 
-            try { 
-                await setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp() }, { merge: true }); 
-            } catch(e) {} 
+            try { await setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp() }, { merge: true }); } catch(e) {} 
         }, 30000); 
-
-        if(!document.hidden) {
-            togglePresenceListener(true);
-        }
+        if(!document.hidden) { togglePresenceListener(true); }
     }
 
     function togglePresenceListener(shouldListen) {
@@ -417,7 +466,6 @@
                 presenceUnsub = onSnapshot(q, (snapshot) => {
                     let onlineUsers = [];
                     let maxReadTime = 0; 
-
                     snapshot.forEach((docSnap) => {
                         const data = docSnap.data();
                         if(docSnap.id !== myId && data.name !== myName) {
@@ -430,7 +478,6 @@
                             }
                         }
                     });
-                    
                     otherUserReadTime = maxReadTime;
                     const statusArea = document.getElementById('status-area');
                     if(statusArea) {
@@ -440,21 +487,15 @@
                 });
             }
         } else {
-            if (presenceUnsub) {
-                presenceUnsub();
-                presenceUnsub = null;
-            }
+            if (presenceUnsub) { presenceUnsub(); presenceUnsub = null; }
         }
     }
 
     function markAsRead() { if(!myName) return; setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp(), lastRead: serverTimestamp() }, { merge: true }); }
     
-    // 🔔 화면 상태 감지 (알림 끄기 기능 연동)
     document.addEventListener("visibilitychange", () => { 
         if (document.visibilityState === 'visible') {
-            markAsRead();
-            stopTabNotification(); // 화면 켜면 탭 알림 중지
-            togglePresenceListener(true); 
+            markAsRead(); stopTabNotification(); togglePresenceListener(true); 
         } else {
             togglePresenceListener(false); 
         }
@@ -480,17 +521,10 @@
         });
     }
 
-    // 로그인 및 이름 설정
     window.checkPassword = function() { 
         if (document.getElementById('password-input').value === '0726') { 
             localStorage.setItem('chat_auth_pw', '0726'); 
-            if (myName) { 
-                showScreen('chat-screen'); 
-                loadMessages(); 
-                startPresenceSystem(); 
-                monitorDeletionVotes();
-                window.requestNotiPermission(); 
-            } 
+            if (myName) { showScreen('chat-screen'); loadMessages(); startPresenceSystem(); monitorDeletionVotes(); window.requestNotiPermission(); } 
             else { showScreen('name-screen'); } 
         } else { alert('비밀번호가 틀립니다!'); } 
     };
@@ -500,16 +534,43 @@
         if (!name) return alert("이름 입력"); 
         myName = name; 
         localStorage.setItem('chat_nickname', name); 
-        showScreen('chat-screen'); 
-        loadMessages(); 
-        startPresenceSystem(); 
-        monitorDeletionVotes();
-        window.requestNotiPermission(); 
+        showScreen('chat-screen'); loadMessages(); startPresenceSystem(); monitorDeletionVotes(); window.requestNotiPermission(); 
     };
 
-    // 메시지 전송 및 로드
-    window.sendMessage = async function() { const input = document.getElementById('msg-input'); const text = input.value; if (text.trim() === "") return; try { await addDoc(collection(db, "chats"), { text: text, sender: myName, timestamp: serverTimestamp(), type: 'text' }); input.value = ""; markAsRead(); scrollToBottom(); } catch (e) { alert("전송 실패"); } };
-    window.uploadImage = async function(fileOrBlob, isDrawing = false) { if (!fileOrBlob) return; document.getElementById('loading').style.display = 'flex'; try { const fileName = Date.now() + (isDrawing ? '_draw.png' : '_' + fileOrBlob.name); const storageRef = ref(storage, 'images/' + fileName); await uploadBytes(storageRef, fileOrBlob); const url = await getDownloadURL(storageRef); await addDoc(collection(db, "chats"), { text: isDrawing ? "그림을 보냈습니다." : "사진을 보냈습니다.", imageUrl: url, sender: myName, timestamp: serverTimestamp(), type: 'image' }); markAsRead(); scrollToBottom(); } catch (e) { alert("전송 실패"); } finally { document.getElementById('loading').style.display = 'none'; document.getElementById('photo-input').value = ''; } };
+    window.sendMessage = async function() { 
+        const input = document.getElementById('msg-input'); 
+        const text = input.value; 
+        if (text.trim() === "") return; 
+        try { 
+            const payload = { text: text, sender: myName, timestamp: serverTimestamp(), type: 'text' };
+            // 답장 중이면 답장 데이터 포함
+            if(currentReplyTarget) {
+                payload.replyTo = currentReplyTarget;
+            }
+            await addDoc(collection(db, "chats"), payload); 
+            input.value = ""; 
+            cancelReply(); // 답장 상태 초기화
+            markAsRead(); scrollToBottom(); 
+        } catch (e) { alert("전송 실패"); } 
+    };
+
+    window.uploadImage = async function(fileOrBlob, isDrawing = false) { 
+        if (!fileOrBlob) return; 
+        document.getElementById('loading').style.display = 'flex'; 
+        try { 
+            const fileName = Date.now() + (isDrawing ? '_draw.png' : '_' + fileOrBlob.name); 
+            const storageRef = ref(storage, 'images/' + fileName); 
+            await uploadBytes(storageRef, fileOrBlob); 
+            const url = await getDownloadURL(storageRef); 
+            
+            const payload = { text: isDrawing ? "그림을 보냈습니다." : "사진을 보냈습니다.", imageUrl: url, sender: myName, timestamp: serverTimestamp(), type: 'image' };
+            if(currentReplyTarget) { payload.replyTo = currentReplyTarget; }
+
+            await addDoc(collection(db, "chats"), payload); 
+            cancelReply();
+            markAsRead(); scrollToBottom(); 
+        } catch (e) { alert("전송 실패"); } finally { document.getElementById('loading').style.display = 'none'; document.getElementById('photo-input').value = ''; } 
+    };
 
     function loadMessages() {
         const q = query(collection(db, "chats"), orderBy("timestamp", "asc"), limitToLast(30));
@@ -526,12 +587,8 @@
                         const isPreviewEnabled = localStorage.getItem('noti_preview') !== 'false';
                         
                         if (data.sender !== myName) {
-                            // 🔔 상대방 메시지 도착 시
                             if (document.hidden) {
-                                // 1. 탭 알림 시작
                                 startTabNotification();
-
-                                // 2. 브라우저 알림 (기존 기능)
                                 if (isNotiEnabled && Notification.permission === "granted") {
                                     let bodyText = "비밀 메시지가 도착했습니다. 🔒";
                                     if (isPreviewEnabled) bodyText = data.type === 'image' ? '사진/그림이 도착했습니다.' : data.text;
@@ -552,7 +609,8 @@
             snapshot.docChanges().forEach((change) => {
                 if (change.type === "added") {
                     const data = change.doc.data();
-                    const msgHTML = createMessageHTML(data);
+                    const docId = change.doc.id; // 메시지 ID 가져오기
+                    const msgHTML = createMessageHTML(data, docId);
                     msgBox.insertAdjacentHTML('beforeend', msgHTML); 
                     if(data.type === 'image') allImages.push(data.imageUrl);
                     if(isInitialLoad) oldestMessageSnap = change.doc; 
@@ -589,7 +647,7 @@
             oldestMessageSnap = docs[0]; 
             let html = "";
             docs.forEach(doc => { 
-                html += createMessageHTML(doc.data()); 
+                html += createMessageHTML(doc.data(), doc.id); 
                 if(doc.data().type === 'image') allImages.unshift(doc.data().imageUrl); 
                 if(doc.data().sender !== myName && doc.data().timestamp) {
                     const time = doc.data().timestamp.toMillis();
@@ -605,7 +663,8 @@
         isFetchingOlder = false;
     }
 
-    function createMessageHTML(data) {
+    // 🛠️ [수정됨] 답장 기능 및 HTML 생성
+    function createMessageHTML(data, docId) {
         const isMe = data.sender === myName;
         const msgTime = data.timestamp ? data.timestamp.toMillis() : Date.now();
         const date = data.timestamp ? data.timestamp.toDate() : new Date();
@@ -615,7 +674,30 @@
         if(data.type === 'image') { contentHtml = `<img src="${data.imageUrl}" class="chat-img" onclick="window.open(this.src)" onload="scrollToBottom()">`; }
         
         const unreadHtml = isMe ? `<span class="unread-mark">😪</span>` : '';
-        return `<div class="message ${isMe?'my-msg':'other-msg'}" data-text="${data.text}" data-timestamp="${msgTime}">${contentHtml}<div class="msg-info">${unreadHtml}${!isMe?`<span class="sender">${data.sender}</span>`:''}<span class="time">${timeStr}</span></div></div>`;
+        const rawText = data.type === 'image' ? '[사진]' : data.text.replace(/"/g, '&quot;');
+
+        // 답장 인용구 생성
+        let replyBlock = '';
+        if(data.replyTo) {
+            replyBlock = `
+                <div class="quote-block" onclick="scrollToMessage('${data.replyTo.id}')">
+                    <span class="quote-sender">To. ${data.replyTo.sender}</span>
+                    <span class="quote-text">${data.replyTo.text}</span>
+                </div>
+            `;
+        }
+
+        return `
+            <div id="msg-${docId}" class="message ${isMe?'my-msg':'other-msg'}" data-text="${data.text}" data-timestamp="${msgTime}">
+                ${replyBlock}
+                ${contentHtml}
+                <div class="msg-info">
+                    ${unreadHtml}
+                    ${!isMe?`<span class="sender">${data.sender}</span>`:''}
+                    <span class="time">${timeStr}</span>
+                    <span class="reply-btn" onclick="setReply('${docId}', '${rawText}', '${data.sender}')">↩️</span>
+                </div>
+            </div>`;
     }
 
     function scrollToBottom() { const msgBox = document.getElementById('messages'); msgBox.scrollTop = msgBox.scrollHeight; }
@@ -627,7 +709,6 @@
         if(recentImages.length === 0) previewGrid.innerHTML = '<span style="grid-column:span 3; text-align:center; color:#ccc; font-size:12px;">사진 없음</span>';
     }
 
-    // 갤러리 관련 함수
     window.openFullGallery = () => {
         showScreen('full-gallery-screen');
         if(document.getElementById('full-gallery-grid').children.length === 0) {
@@ -672,7 +753,6 @@
         }
     });
 
-    // 기타 유틸리티 및 설정 저장
     window.clearCache = () => {
         if(confirm("캐시를 삭제하면 자동 로그인 정보가 지워집니다. 진행할까요?")) {
             localStorage.clear();
@@ -684,15 +764,9 @@
         if(!confirm("⚠️ 모든 대화와 사진이 삭제됩니다. 복구 불가!\n\n동의하시겠습니까? (상대방도 동의해야 최종 삭제됩니다)")) return;
 
         try {
-            await setDoc(deleteReqRef, {
-                requestedBy: arrayUnion(myId)
-            }, { merge: true });
-            
+            await setDoc(deleteReqRef, { requestedBy: arrayUnion(myId) }, { merge: true });
             alert("삭제 요청을 보냈습니다. 상대방도 동의하면 즉시 삭제됩니다.");
-        } catch(e) {
-            console.error(e);
-            alert("요청 중 오류 발생");
-        }
+        } catch(e) { console.error(e); alert("요청 중 오류 발생"); }
     };
 
     async function performFullDeletion() {
@@ -706,23 +780,14 @@
             for (const doc of snapshot.docs) {
                 batch.delete(doc.ref);
                 count++;
-                if (count >= batchSize) {
-                    await batch.commit();
-                    batch = writeBatch(db);
-                    count = 0;
-                }
+                if (count >= batchSize) { await batch.commit(); batch = writeBatch(db); count = 0; }
             }
             if (count > 0) await batch.commit();
 
             await setDoc(deleteReqRef, { requestedBy: [] });
-            
             alert("모든 데이터가 안전하게 삭제되었습니다.");
             location.reload();
-        } catch(e) {
-            console.error(e);
-            alert("삭제 실패");
-            location.reload();
-        }
+        } catch(e) { console.error(e); alert("삭제 실패"); location.reload(); }
     }
 
     window.toggleSearch = () => { 
@@ -768,21 +833,19 @@
     window.clearCanvas = () => initCanvas();
     window.sendDrawing = () => { canvas.toBlob((blob) => { if(blob) { uploadImage(blob, true); toggleDrawingPad(); initCanvas(); } }, 'image/png'); };
 
-    // 📋 [추가됨] 이미지 붙여넣기 감지 기능
+    // 📋 [기존] 이미지 붙여넣기 기능 유지
     window.addEventListener('paste', (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         for (let i = 0; i < items.length; i++) {
             if (items[i].kind === 'file' && items[i].type.includes('image/')) {
                 const file = items[i].getAsFile();
-                if(confirm("📋 클립보드에 있는 이미지를 전송하시겠습니까?")) {
-                    uploadImage(file);
-                }
+                if(confirm("📋 클립보드에 있는 이미지를 전송하시겠습니까?")) { uploadImage(file); }
             }
         }
     });
 
     // ==========================================
-    // 🚀 [실행 시작] 자동 로그인 및 초기화
+    // 🚀 [실행 시작]
     // ==========================================
     const savedPasswordFinal = localStorage.getItem('chat_auth_pw');
     if (savedPasswordFinal === '0726') {
