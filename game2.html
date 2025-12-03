@@ -78,7 +78,7 @@
         /* 오버레이 & 메뉴 */
         #overlay, #pause-menu, #solo-menu, #vote-screen { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(255,255,255,0.98); /* 배경 불투명도 높임 */
+            background: rgba(255,255,255,0.98); 
             z-index: 100; display: flex; 
             justify-content: center; align-items: center; flex-direction: column; gap: 15px;
         }
@@ -92,10 +92,27 @@
             font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; 
             display: flex; justify-content: center; align-items: center; gap: 8px;
         }
+        .mode-btn:disabled { filter: grayscale(1); cursor: not-allowed; opacity: 0.5; box-shadow: none; }
+        
         .btn-solo { background: #a5d8ff; color: #1c7ed6; box-shadow: 0 4px 0 #74c0fc; }
         .btn-multi { background: #ffc9c9; color: #e03131; box-shadow: 0 4px 0 #ffa8a8; }
         .btn-easy { background: #b2f2bb; color: #2b8a3e; box-shadow: 0 4px 0 #8ce99a; }
         .btn-hard { background: #ff8787; color: #c92a2a; box-shadow: 0 4px 0 #fa5252; }
+        
+        /* 선택된 버튼 스타일 */
+        .btn-easy.selected { border: 3px solid #2b8a3e; transform: scale(1.05); }
+        .btn-hard.selected { border: 3px solid #c92a2a; transform: scale(1.05); }
+        .btn-easy:not(.selected), .btn-hard:not(.selected) { opacity: 0.6; }
+
+        .btn-start-game { 
+            background: #333; color: white; box-shadow: 0 4px 0 #000; 
+            margin-top: 20px; width: 260px; font-size: 18px;
+        }
+        .btn-start-game:disabled { background: #ccc; color: #888; box-shadow: none; }
+        .btn-start-game.active { background: #ff6b6b; color: white; box-shadow: 0 4px 0 #d32f2f; animation: pulse 1s infinite; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
+
         .btn-save { background: #ffe066; color: #e67700; box-shadow: 0 4px 0 #fcc419; }
         .btn-exit { background: #ced4da; color: #495057; box-shadow: 0 4px 0 #adb5bd; }
         .btn-resume { background: white; color: #555; border: 2px solid #eee; box-shadow: 0 4px 0 #ddd; }
@@ -108,7 +125,8 @@
         .vote-status { display: flex; justify-content: space-between; margin-bottom: 20px; }
         .player-status { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 45%; }
         .p-icon { font-size: 24px; background: #eee; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .p-vote { font-size: 12px; font-weight: bold; color: #888; }
+        .p-name { font-size: 13px; font-weight: bold; color: #333; }
+        .p-vote { font-size: 11px; font-weight: bold; color: #888; }
         
         .voted-easy { color: #2b8a3e; border: 3px solid #b2f2bb; background: #ebfbee; transform: scale(1.1); }
         .voted-hard { color: #c92a2a; border: 3px solid #ff8787; background: #fff5f5; transform: scale(1.1); }
@@ -169,22 +187,30 @@
 
         <div id="vote-screen">
             <h2>난이도 투표</h2>
-            <p class="sub-text">두 명의 선택이 같아야 시작!</p>
+            <p class="sub-text">둘이 같은 난이도를 고르면 시작 버튼이 켜집니다!</p>
+            
             <div class="vote-box">
                 <div class="vote-status">
                     <div class="player-status">
                         <div id="p1-icon" class="p-icon">👤</div>
+                        <span id="p1-name-display" class="p-name"></span>
                         <span id="p1-vote-text" class="p-vote">접속 대기...</span>
                     </div>
                     <div class="player-status">
                         <div id="p2-icon" class="p-icon">👤</div>
+                        <span id="p2-name-display" class="p-name"></span>
                         <span id="p2-vote-text" class="p-vote">접속 대기...</span>
                     </div>
                 </div>
-                <div class="status-msg" id="vote-msg">상대방을 기다리고 있습니다...</div>
+                <div class="status-msg" id="vote-msg">난이도를 선택하세요</div>
             </div>
-            <button class="mode-btn btn-easy" onclick="voteDifficulty('easy')">🌱 EASY</button>
-            <button class="mode-btn btn-hard" onclick="voteDifficulty('hard')">🔥 HARD</button>
+
+            <div style="display:flex; gap:10px;">
+                <button id="vote-btn-easy" class="mode-btn btn-easy" style="width:120px;" onclick="voteDifficulty('easy')">🌱 EASY</button>
+                <button id="vote-btn-hard" class="mode-btn btn-hard" style="width:120px;" onclick="voteDifficulty('hard')">🔥 HARD</button>
+            </div>
+
+            <button id="btn-start-game" class="mode-btn btn-start-game" onclick="startGameNow()" disabled>GAME START</button>
             <button class="btn-back" onclick="location.reload()">나가기</button>
         </div>
 
@@ -217,6 +243,7 @@
         const gameDocRef = doc(db, "games", "coop_tetris");
 
         let myId = localStorage.getItem('chat_uid');
+        let myName = localStorage.getItem('chat_nickname') || "익명"; 
         if(!myId) { myId = 'user_' + Date.now(); localStorage.setItem('chat_uid', myId); }
 
         const COLS = 10;
@@ -240,6 +267,7 @@
         let activePiece = null;
         let animationId = null;
 
+        // --- 🎨 [블록 정의] ---
         const SHAPES = [
             [], 
             [[1, 1, 1, 1]], [[1, 1], [1, 1]], [[0, 1, 0], [1, 1, 1]], 
@@ -271,7 +299,6 @@
             const saveData = localStorage.getItem('tetris_solo_save');
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('solo-menu').style.display = 'flex';
-            
             if(saveData) {
                 document.getElementById('has-save-msg').style.display = 'block';
                 document.getElementById('btn-resume-solo').style.display = 'flex';
@@ -284,28 +311,23 @@
             document.getElementById('solo-menu').style.display = 'none'; 
             document.getElementById('overlay').style.display = 'flex';
         };
-        
         window.startSoloNew = (diff) => {
             localStorage.removeItem('tetris_solo_save');
             gameMode = 'solo'; myRole = 'p1'; currentTurn = 'p1'; isMyTurn = true;
             difficulty = diff;
-            
             document.getElementById('solo-menu').style.display = 'none';
             resetLocalBoard(); spawnPiece(); updateGameLoop();
         };
-
         window.loadSoloGame = () => {
             const saveStr = localStorage.getItem('tetris_solo_save');
             if(!saveStr) return startSoloNew('easy');
             const save = JSON.parse(saveStr);
             board = save.board; score = save.score; level = save.level; difficulty = save.difficulty || 'easy';
             gameMode = 'solo'; myRole = 'p1'; currentTurn = 'p1'; isMyTurn = true;
-            
             updateScoreUI(); updateTurnUI();
             document.getElementById('solo-menu').style.display = 'none';
             spawnPiece(); updateGameLoop();
         };
-
         function saveGameToLocal() {
             if(gameMode !== 'solo') return;
             const data = { board: board, score: score, level: level, difficulty: difficulty, date: new Date().getTime() };
@@ -313,45 +335,39 @@
         }
 
         // ===========================================
-        // 👥 [멀티플레이 투표 시스템]
+        // 👥 [멀티플레이 투표: 픽스 버전]
         // ===========================================
         window.startMulti = async () => {
             gameMode = 'multi';
             const docSnap = await getDoc(gameDocRef);
             let data = docSnap.exists() ? docSnap.data() : null;
 
-            // ⚠️ [Fix] 기존 상태가 무엇이든 'voting'으로 강제 초기화하여 투표 화면을 띄움
+            // ⚠️ [Fix] 무조건 'voting' 상태로 리셋하고 시작
             const updatePayload = {
-                status: 'voting', // 무조건 투표 모드로 시작
-                p1Vote: null,
-                p2Vote: null,
-                score: 0,
-                level: 1,
+                status: 'voting',
+                p1Vote: null, p2Vote: null,
+                score: 0, level: 1,
                 boardStr: JSON.stringify(Array.from({length: ROWS}, () => Array(COLS).fill(0)))
             };
 
             if (!data) {
-                // 방 생성
-                updatePayload.p1 = myId;
-                updatePayload.p2 = null;
+                updatePayload.p1 = myId; updatePayload.p1Name = myName;
+                updatePayload.p2 = null; updatePayload.p2Name = "";
                 updatePayload.turn = 'p1';
                 await setDoc(gameDocRef, updatePayload);
                 myRole = 'p1';
             } else {
-                // 참가 로직
-                if (data.p1 === myId) myRole = 'p1';
-                else if (data.p2 === myId) myRole = 'p2';
-                else if (!data.p1) { updatePayload.p1 = myId; myRole = 'p1'; }
-                else if (!data.p2) { updatePayload.p2 = myId; myRole = 'p2'; }
+                if (data.p1 === myId) { myRole = 'p1'; updatePayload.p1Name = myName; } // 이름 업데이트
+                else if (data.p2 === myId) { myRole = 'p2'; updatePayload.p2Name = myName; }
+                else if (!data.p1) { updatePayload.p1 = myId; updatePayload.p1Name = myName; myRole = 'p1'; }
+                else if (!data.p2) { updatePayload.p2 = myId; updatePayload.p2Name = myName; myRole = 'p2'; }
                 
                 await updateDoc(gameDocRef, updatePayload);
             }
 
-            // 화면 전환
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('vote-screen').style.display = 'flex';
 
-            // 리스너
             onSnapshot(gameDocRef, (snap) => {
                 const d = snap.data();
                 if (!d) return;
@@ -359,18 +375,6 @@
                 // 1. 투표 화면 업데이트
                 if (d.status === 'voting') {
                     updateVoteUI(d);
-                    
-                    // 만장일치 체크 (p1이 실행)
-                    if (myRole === 'p1' && d.p1Vote && d.p2Vote && d.p1Vote === d.p2Vote) {
-                        setTimeout(() => {
-                            updateDoc(gameDocRef, { 
-                                status: 'playing', 
-                                difficulty: d.p1Vote,
-                                level: d.p1Vote === 'hard' ? 4 : 1, 
-                                score: 0
-                            });
-                        }, 1500);
-                    }
                 }
 
                 // 2. 게임 시작
@@ -397,56 +401,84 @@
             await updateDoc(gameDocRef, { [field]: vote });
         };
 
+        // [New] 게임 시작 버튼 (만장일치 시 활성화)
+        window.startGameNow = async () => {
+            // 현재 투표 상태 확인
+            const docSnap = await getDoc(gameDocRef);
+            const d = docSnap.data();
+            
+            if (d.p1Vote && d.p2Vote && d.p1Vote === d.p2Vote) {
+                await updateDoc(gameDocRef, { 
+                    status: 'playing', 
+                    difficulty: d.p1Vote,
+                    level: d.p1Vote === 'hard' ? 4 : 1, 
+                    score: 0
+                });
+            } else {
+                alert("아직 두 명의 의견이 일치하지 않았습니다!");
+            }
+        };
+
         function updateVoteUI(data) {
             const p1Text = document.getElementById('p1-vote-text');
             const p2Text = document.getElementById('p2-vote-text');
             const p1Icon = document.getElementById('p1-icon');
             const p2Icon = document.getElementById('p2-icon');
+            const p1NameDisp = document.getElementById('p1-name-display');
+            const p2NameDisp = document.getElementById('p2-name-display');
             const msg = document.getElementById('vote-msg');
+            const startBtn = document.getElementById('btn-start-game');
+
+            // 내 버튼 상태 업데이트 (시각적)
+            const myVote = myRole === 'p1' ? data.p1Vote : data.p2Vote;
+            document.getElementById('vote-btn-easy').classList.toggle('selected', myVote === 'easy');
+            document.getElementById('vote-btn-hard').classList.toggle('selected', myVote === 'hard');
 
             // P1 UI
+            p1NameDisp.innerText = data.p1Name || "Player 1";
             if(!data.p1) { p1Text.innerText = "대기 중..."; p1Icon.className = "p-icon"; }
             else if(!data.p1Vote) { p1Text.innerText = "고민 중..."; p1Icon.className = "p-icon"; }
             else { p1Text.innerText = data.p1Vote.toUpperCase(); p1Icon.className = `p-icon voted-${data.p1Vote}`; }
 
             // P2 UI
+            p2NameDisp.innerText = data.p2Name || "Player 2";
             if(!data.p2) { p2Text.innerText = "접속 대기..."; p2Icon.className = "p-icon"; }
             else if(!data.p2Vote) { p2Text.innerText = "고민 중..."; p2Icon.className = "p-icon"; }
             else { p2Text.innerText = data.p2Vote.toUpperCase(); p2Icon.className = `p-icon voted-${data.p2Vote}`; }
 
-            if(data.p1Vote && data.p2Vote) {
-                if(data.p1Vote === data.p2Vote) msg.innerText = "의견 일치! 곧 시작합니다...";
-                else msg.innerText = "서로 다른 난이도를 골랐어요!";
+            // 메시지 & 시작 버튼 제어
+            if(data.p1 && data.p2 && data.p1Vote && data.p2Vote) {
+                if(data.p1Vote === data.p2Vote) {
+                    msg.innerText = "준비 완료! 시작 버튼을 누르세요.";
+                    startBtn.disabled = false;
+                    startBtn.classList.add('active');
+                } else {
+                    msg.innerText = "서로 다른 난이도를 골랐어요!";
+                    startBtn.disabled = true;
+                    startBtn.classList.remove('active');
+                }
             } else {
-                msg.innerText = "난이도를 선택해주세요.";
+                msg.innerText = "모두 난이도를 선택해주세요.";
+                startBtn.disabled = true;
+                startBtn.classList.remove('active');
             }
         }
 
         // ===========================================
         // 🎮 [게임 메인 로직]
         // ===========================================
-        
         function spawnPiece() {
             let minIndex = 1; let maxIndex = 7;
-
             if (difficulty === 'easy') {
                 if (level >= 3 && level < 6) { maxIndex = 12; } 
                 else if (level >= 6 && level < 9) { minIndex = 1; maxIndex = 16; } 
                 else if (level >= 9) { minIndex = 8; maxIndex = SHAPES.length - 1; } 
             } else {
-                minIndex = 1; 
-                maxIndex = SHAPES.length - 1;
+                minIndex = 1; maxIndex = SHAPES.length - 1;
             }
-
             const typeId = Math.floor(Math.random() * (maxIndex - minIndex + 1)) + minIndex;
             const shape = SHAPES[typeId];
-            
-            activePiece = {
-                x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2),
-                y: 0,
-                shape: shape,
-                color: COLORS[typeId]
-            };
+            activePiece = { x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0, shape: shape, color: COLORS[typeId] };
 
             if (collision(0, 0, activePiece.shape)) {
                 gameOver = true;
@@ -479,14 +511,12 @@
                     if (by >= 0) board[by][bx] = activePiece.color;
                 }
             }
-            
             let linesCleared = 0;
             for (let r = 0; r < ROWS; r++) {
                 if (board[r].every(cell => cell !== 0)) {
                     board.splice(r, 1); board.unshift(Array(COLS).fill(0)); linesCleared++;
                 }
             }
-
             if (linesCleared > 0) {
                 score += linesCleared * 100;
                 if (difficulty === 'hard') {
@@ -536,8 +566,7 @@
         }
 
         function draw() {
-            ctx.fillStyle = '#333'; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#333'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.strokeStyle = '#444'; ctx.lineWidth = 1;
             for(let x=0; x<=COLS; x++) { ctx.beginPath(); ctx.moveTo(x*BLOCK_SIZE, 0); ctx.lineTo(x*BLOCK_SIZE, ROWS*BLOCK_SIZE); ctx.stroke(); }
             for(let y=0; y<=ROWS; y++) { ctx.beginPath(); ctx.moveTo(0, y*BLOCK_SIZE); ctx.lineTo(COLS*BLOCK_SIZE, y*BLOCK_SIZE); ctx.stroke(); }
@@ -575,7 +604,6 @@
             const threshold = difficulty === 'hard' ? 300 : 500;
             const nextLevelScore = (level - (difficulty==='hard'?3:0)) * threshold;
             document.getElementById('next-goal').innerText = `Next: ${Math.max(0, nextLevelScore - score)}`;
-            
             const badge = document.getElementById('diff-badge');
             badge.innerText = difficulty.toUpperCase();
             badge.className = `diff-badge badge-${difficulty}`;
@@ -584,7 +612,6 @@
         function resetLocalBoard() {
             board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
             score = 0;
-            
             if (difficulty === 'hard') { level = 4; dropInterval = 500; } 
             else { level = 1; dropInterval = 1000; }
             updateScoreUI();
