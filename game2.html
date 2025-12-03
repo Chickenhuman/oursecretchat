@@ -49,15 +49,15 @@
         .my-turn { background: #ff6b6b !important; color: white; transform: scale(1.02); }
         .other-turn { background: #eee !important; color: #888; }
 
-        /* 게임 보드 */
+        /* [가시성 패치] 게임 보드 배경 변경 */
         #game-container {
             flex: 1; display: flex; justify-content: center; align-items: center;
             width: 100%; overflow: hidden; margin: 5px 0;
         }
         #game-board { 
-            background: #fff; 
+            background: #333; /* 회색 배경 (가시성 확보) */
             border: 4px solid #ffccd5; border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
             max-height: 100%; max-width: 90%; height: auto; width: auto;
             aspect-ratio: 10/20; object-fit: contain;
         }
@@ -175,7 +175,6 @@
         <div id="vote-screen">
             <h2>난이도 투표</h2>
             <p class="sub-text">두 명의 선택이 같아야 시작됩니다.</p>
-            
             <div class="vote-box">
                 <div class="vote-status">
                     <div class="player-status">
@@ -189,7 +188,6 @@
                 </div>
                 <div class="status-msg" id="vote-msg">난이도를 선택하세요</div>
             </div>
-
             <button class="mode-btn btn-easy" onclick="voteDifficulty('easy')">🌱 EASY</button>
             <button class="mode-btn btn-hard" onclick="voteDifficulty('hard')">🔥 HARD</button>
             <button class="btn-back" onclick="location.reload()">나가기</button>
@@ -235,7 +233,7 @@
         let board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
         let gameMode = null; 
         let myRole = null;
-        let difficulty = 'easy'; // 'easy' or 'hard'
+        let difficulty = 'easy'; 
         let currentTurn = 'p1';
         let isMyTurn = false;
         let score = 0;
@@ -266,20 +264,19 @@
         ];
 
         const COLORS = [
-            '#ffffff', 
+            '#333333', // 0번(배경용)
             '#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff',
             '#ffc6ff', '#fffffc', '#fabfb7', '#fdf2f0', '#b9fbc0',
             '#ff9aa2', '#e2f0cb', '#b5ead7', '#c7ceea', '#f4f1de', '#e07a5f'
         ];
 
         // ===========================================
-        // 💾 [솔로 모드 시스템]
+        // 💾 [저장/로드 시스템]
         // ===========================================
         window.checkSoloSave = () => {
             const saveData = localStorage.getItem('tetris_solo_save');
-            const menu = document.getElementById('solo-menu');
             document.getElementById('overlay').style.display = 'none';
-            menu.style.display = 'flex';
+            document.getElementById('solo-menu').style.display = 'flex';
             
             if(saveData) {
                 document.getElementById('has-save-msg').style.display = 'block';
@@ -305,7 +302,7 @@
 
         window.loadSoloGame = () => {
             const saveStr = localStorage.getItem('tetris_solo_save');
-            if(!saveStr) return;
+            if(!saveStr) return startSoloNew('easy');
             const save = JSON.parse(saveStr);
             board = save.board; score = save.score; level = save.level; difficulty = save.difficulty || 'easy';
             gameMode = 'solo'; myRole = 'p1'; currentTurn = 'p1'; isMyTurn = true;
@@ -322,17 +319,40 @@
         }
 
         // ===========================================
-        // 👥 [멀티플레이 투표 시스템]
+        // ⏯️ [일시정지]
+        // ===========================================
+        window.openPauseMenu = () => {
+            if(gameOver) return;
+            isPaused = true;
+            if(animationId) cancelAnimationFrame(animationId);
+            const saveBtn = document.getElementById('btn-save-manual');
+            if(gameMode === 'multi') { saveBtn.innerText = "멀티는 자동저장됨"; saveBtn.disabled = true; saveBtn.style.opacity = "0.5"; } 
+            else { saveBtn.innerText = "저장하기"; saveBtn.disabled = false; saveBtn.style.opacity = "1"; }
+            document.getElementById('pause-menu').style.display = 'flex';
+        };
+
+        window.resumeGame = () => {
+            isPaused = false;
+            document.getElementById('pause-menu').style.display = 'none';
+            lastDropTime = Date.now();
+            updateGameLoop();
+        };
+
+        window.saveAndAlert = () => { if(gameMode === 'solo') { saveGameToLocal(); alert("게임이 저장되었습니다! 💾"); } };
+        window.saveAndExit = () => { if(gameMode === 'solo') { saveGameToLocal(); } location.href = "gamelist.html"; };
+
+        document.addEventListener('keydown', (e) => { if(e.keyCode === 27) { if(isPaused) resumeGame(); else openPauseMenu(); } });
+
+        // ===========================================
+        // 👥 [멀티플레이 투표]
         // ===========================================
         window.startMulti = async () => {
             gameMode = 'multi';
             const docSnap = await getDoc(gameDocRef);
             let data = docSnap.exists() ? docSnap.data() : null;
 
-            // 방 초기화 또는 입장
             const updatePayload = {};
             if (!data || (data.p1 && data.p2 && data.status !== 'voting' && data.status !== 'playing')) {
-                // 방 리셋
                 await setDoc(gameDocRef, {
                     p1: myId, p2: null, status: 'voting',
                     p1Vote: null, p2Vote: null,
@@ -351,31 +371,26 @@
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('vote-screen').style.display = 'flex';
 
-            // 리스너 연결
             onSnapshot(gameDocRef, (snap) => {
                 const d = snap.data();
                 if (!d) return;
 
-                // 1. 투표 화면 업데이트
                 if (d.status === 'voting') {
                     updateVoteUI(d);
-                    // 만장일치 체크 (p1이 대표로 실행)
                     if (myRole === 'p1' && d.p1Vote && d.p2Vote && d.p1Vote === d.p2Vote) {
                         setTimeout(() => {
                             updateDoc(gameDocRef, { 
                                 status: 'playing', 
                                 difficulty: d.p1Vote,
-                                level: d.p1Vote === 'hard' ? 4 : 1, // 하드는 4렙 시작
+                                level: d.p1Vote === 'hard' ? 4 : 1, 
                                 score: 0
                             });
                         }, 1500);
                     }
                 }
 
-                // 2. 게임 시작
                 if (d.status === 'playing') {
                     document.getElementById('vote-screen').style.display = 'none';
-                    // 게임 데이터 동기화
                     board = JSON.parse(d.boardStr);
                     score = d.score; level = d.level; currentTurn = d.turn;
                     difficulty = d.difficulty || 'easy';
@@ -404,7 +419,6 @@
             const p2Icon = document.getElementById('p2-icon');
             const msg = document.getElementById('vote-msg');
 
-            // P1 상태
             if(!data.p1) p1Text.innerText = "접속 대기...";
             else if(!data.p1Vote) p1Text.innerText = "고민 중...";
             else {
@@ -412,7 +426,6 @@
                 p1Icon.className = `p-icon voted-${data.p1Vote}`;
             }
 
-            // P2 상태
             if(!data.p2) p2Text.innerText = "접속 대기...";
             else if(!data.p2Vote) p2Text.innerText = "고민 중...";
             else {
@@ -420,7 +433,6 @@
                 p2Icon.className = `p-icon voted-${data.p2Vote}`;
             }
 
-            // 메시지
             if(data.p1Vote && data.p2Vote) {
                 if(data.p1Vote === data.p2Vote) msg.innerText = "의견 일치! 곧 시작합니다...";
                 else msg.innerText = "의견이 다릅니다! 통일해주세요.";
@@ -436,13 +448,12 @@
         function spawnPiece() {
             let minIndex = 1; let maxIndex = 7;
 
-            // 난이도별 블록 등장 로직
             if (difficulty === 'easy') {
-                if (level >= 3 && level < 6) { maxIndex = 12; } // 조금 이상함
-                else if (level >= 6 && level < 9) { minIndex = 1; maxIndex = 16; } // 많이 이상함
-                else if (level >= 9) { minIndex = 8; maxIndex = SHAPES.length - 1; } // 지옥
+                if (level >= 3 && level < 6) { maxIndex = 12; } 
+                else if (level >= 6 && level < 9) { minIndex = 1; maxIndex = 16; } 
+                else if (level >= 9) { minIndex = 8; maxIndex = SHAPES.length - 1; } 
             } else {
-                // 하드 모드: 시작부터 전면 개방
+                // [하드 모드] 기괴한 블록 전체 개방
                 minIndex = 1; 
                 maxIndex = SHAPES.length - 1;
             }
@@ -498,13 +509,16 @@
 
             if (linesCleared > 0) {
                 score += linesCleared * 100;
-                // 하드모드는 레벨업이 더 빠름
-                const threshold = difficulty === 'hard' ? 300 : 500; 
-                const baseLevel = difficulty === 'hard' ? 4 : 1;
-                level = baseLevel + Math.floor(score / threshold);
-                
-                // 속도 조절
-                dropInterval = Math.max(150, 1000 - (level * 100)); 
+                // [난이도별 레벨링 및 속도 조절]
+                if (difficulty === 'hard') {
+                    // 하드: 레벨업 빠름, 속도 감속 폭 큼
+                    level = 4 + Math.floor(score / 300);
+                    dropInterval = Math.max(100, 500 - ((level - 4) * 60)); // 시작 0.5s -> 0.1s까지 단축
+                } else {
+                    // 이지: 레벨업 보통, 속도 감속 완만
+                    level = 1 + Math.floor(score / 500);
+                    dropInterval = Math.max(200, 1000 - (level * 80)); // 시작 1.0s
+                }
             }
             activePiece = null; endTurn();
         }
@@ -545,9 +559,12 @@
         }
 
         function draw() {
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            // 격자
-            ctx.strokeStyle = '#f8f9fa'; ctx.lineWidth = 1;
+            // [가시성 패치] 배경을 회색으로 칠해서 흰색/파스텔 블록이 잘 보이게 함
+            ctx.fillStyle = '#333333'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 격자 (연한 회색)
+            ctx.strokeStyle = '#444444'; ctx.lineWidth = 1;
             for(let x=0; x<=COLS; x++) { ctx.beginPath(); ctx.moveTo(x*BLOCK_SIZE, 0); ctx.lineTo(x*BLOCK_SIZE, ROWS*BLOCK_SIZE); ctx.stroke(); }
             for(let y=0; y<=ROWS; y++) { ctx.beginPath(); ctx.moveTo(0, y*BLOCK_SIZE); ctx.lineTo(COLS*BLOCK_SIZE, y*BLOCK_SIZE); ctx.stroke(); }
 
@@ -565,7 +582,7 @@
 
         function drawBlock(x, y, color) {
             ctx.fillStyle = color; ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-            ctx.strokeStyle = 'rgba(0,0,0,0.05)'; ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
             ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(x * BLOCK_SIZE + 6, y * BLOCK_SIZE + 6, 2, 0, Math.PI * 2); ctx.fill();
         }
 
@@ -585,7 +602,6 @@
             const nextLevelScore = (level - (difficulty==='hard'?3:0)) * threshold;
             document.getElementById('next-goal').innerText = `Next: ${Math.max(0, nextLevelScore - score)}`;
             
-            // 배지 업데이트
             const badge = document.getElementById('diff-badge');
             badge.innerText = difficulty.toUpperCase();
             badge.className = `diff-badge badge-${difficulty}`;
@@ -594,9 +610,15 @@
         function resetLocalBoard() {
             board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
             score = 0;
-            // 하드 모드면 레벨 4부터 시작
-            level = (difficulty === 'hard') ? 4 : 1;
-            dropInterval = Math.max(150, 1000 - (level * 100));
+            
+            // [초기 속도 및 레벨 설정]
+            if (difficulty === 'hard') {
+                level = 4;
+                dropInterval = 500; // 하드: 0.5초 (빠름)
+            } else {
+                level = 1;
+                dropInterval = 1000; // 이지: 1.0초 (보통)
+            }
             updateScoreUI();
         }
 
@@ -609,26 +631,6 @@
             let dist = 0; while (!collision(0, dist + 1, activePiece.shape)) { dist++; }
             activePiece.y += dist; draw(); lockPiece(); 
         };
-
-        window.openPauseMenu = () => {
-            if(gameOver) return;
-            isPaused = true;
-            if(animationId) cancelAnimationFrame(animationId);
-            const saveBtn = document.getElementById('btn-save-manual');
-            if(gameMode === 'multi') { saveBtn.innerText = "멀티는 자동저장됨"; saveBtn.disabled = true; saveBtn.style.opacity = "0.5"; } 
-            else { saveBtn.innerText = "저장하기"; saveBtn.disabled = false; saveBtn.style.opacity = "1"; }
-            document.getElementById('pause-menu').style.display = 'flex';
-        };
-
-        window.resumeGame = () => {
-            isPaused = false;
-            document.getElementById('pause-menu').style.display = 'none';
-            lastDropTime = Date.now();
-            updateGameLoop();
-        };
-
-        window.saveAndAlert = () => { if(gameMode === 'solo') { saveGameToLocal(); alert("게임이 저장되었습니다! 💾"); } };
-        window.saveAndExit = () => { if(gameMode === 'solo') { saveGameToLocal(); } location.href = "gamelist.html"; };
 
         document.addEventListener('keydown', (e) => {
             if (!isMyTurn || isPaused) return;
