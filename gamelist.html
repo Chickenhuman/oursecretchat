@@ -4,23 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Game Arcade</title>
-<link rel="apple-touch-icon" href="icon.png">
-
-<link rel="icon" href="icon.png">
-
-<link rel="manifest" href="manifest.json">
+    
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2076/2076218.png">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2076/2076218.png">
+    <link rel="manifest" href="manifest.json">
+    
     <style>
         body { font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #f0f0f0; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; }
         
         .container { width: 100%; max-width: 450px; background: white; height: 100%; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
         
-        /* 헤더 */
+        /* 헤더 디자인 */
         .header { padding: 20px; background: #ff6b6b; color: white; text-align: center; font-weight: bold; font-size: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; position: relative; }
         .back-btn { position: absolute; left: 20px; background: none; border: none; color: white; font-size: 24px; cursor: pointer; text-decoration: none; }
 
-        /* 게임 리스트 */
+        /* 게임 리스트 영역 */
         .game-list { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
         
+        /* 게임 카드 디자인 */
         .game-card {
             background: white; border: 1px solid #eee; border-radius: 15px; padding: 20px;
             display: flex; align-items: center; gap: 15px; cursor: pointer;
@@ -33,7 +34,7 @@
         .game-title { font-weight: bold; font-size: 16px; margin-bottom: 4px; display: block; }
         .game-desc { font-size: 12px; color: #888; }
         
-        /* 준비 중 카드 */
+        /* 잠긴 카드 디자인 */
         .game-card.locked { opacity: 0.6; cursor: default; background: #f9f9f9; }
         .game-card.locked:hover { transform: none; border-color: #eee; }
 
@@ -51,8 +52,17 @@
         <a href="game1.html" class="game-card">
             <div class="game-icon">⚫</div>
             <div class="game-info">
-                <span class="game-title"> 실시간 오목</span>
-                <span class="game-desc">실시간으로 두는 오목 한 판!</span>
+                <span class="game-title">실시간 오목</span>
+                <span class="game-desc">두뇌 싸움! 오목 한 판!</span>
+            </div>
+            <span style="color:#ccc;">ᐳ</span>
+        </a>
+
+        <a href="game2.html" class="game-card">
+            <div class="game-icon">🧱</div>
+            <div class="game-info">
+                <span class="game-title">협력 턴제 테트리스</span>
+                <span class="game-desc">돌아가면서 쌓는 기괴한 블록!</span>
             </div>
             <span style="color:#ccc;">ᐳ</span>
         </a>
@@ -61,7 +71,7 @@
             <div class="game-icon">🔒</div>
             <div class="game-info">
                 <span class="game-title">준비 중...</span>
-                <span class="game-desc">다음 게임을 기대해주세요!</span>
+                <span class="game-desc">다음 업데이트를 기다려주세요!</span>
             </div>
         </div>
     </div>

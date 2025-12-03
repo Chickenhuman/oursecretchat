@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pastel Co-op Tetris</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" href="icon.png">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        /* [테마 변경] 전체적으로 파스텔 & 화이트 톤 */
+        body { 
+            font-family: 'Apple SD Gothic Neo', sans-serif; 
+            background-color: #fff5f5; /* 연분홍 배경 */
+            color: #555; margin: 0; 
+            display: flex; flex-direction: column; align-items: center; 
+            height: 100dvh; overflow: hidden; touch-action: none; 
+        }
+        
+        .main-wrapper { 
+            display: flex; flex-direction: column; align-items: center; 
+            width: 100%; max-width: 450px; height: 100%; position: relative; 
+            justify-content: space-between; padding-bottom: 20px; box-sizing: border-box;
+        }
+
+        /* 헤더 & 점수 (카드 스타일) */
+        .header { 
+            width: 90%; display: flex; justify-content: space-between; align-items: center; 
+            margin-top: 15px; padding: 10px 20px; 
+            background: white; border-radius: 20px; 
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.15); 
+            flex-shrink: 0; box-sizing: border-box;
+        }
+        .score-box { text-align: center; }
+        .label { font-size: 11px; color: #aaa; font-weight: bold; letter-spacing: 1px; }
+        .value { font-size: 20px; font-weight: bold; color: #ff6b6b; }
+        .next-goal { font-size: 10px; color: #ffb7b2; margin-top: 2px; }
+        
+        /* 일시정지 버튼 */
+        .pause-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #ff6b6b; padding: 0 10px; transition: 0.2s; }
+        .pause-btn:active { transform: scale(0.9); }
+
+        /* 턴 표시기 */
+        #turn-indicator { 
+            width: 90%; text-align: center; padding: 8px; 
+            font-weight: bold; font-size: 15px; 
+            margin: 10px 0; border-radius: 15px; 
+            transition: 0.3s; flex-shrink: 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .my-turn { background: #ff6b6b !important; color: white; transform: scale(1.02); }
+        .other-turn { background: #eee !important; color: #888; }
+
+        /* 게임 보드 (흰색 배경 + 테두리) */
+        #game-container {
+            flex: 1; display: flex; justify-content: center; align-items: center;
+            width: 100%; overflow: hidden; margin: 5px 0;
+        }
+        #game-board { 
+            background: #fff; 
+            border: 4px solid #ffccd5; border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            max-height: 100%; max-width: 90%; height: auto; width: auto;
+            aspect-ratio: 10/20; object-fit: contain;
+        }
+
+        /* 컨트롤러 (둥글둥글 스타일) */
+        .controls { display: flex; gap: 12px; width: 90%; justify-content: center; margin-bottom: 10px; flex-shrink: 0; }
+        .d-pad { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .c-btn { 
+            width: 55px; height: 55px; 
+            background: white; border: 1px solid #ffccd5; 
+            border-radius: 15px; color: #ff6b6b; 
+            font-size: 22px; font-weight: bold; 
+            box-shadow: 0 4px 0 #ffe0e6; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            transition: 0.1s;
+        }
+        .c-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #ffe0e6; background: #fff0f0; }
+        
+        .btn-drop { background: #ffeb3b; color: #f57c00; border-color: #fbc02d; box-shadow: 0 4px 0 #f9a825; } /* 아래키 */
+        .btn-rot { background: #ff6b6b; color: white; border-color: #ff5252; box-shadow: 0 4px 0 #d32f2f; width: 65px; height: 65px; border-radius: 50%; margin-left: 15px; } /* 스페이스바 */
+
+        /* 오버레이 스타일 */
+        #overlay, #pause-menu, #solo-menu { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.9); z-index: 100; display: flex; 
+            justify-content: center; align-items: center; flex-direction: column; gap: 15px;
+            backdrop-filter: blur(5px);
+        }
+        #pause-menu, #solo-menu { display: none; background: rgba(255,255,255,0.95); }
+
+        h2 { color: #ff6b6b; margin-bottom: 20px; font-size: 24px; letter-spacing: -1px; }
+
+        .mode-btn { 
+            width: 220px; padding: 15px; border: none; border-radius: 30px; 
+            font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; 
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .btn-solo { background: #a5d8ff; color: #1c7ed6; box-shadow: 0 4px 0 #74c0fc; }
+        .btn-multi { background: #ffc9c9; color: #e03131; box-shadow: 0 4px 0 #ffa8a8; }
+        .btn-save { background: #ffe066; color: #e67700; box-shadow: 0 4px 0 #fcc419; }
+        .btn-exit { background: #ced4da; color: #495057; box-shadow: 0 4px 0 #adb5bd; }
+        .btn-resume { background: white; color: #555; border: 2px solid #eee; box-shadow: 0 4px 0 #ddd; }
+        
+        .mode-btn:active { transform: translateY(4px); box-shadow: none; }
+        .btn-back { color: #aaa; margin-top: 10px; font-size: 13px; text-decoration: underline; cursor: pointer; background:none; border:none; }
+
+        #waiting-msg { color: #888; font-size: 14px; margin-top: 20px; display: none; text-align: center; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <div class="header">
+            <div class="score-box">
+                <div class="label">LEVEL</div>
+                <div class="value" id="level">1</div>
+            </div>
+            <button class="pause-btn" onclick="openPauseMenu()">⏸️</button>
+            <div class="score-box">
+                <div class="label">SCORE</div>
+                <div class="value" id="score">0</div>
+                <div class="next-goal" id="next-goal">Next: 500</div>
+            </div>
+        </div>
+
+        <div id="turn-indicator">게임 준비 중...</div>
+
+        <div id="game-container">
+            <canvas id="game-board" width="240" height="480"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="d-pad">
+                <button class="c-btn" onclick="inputLeft()">←</button>
+                <button class="c-btn btn-drop" onclick="inputDrop()">⇓</button>
+                <button class="c-btn" onclick="inputRight()">→</button>
+                <button class="c-btn" style="grid-column: 2; grid-row: 1;" onclick="inputRotate()">↻</button>
+            </div>
+            <button class="c-btn btn-rot" onclick="inputHardDrop()">🚀</button> 
+        </div>
+
+        <div id="overlay">
+            <h2>🧩 PASTEL TETRIS</h2>
+            <button class="mode-btn btn-solo" onclick="checkSoloSave()"><span>👤</span> 혼자 하기</button>
+            <button class="mode-btn btn-multi" onclick="startMulti()"><span>👥</span> 같이 하기 (2인)</button>
+            <a href="gamelist.html" class="btn-back">나가기</a>
+            <div id="waiting-msg">상대방을 기다리는 중...<br>(접속하면 자동 시작)</div>
+        </div>
+
+        <div id="solo-menu">
+            <h2 style="color:#74c0fc;">SOLO MODE</h2>
+            <div style="font-size:12px; color:#aaa; margin-bottom:10px;">저장된 게임이 있어요!</div>
+            <button class="mode-btn btn-resume" onclick="loadSoloGame()">이어하기</button>
+            <button class="mode-btn btn-solo" onclick="startSoloNew()">새로 하기</button>
+            <button class="btn-back" onclick="closeSoloMenu()">취소</button>
+        </div>
+
+        <div id="pause-menu">
+            <h2>PAUSED</h2>
+            <button class="mode-btn btn-resume" onclick="resumeGame()">계속하기</button>
+            <button class="mode-btn btn-save" id="btn-save-manual" onclick="saveAndAlert()">저장하기</button>
+            <button class="mode-btn btn-exit" onclick="saveAndExit()">저장 후 나가기</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 🔴 [필수] 본인의 firebaseConfig
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
+      authDomain: "lovechatproject-2db11.firebaseapp.com",
+      projectId: "lovechatproject-2db11",
+      storageBucket: "lovechatproject-2db11.firebasestorage.app",
+      messagingSenderId: "1069136590072",
+      appId: "1:1069136590072:web:7712e718db03c70bff370d",
+      measurementId: "G-ERG2LL283F"
+    };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const gameDocRef = doc(db, "games", "coop_tetris");
+
+        let myId = localStorage.getItem('chat_uid');
+        if(!myId) { myId = 'user_' + Date.now(); localStorage.setItem('chat_uid', myId); }
+
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 24;
+        const canvas = document.getElementById('game-board');
+        const ctx = canvas.getContext('2d');
+        
+        let board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+        let gameMode = null; 
+        let myRole = null;
+        let currentTurn = 'p1';
+        let isMyTurn = false;
+        let score = 0;
+        let level = 1;
+        let gameOver = false;
+        let isPaused = false;
+        let dropInterval = 1000;
+        let lastDropTime = 0;
+        let activePiece = null;
+        let animationId = null;
+
+        // --- 🎨 [블록 디자인] 파스텔 컬러 & 기괴한 모양 ---
+        const SHAPES = [
+            [], 
+            // [Lv 1~2] 기본 블록 (4칸)
+            [[1, 1, 1, 1]], // I
+            [[1, 1], [1, 1]], // O
+            [[0, 1, 0], [1, 1, 1]], // T
+            [[1, 0, 0], [1, 1, 1]], // L
+            [[0, 0, 1], [1, 1, 1]], // J
+            [[0, 1, 1], [1, 1, 0]], // S
+            [[1, 1, 0], [0, 1, 1]], // Z
+
+            // [Lv 3~5] 조금 이상한 블록 (3칸, 5칸)
+            [[1]], // 점 (1칸) - 구원투수!
+            [[1, 1, 1]], // 짧은 막대 (3칸)
+            [[1, 1], [1, 0]], // 작은 ㄱ (3칸)
+            [[1, 1, 1, 1, 1]], // 긴 막대 (5칸)
+            [[0, 1, 0], [1, 1, 1], [0, 1, 0]], // 십자가 (5칸)
+
+            // [Lv 6+] ❤️ 말도 안 되는 블록들 (하트, 사람 등)
+            [[1, 0, 1], [1, 1, 1], [0, 1, 0]], // ❤️ 하트 모양
+            [[0, 1, 0], [1, 1, 1], [1, 0, 1]], // 🏃 사람 모양 (졸라맨)
+            [[1, 1, 1, 1], [1, 0, 0, 0]], // 🔫 총 모양
+            [[1, 0, 1], [0, 1, 0], [1, 0, 1]], // X 모양
+            [[1, 1, 1], [1, 0, 1], [1, 1, 1]], // ㅁ (가운데 빎) - 최악의 블록
+            [[1, 0, 0], [0, 1, 0], [0, 0, 1]]  // 대각선 3칸
+        ];
+
+        // 파스텔 톤 색상 팔레트
+        const COLORS = [
+            '#ffffff', // 배경 (사용안함)
+            '#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', // 기본 7색 (파스텔)
+            '#ffc6ff', '#fffffc', '#fabfb7', '#fdf2f0', '#b9fbc0', // 추가 색상
+            '#ff9aa2', '#e2f0cb', '#b5ead7', '#c7ceea', '#f4f1de', '#e07a5f'
+        ];
+
+        // ===========================================
+        // 💾 [저장/로드 시스템]
+        // ===========================================
+        window.checkSoloSave = () => {
+            const saveData = localStorage.getItem('tetris_solo_save');
+            if(saveData) { document.getElementById('solo-menu').style.display = 'flex'; } 
+            else { startSoloNew(); }
+        };
+        window.closeSoloMenu = () => { document.getElementById('solo-menu').style.display = 'none'; };
+        
+        window.startSoloNew = () => {
+            localStorage.removeItem('tetris_solo_save');
+            gameMode = 'solo'; myRole = 'p1'; currentTurn = 'p1'; isMyTurn = true;
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('solo-menu').style.display = 'none';
+            resetLocalBoard(); spawnPiece(); updateGameLoop();
+        };
+
+        window.loadSoloGame = () => {
+            const saveStr = localStorage.getItem('tetris_solo_save');
+            if(!saveStr) return startSoloNew();
+            const save = JSON.parse(saveStr);
+            board = save.board; score = save.score; level = save.level;
+            gameMode = 'solo'; myRole = 'p1'; currentTurn = 'p1'; isMyTurn = true;
+            updateScoreUI(); updateTurnUI();
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('solo-menu').style.display = 'none';
+            spawnPiece(); updateGameLoop();
+        };
+
+        function saveGameToLocal() {
+            if(gameMode !== 'solo') return;
+            const data = { board: board, score: score, level: level, date: new Date().getTime() };
+            localStorage.setItem('tetris_solo_save', JSON.stringify(data));
+        }
+
+        // ===========================================
+        // ⏯️ [일시정지]
+        // ===========================================
+        window.openPauseMenu = () => {
+            if(gameOver) return;
+            isPaused = true;
+            if(animationId) cancelAnimationFrame(animationId);
+            const saveBtn = document.getElementById('btn-save-manual');
+            if(gameMode === 'multi') { saveBtn.innerText = "멀티는 자동저장됨"; saveBtn.disabled = true; saveBtn.style.opacity = "0.5"; } 
+            else { saveBtn.innerText = "저장하기"; saveBtn.disabled = false; saveBtn.style.opacity = "1"; }
+            document.getElementById('pause-menu').style.display = 'flex';
+        };
+
+        window.resumeGame = () => {
+            isPaused = false;
+            document.getElementById('pause-menu').style.display = 'none';
+            lastDropTime = Date.now();
+            updateGameLoop();
+        };
+
+        window.saveAndAlert = () => { if(gameMode === 'solo') { saveGameToLocal(); alert("게임이 저장되었습니다! 💾"); } };
+        window.saveAndExit = () => { if(gameMode === 'solo') { saveGameToLocal(); } location.href = "gamelist.html"; };
+
+        document.addEventListener('keydown', (e) => { if(e.keyCode === 27) { if(isPaused) resumeGame(); else openPauseMenu(); } });
+
+        // ===========================================
+        // 🎮 [게임 로직]
+        // ===========================================
+        window.startMulti = async () => {
+            gameMode = 'multi';
+            const docSnap = await getDoc(gameDocRef);
+            let data = docSnap.exists() ? docSnap.data() : null;
+
+            if (!data || (data.p1 && data.p2)) { 
+                await setDoc(gameDocRef, {
+                    p1: myId, p2: null, 
+                    boardStr: JSON.stringify(Array.from({length: ROWS}, () => Array(COLS).fill(0))),
+                    turn: 'p1', score: 0, level: 1, status: 'waiting'
+                });
+                myRole = 'p1';
+                document.getElementById('waiting-msg').style.display = 'block';
+            } else if (!data.p1) {
+                await updateDoc(gameDocRef, { p1: myId });
+                myRole = 'p1';
+                document.getElementById('waiting-msg').style.display = 'block';
+            } else if (!data.p2) {
+                if (data.p1 === myId) { myRole = 'p1'; } 
+                else {
+                    await updateDoc(gameDocRef, { p2: myId, status: 'playing' });
+                    myRole = 'p2';
+                }
+            }
+
+            onSnapshot(gameDocRef, (snap) => {
+                const d = snap.data();
+                if (!d) return;
+                if (d.status === 'waiting') { if (d.p1 && d.p2) { updateDoc(gameDocRef, { status: 'playing' }); } return; }
+                if (d.status === 'playing') {
+                    document.getElementById('overlay').style.display = 'none';
+                    board = JSON.parse(d.boardStr);
+                    score = d.score; level = d.level; currentTurn = d.turn;
+                    updateScoreUI(); isMyTurn = (currentTurn === myRole); updateTurnUI();
+                    if (isMyTurn && !activePiece) {
+                        spawnPiece(); lastDropTime = Date.now(); if (!animationId) updateGameLoop();
+                    } else if (!isMyTurn) {
+                        if (animationId) cancelAnimationFrame(animationId);
+                        animationId = null; activePiece = null; draw(); 
+                    }
+                }
+            });
+        };
+
+        function spawnPiece() {
+            let minIndex = 1; let maxIndex = 7;
+            // 레벨별 등장 블록 범위 확장
+            if (level >= 2 && level < 4) { maxIndex = 12; } // 점, 펜토미노
+            else if (level >= 4) { maxIndex = SHAPES.length - 1; } // 하트, 사람 등 전면 개방
+
+            const typeId = Math.floor(Math.random() * (maxIndex - minIndex + 1)) + minIndex;
+            const shape = SHAPES[typeId];
+            
+            activePiece = {
+                x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2),
+                y: 0,
+                shape: shape,
+                color: COLORS[typeId]
+            };
+
+            if (collision(0, 0, activePiece.shape)) {
+                gameOver = true;
+                alert("GAME OVER! 점수: " + score);
+                if (gameMode === 'multi') { setDoc(gameDocRef, { p1: null, p2: null, status: 'waiting' }); }
+                localStorage.removeItem('tetris_solo_save');
+                location.reload();
+            }
+        }
+
+        function collision(offsetX, offsetY, pieceShape) {
+            for (let r = 0; r < pieceShape.length; r++) {
+                for (let c = 0; c < pieceShape[r].length; c++) {
+                    if (!pieceShape[r][c]) continue;
+                    let newX = activePiece.x + c + offsetX;
+                    let newY = activePiece.y + r + offsetY;
+                    if (newX < 0 || newX >= COLS || newY >= ROWS) return true;
+                    if (newY < 0) continue;
+                    if (board[newY][newX]) return true;
+                }
+            }
+            return false;
+        }
+
+        function lockPiece() {
+            for (let r = 0; r < activePiece.shape.length; r++) {
+                for (let c = 0; c < activePiece.shape[r].length; c++) {
+                    if (!activePiece.shape[r][c]) continue;
+                    let by = activePiece.y + r; let bx = activePiece.x + c;
+                    if (by >= 0) board[by][bx] = activePiece.color;
+                }
+            }
+            
+            let linesCleared = 0;
+            for (let r = 0; r < ROWS; r++) {
+                if (board[r].every(cell => cell !== 0)) {
+                    board.splice(r, 1); board.unshift(Array(COLS).fill(0)); linesCleared++;
+                }
+            }
+
+            if (linesCleared > 0) {
+                score += linesCleared * 100;
+                level = Math.floor(score / 500) + 1;
+                dropInterval = Math.max(200, 1000 - (level * 100));
+            }
+            activePiece = null; endTurn();
+        }
+
+        async function endTurn() {
+            if (gameMode === 'solo') { updateScoreUI(); spawnPiece(); } 
+            else {
+                const nextTurn = currentTurn === 'p1' ? 'p2' : 'p1';
+                isMyTurn = false; updateTurnUI();
+                await updateDoc(gameDocRef, { boardStr: JSON.stringify(board), score: score, level: level, turn: nextTurn });
+            }
+        }
+
+        function updateGameLoop() {
+            if (isPaused) return;
+            if (!isMyTurn && gameMode === 'multi') return;
+            if (gameOver) return;
+            const now = Date.now();
+            if (now - lastDropTime > dropInterval) { movePiece(0, 1); lastDropTime = now; }
+            draw();
+            animationId = requestAnimationFrame(updateGameLoop);
+        }
+
+        function movePiece(dx, dy) {
+            if (!activePiece) return;
+            if (!collision(dx, dy, activePiece.shape)) { activePiece.x += dx; activePiece.y += dy; } 
+            else if (dy > 0) { lockPiece(); }
+        }
+
+        function rotatePiece() {
+            if (!activePiece) return;
+            const matrix = activePiece.shape;
+            const N = matrix.length; const M = matrix[0].length;
+            let result = Array.from({length: M}, () => Array(N).fill(0));
+            for (let i = 0; i < N; i++) { for (let j = 0; j < M; j++) { result[j][N - 1 - i] = matrix[i][j]; } }
+            if (!collision(0, 0, result)) { activePiece.shape = result; } 
+            else { if (!collision(-1, 0, result)) { activePiece.x -= 1; activePiece.shape = result; } else if (!collision(1, 0, result)) { activePiece.x += 1; activePiece.shape = result; } }
+        }
+
+        function draw() {
+            // 배경을 파스텔 화이트로 채움 (잔상 제거)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 격자 무늬 그리기 (선택)
+            drawGrid();
+
+            // 쌓인 블록
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[r][c]) { drawBlock(c, r, board[r][c]); }
+                }
+            }
+
+            // 고스트 블록
+            if (activePiece) {
+                let ghostY = activePiece.y;
+                while (!collision(0, ghostY - activePiece.y + 1, activePiece.shape)) { ghostY++; }
+                ctx.globalAlpha = 0.2; // 투명하게
+                for (let r = 0; r < activePiece.shape.length; r++) {
+                    for (let c = 0; c < activePiece.shape[r].length; c++) {
+                        if (activePiece.shape[r][c]) { drawBlock(activePiece.x + c, ghostY + r, activePiece.color); }
+                    }
+                }
+                ctx.globalAlpha = 1.0; 
+
+                // 현재 블록
+                for (let r = 0; r < activePiece.shape.length; r++) {
+                    for (let c = 0; c < activePiece.shape[r].length; c++) {
+                        if (activePiece.shape[r][c]) { drawBlock(activePiece.x + c, activePiece.y + r, activePiece.color); }
+                    }
+                }
+            }
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = '#f8f9fa';
+            ctx.lineWidth = 1;
+            for(let x = 0; x <= COLS; x++) {
+                ctx.beginPath(); ctx.moveTo(x*BLOCK_SIZE, 0); ctx.lineTo(x*BLOCK_SIZE, ROWS*BLOCK_SIZE); ctx.stroke();
+            }
+            for(let y = 0; y <= ROWS; y++) {
+                ctx.beginPath(); ctx.moveTo(0, y*BLOCK_SIZE); ctx.lineTo(COLS*BLOCK_SIZE, y*BLOCK_SIZE); ctx.stroke();
+            }
+        }
+
+        function drawBlock(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            
+            // 파스텔 톤에 어울리는 부드러운 테두리
+            ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+            ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            
+            // 귀여운 하이라이트 (둥글게)
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.beginPath();
+            ctx.arc(x * BLOCK_SIZE + 6, y * BLOCK_SIZE + 6, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function updateTurnUI() {
+            const ind = document.getElementById('turn-indicator');
+            if (gameMode === 'solo') { ind.innerText = "SOLO MODE"; ind.className = 'my-turn'; } 
+            else {
+                if (isMyTurn) { ind.innerText = "👉 당신 차례! (MOVE!)"; ind.className = 'my-turn'; } 
+                else { ind.innerText = "✋ 상대방 차례 (WAIT)"; ind.className = 'other-turn'; }
+            }
+        }
+
+        function updateScoreUI() {
+            document.getElementById('score').innerText = score;
+            document.getElementById('level').innerText = level;
+            const nextLevelScore = level * 500;
+            document.getElementById('next-goal').innerText = `Next: ${nextLevelScore - score}`;
+        }
+
+        function resetLocalBoard() {
+            board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+            score = 0; level = 1;
+            updateScoreUI();
+        }
+
+        window.inputLeft = () => { if(isMyTurn && !isPaused) movePiece(-1, 0); };
+        window.inputRight = () => { if(isMyTurn && !isPaused) movePiece(1, 0); };
+        window.inputDrop = () => { if(isMyTurn && !isPaused) movePiece(0, 1); }; 
+        window.inputRotate = () => { if(isMyTurn && !isPaused) rotatePiece(); };
+        window.inputHardDrop = () => { 
+            if(!isMyTurn || !activePiece || isPaused) return;
+            let dist = 0;
+            while (!collision(0, dist + 1, activePiece.shape)) { dist++; }
+            activePiece.y += dist; draw(); lockPiece(); 
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (!isMyTurn || isPaused) return;
+            if (e.keyCode === 37) inputLeft();
+            else if (e.keyCode === 39) inputRight();
+            else if (e.keyCode === 40) inputDrop();
+            else if (e.keyCode === 38) inputRotate();
+            else if (e.keyCode === 32) { e.preventDefault(); inputHardDrop(); }
+        });
+    </script>
+</body>
+</html>
