@@ -75,20 +75,20 @@
         .btn-drop { background: #ffeb3b; color: #f57c00; border-color: #fbc02d; box-shadow: 0 4px 0 #f9a825; }
         .btn-rot { background: #ff6b6b; color: white; border-color: #ff5252; box-shadow: 0 4px 0 #d32f2f; width: 65px; height: 65px; border-radius: 50%; margin-left: 15px; }
 
-        /* 오버레이 & 메뉴 */
-        #overlay, #pause-menu, #solo-menu, #vote-screen { 
+        /* 오버레이 & 메뉴 공통 */
+        #overlay, #pause-menu, #solo-menu, #vote-screen, #game-over-screen, #ranking-screen { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(255,255,255,0.98); 
             z-index: 100; display: flex; 
-            justify-content: center; align-items: center; flex-direction: column; gap: 15px;
+            justify-content: center; align-items: center; flex-direction: column; gap: 12px;
         }
-        #pause-menu, #solo-menu, #vote-screen { display: none; }
+        #pause-menu, #solo-menu, #vote-screen, #game-over-screen, #ranking-screen { display: none; }
 
         h2 { color: #ff6b6b; margin-bottom: 10px; font-size: 24px; letter-spacing: -1px; text-align: center; }
-        .sub-text { font-size: 13px; color: #888; margin-bottom: 20px; text-align: center; }
+        .sub-text { font-size: 13px; color: #888; margin-bottom: 15px; text-align: center; }
 
         .mode-btn { 
-            width: 240px; padding: 15px; border: none; border-radius: 30px; 
+            width: 240px; padding: 12px; border: none; border-radius: 30px; 
             font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; 
             display: flex; justify-content: center; align-items: center; gap: 8px;
         }
@@ -96,29 +96,33 @@
         
         .btn-solo { background: #a5d8ff; color: #1c7ed6; box-shadow: 0 4px 0 #74c0fc; }
         .btn-multi { background: #ffc9c9; color: #e03131; box-shadow: 0 4px 0 #ffa8a8; }
+        .btn-rank { background: #ffd43b; color: #e67700; box-shadow: 0 4px 0 #fcc419; }
         .btn-easy { background: #b2f2bb; color: #2b8a3e; box-shadow: 0 4px 0 #8ce99a; }
         .btn-hard { background: #ff8787; color: #c92a2a; box-shadow: 0 4px 0 #fa5252; }
-        
-        /* 선택된 버튼 스타일 */
-        .btn-easy.selected { border: 3px solid #2b8a3e; transform: scale(1.05); }
-        .btn-hard.selected { border: 3px solid #c92a2a; transform: scale(1.05); }
-        .btn-easy:not(.selected), .btn-hard:not(.selected) { opacity: 0.6; }
-
-        .btn-start-game { 
-            background: #333; color: white; box-shadow: 0 4px 0 #000; 
-            margin-top: 20px; width: 260px; font-size: 18px;
-        }
-        .btn-start-game:disabled { background: #ccc; color: #888; box-shadow: none; }
-        .btn-start-game.active { background: #ff6b6b; color: white; box-shadow: 0 4px 0 #d32f2f; animation: pulse 1s infinite; }
-
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
-
         .btn-save { background: #ffe066; color: #e67700; box-shadow: 0 4px 0 #fcc419; }
         .btn-exit { background: #ced4da; color: #495057; box-shadow: 0 4px 0 #adb5bd; }
         .btn-resume { background: white; color: #555; border: 2px solid #eee; box-shadow: 0 4px 0 #ddd; }
         
         .mode-btn:active { transform: translateY(4px); box-shadow: none; }
-        .btn-back { color: #aaa; margin-top: 10px; font-size: 13px; text-decoration: underline; cursor: pointer; background:none; border:none; }
+        .btn-back { color: #aaa; margin-top: 5px; font-size: 13px; text-decoration: underline; cursor: pointer; background:none; border:none; }
+
+        /* 랭킹 스타일 */
+        .rank-list { width: 85%; max-height: 300px; overflow-y: auto; background: white; border-radius: 15px; padding: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .rank-item { display: flex; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; font-size: 14px; align-items: center; }
+        .rank-item:last-child { border-bottom: none; }
+        .rank-rank { width: 25px; font-weight: bold; color: #888; }
+        .rank-name { flex: 1; text-align: left; font-weight: bold; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .rank-score { font-weight: bold; color: #ff6b6b; }
+        .rank-mode { font-size: 10px; background: #eee; padding: 2px 5px; border-radius: 4px; margin-right: 5px; color: #666; }
+        
+        .rank-1 .rank-rank { color: #ffd700; font-size: 18px; } /* 금 */
+        .rank-2 .rank-rank { color: #c0c0c0; font-size: 16px; } /* 은 */
+        .rank-3 .rank-rank { color: #cd7f32; font-size: 16px; } /* 동 */
+
+        /* 게임 오버 점수판 */
+        .result-box { background: white; padding: 20px; border-radius: 20px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-bottom: 20px; width: 80%; }
+        .result-score { font-size: 32px; font-weight: bold; color: #ff6b6b; margin: 10px 0; }
+        .result-label { color: #aaa; font-size: 12px; }
 
         /* 투표 화면 스타일 */
         .vote-box { background: white; padding: 20px; border-radius: 20px; width: 85%; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
@@ -127,11 +131,14 @@
         .p-icon { font-size: 24px; background: #eee; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         .p-name { font-size: 13px; font-weight: bold; color: #333; }
         .p-vote { font-size: 11px; font-weight: bold; color: #888; }
-        
         .voted-easy { color: #2b8a3e; border: 3px solid #b2f2bb; background: #ebfbee; transform: scale(1.1); }
         .voted-hard { color: #c92a2a; border: 3px solid #ff8787; background: #fff5f5; transform: scale(1.1); }
         
-        .status-msg { text-align: center; color: #ff6b6b; font-weight: bold; margin-top: 10px; font-size: 14px; min-height: 20px;}
+        /* 시작 버튼 */
+        .btn-start-game { background: #333; color: white; box-shadow: 0 4px 0 #000; margin-top: 20px; width: 260px; font-size: 18px; }
+        .btn-start-game:disabled { background: #ccc; color: #888; box-shadow: none; }
+        .btn-start-game.active { background: #ff6b6b; color: white; box-shadow: 0 4px 0 #d32f2f; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -171,6 +178,7 @@
             <h2>🧩 PASTEL TETRIS</h2>
             <button class="mode-btn btn-solo" onclick="checkSoloSave()"><span>👤</span> 혼자 하기</button>
             <button class="mode-btn btn-multi" onclick="startMulti()"><span>👥</span> 같이 하기 (2인)</button>
+            <button class="mode-btn btn-rank" onclick="openRanking()"><span>🏆</span> 랭킹 보기</button>
             <a href="gamelist.html" class="btn-back">나가기</a>
         </div>
 
@@ -188,7 +196,6 @@
         <div id="vote-screen">
             <h2>난이도 투표</h2>
             <p class="sub-text">둘이 같은 난이도를 고르면 시작 버튼이 켜집니다!</p>
-            
             <div class="vote-box">
                 <div class="vote-status">
                     <div class="player-status">
@@ -204,12 +211,10 @@
                 </div>
                 <div class="status-msg" id="vote-msg">난이도를 선택하세요</div>
             </div>
-
             <div style="display:flex; gap:10px;">
                 <button id="vote-btn-easy" class="mode-btn btn-easy" style="width:120px;" onclick="voteDifficulty('easy')">🌱 EASY</button>
                 <button id="vote-btn-hard" class="mode-btn btn-hard" style="width:120px;" onclick="voteDifficulty('hard')">🔥 HARD</button>
             </div>
-
             <button id="btn-start-game" class="mode-btn btn-start-game" onclick="startGameNow()" disabled>GAME START</button>
             <button class="btn-back" onclick="location.reload()">나가기</button>
         </div>
@@ -220,11 +225,31 @@
             <button class="mode-btn btn-save" id="btn-save-manual" onclick="saveAndAlert()">저장하기</button>
             <button class="mode-btn btn-exit" onclick="saveAndExit()">저장 후 나가기</button>
         </div>
+
+        <div id="game-over-screen">
+            <h2>☠️ GAME OVER</h2>
+            <div class="result-box">
+                <div class="result-label">FINAL SCORE</div>
+                <div class="result-score" id="final-score">0</div>
+                <div class="result-label" id="final-mode">SOLO - EASY</div>
+            </div>
+            <button id="btn-save-rank" class="mode-btn btn-save" onclick="saveRankToDB()">📝 랭킹에 저장하기</button>
+            <button class="mode-btn btn-solo" onclick="location.reload()">🔄 다시 하기</button>
+            <a href="gamelist.html" class="btn-back">나가기</a>
+        </div>
+
+        <div id="ranking-screen">
+            <h2>🏆 Hall of Fame</h2>
+            <div id="ranking-list" class="rank-list">
+                <div style="text-align:center; padding:20px; color:#aaa;">로딩 중...</div>
+            </div>
+            <button class="btn-back" onclick="closeRanking()">닫기</button>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc } 
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // 🔴 [필수] 본인의 firebaseConfig
@@ -241,9 +266,10 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const gameDocRef = doc(db, "games", "coop_tetris");
+        const rankColRef = collection(db, "tetris_rankings");
 
         let myId = localStorage.getItem('chat_uid');
-        let myName = localStorage.getItem('chat_nickname') || "익명"; 
+        let myName = localStorage.getItem('chat_nickname') || "익명";
         if(!myId) { myId = 'user_' + Date.now(); localStorage.setItem('chat_uid', myId); }
 
         const COLS = 10;
@@ -293,12 +319,92 @@
         ];
 
         // ===========================================
+        // 🏆 [랭킹 시스템]
+        // ===========================================
+        window.openRanking = async () => {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('ranking-screen').style.display = 'flex';
+            
+            const list = document.getElementById('ranking-list');
+            list.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">로딩 중...</div>';
+
+            try {
+                const q = query(rankColRef, orderBy("score", "desc"), limit(20));
+                const querySnapshot = await getDocs(q);
+                list.innerHTML = "";
+                
+                let rank = 1;
+                querySnapshot.forEach((doc) => {
+                    const d = doc.data();
+                    const rankClass = rank <= 3 ? `rank-${rank}` : '';
+                    list.innerHTML += `
+                        <div class="rank-item ${rankClass}">
+                            <div class="rank-rank">${rank}</div>
+                            <div class="rank-name">
+                                <span class="rank-mode">${d.mode}</span>
+                                ${d.name}
+                            </div>
+                            <div class="rank-score">${d.score}</div>
+                        </div>`;
+                    rank++;
+                });
+
+                if(rank === 1) list.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">아직 기록이 없습니다.</div>';
+
+            } catch(e) {
+                console.error(e);
+                list.innerHTML = '<div style="text-align:center; color:red;">랭킹 로드 실패</div>';
+            }
+        };
+
+        window.closeRanking = () => {
+            document.getElementById('ranking-screen').style.display = 'none';
+            document.getElementById('overlay').style.display = 'flex';
+        };
+
+        window.saveRankToDB = async () => {
+            if(score <= 0) return alert("0점은 저장할 수 없습니다!");
+            const btn = document.getElementById('btn-save-rank');
+            btn.disabled = true;
+            btn.innerText = "저장 중...";
+
+            try {
+                await addDoc(rankColRef, {
+                    name: myName,
+                    score: score,
+                    level: level,
+                    mode: gameMode === 'solo' ? `Solo(${difficulty.toUpperCase()})` : `Co-op`,
+                    date: serverTimestamp()
+                });
+                alert("랭킹에 등록되었습니다! 🏆");
+                openRanking(); // 저장 후 랭킹 보여주기
+                document.getElementById('game-over-screen').style.display = 'none';
+            } catch(e) {
+                alert("저장 실패: " + e.message);
+                btn.disabled = false;
+                btn.innerText = "📝 랭킹에 저장하기";
+            }
+        };
+
+        function showGameOverScreen() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('game-over-screen').style.display = 'flex';
+            document.getElementById('final-score').innerText = score;
+            const modeText = gameMode === 'solo' ? `SOLO - ${difficulty.toUpperCase()}` : `MULTI - ${difficulty.toUpperCase()}`;
+            document.getElementById('final-mode').innerText = modeText;
+            
+            // 멀티모드거나 점수 없으면 저장 버튼 숨기기 (선택 사항)
+            // 여기선 멀티도 저장 가능하게 열어둠
+        }
+
+        // ===========================================
         // 💾 [솔로 모드 시스템]
         // ===========================================
         window.checkSoloSave = () => {
             const saveData = localStorage.getItem('tetris_solo_save');
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('solo-menu').style.display = 'flex';
+            
             if(saveData) {
                 document.getElementById('has-save-msg').style.display = 'block';
                 document.getElementById('btn-resume-solo').style.display = 'flex';
@@ -311,23 +417,28 @@
             document.getElementById('solo-menu').style.display = 'none'; 
             document.getElementById('overlay').style.display = 'flex';
         };
+        
         window.startSoloNew = (diff) => {
             localStorage.removeItem('tetris_solo_save');
             gameMode = 'solo'; myRole = 'p1'; currentTurn = 'p1'; isMyTurn = true;
             difficulty = diff;
+            
             document.getElementById('solo-menu').style.display = 'none';
             resetLocalBoard(); spawnPiece(); updateGameLoop();
         };
+
         window.loadSoloGame = () => {
             const saveStr = localStorage.getItem('tetris_solo_save');
             if(!saveStr) return startSoloNew('easy');
             const save = JSON.parse(saveStr);
             board = save.board; score = save.score; level = save.level; difficulty = save.difficulty || 'easy';
             gameMode = 'solo'; myRole = 'p1'; currentTurn = 'p1'; isMyTurn = true;
+            
             updateScoreUI(); updateTurnUI();
             document.getElementById('solo-menu').style.display = 'none';
             spawnPiece(); updateGameLoop();
         };
+
         function saveGameToLocal() {
             if(gameMode !== 'solo') return;
             const data = { board: board, score: score, level: level, difficulty: difficulty, date: new Date().getTime() };
@@ -342,7 +453,6 @@
             const docSnap = await getDoc(gameDocRef);
             let data = docSnap.exists() ? docSnap.data() : null;
 
-            // ⚠️ [Fix] 무조건 'voting' 상태로 리셋하고 시작
             const updatePayload = {
                 status: 'voting',
                 p1Vote: null, p2Vote: null,
@@ -357,7 +467,7 @@
                 await setDoc(gameDocRef, updatePayload);
                 myRole = 'p1';
             } else {
-                if (data.p1 === myId) { myRole = 'p1'; updatePayload.p1Name = myName; } // 이름 업데이트
+                if (data.p1 === myId) { myRole = 'p1'; updatePayload.p1Name = myName; } 
                 else if (data.p2 === myId) { myRole = 'p2'; updatePayload.p2Name = myName; }
                 else if (!data.p1) { updatePayload.p1 = myId; updatePayload.p1Name = myName; myRole = 'p1'; }
                 else if (!data.p2) { updatePayload.p2 = myId; updatePayload.p2Name = myName; myRole = 'p2'; }
@@ -372,12 +482,10 @@
                 const d = snap.data();
                 if (!d) return;
 
-                // 1. 투표 화면 업데이트
                 if (d.status === 'voting') {
                     updateVoteUI(d);
                 }
 
-                // 2. 게임 시작
                 if (d.status === 'playing') {
                     document.getElementById('vote-screen').style.display = 'none';
                     board = JSON.parse(d.boardStr);
@@ -401,9 +509,7 @@
             await updateDoc(gameDocRef, { [field]: vote });
         };
 
-        // [New] 게임 시작 버튼 (만장일치 시 활성화)
         window.startGameNow = async () => {
-            // 현재 투표 상태 확인
             const docSnap = await getDoc(gameDocRef);
             const d = docSnap.data();
             
@@ -429,24 +535,20 @@
             const msg = document.getElementById('vote-msg');
             const startBtn = document.getElementById('btn-start-game');
 
-            // 내 버튼 상태 업데이트 (시각적)
             const myVote = myRole === 'p1' ? data.p1Vote : data.p2Vote;
             document.getElementById('vote-btn-easy').classList.toggle('selected', myVote === 'easy');
             document.getElementById('vote-btn-hard').classList.toggle('selected', myVote === 'hard');
 
-            // P1 UI
             p1NameDisp.innerText = data.p1Name || "Player 1";
             if(!data.p1) { p1Text.innerText = "대기 중..."; p1Icon.className = "p-icon"; }
             else if(!data.p1Vote) { p1Text.innerText = "고민 중..."; p1Icon.className = "p-icon"; }
             else { p1Text.innerText = data.p1Vote.toUpperCase(); p1Icon.className = `p-icon voted-${data.p1Vote}`; }
 
-            // P2 UI
             p2NameDisp.innerText = data.p2Name || "Player 2";
             if(!data.p2) { p2Text.innerText = "접속 대기..."; p2Icon.className = "p-icon"; }
             else if(!data.p2Vote) { p2Text.innerText = "고민 중..."; p2Icon.className = "p-icon"; }
             else { p2Text.innerText = data.p2Vote.toUpperCase(); p2Icon.className = `p-icon voted-${data.p2Vote}`; }
 
-            // 메시지 & 시작 버튼 제어
             if(data.p1 && data.p2 && data.p1Vote && data.p2Vote) {
                 if(data.p1Vote === data.p2Vote) {
                     msg.innerText = "준비 완료! 시작 버튼을 누르세요.";
@@ -482,10 +584,10 @@
 
             if (collision(0, 0, activePiece.shape)) {
                 gameOver = true;
-                alert("GAME OVER! 점수: " + score);
                 if (gameMode === 'multi') { setDoc(gameDocRef, { p1: null, p2: null, status: 'voting', p1Vote:null, p2Vote:null }); }
                 localStorage.removeItem('tetris_solo_save');
-                location.reload();
+                // 기존 reload 대신 게임 오버 화면 호출
+                showGameOverScreen();
             }
         }
 
@@ -614,6 +716,7 @@
             score = 0;
             if (difficulty === 'hard') { level = 4; dropInterval = 500; } 
             else { level = 1; dropInterval = 1000; }
+            gameOver = false; // 게임오버 초기화
             updateScoreUI();
         }
 
