@@ -237,7 +237,7 @@
             </div>
 
             <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃 (자동로그인 해제)</span></div>
-            <div class="version-info">Ver 1.71 (25/12/2 14:06)</div>
+            <div class="version-info">Ver 1.72 (Copy & Paste Added)</div>
         </div>
     </div>
 
@@ -767,6 +767,19 @@
     window.toggleDrawingPad = () => { const m = document.getElementById('drawing-modal'); if(m.style.display !== 'flex') { m.style.display = 'flex'; } else { m.style.display = 'none'; } };
     window.clearCanvas = () => initCanvas();
     window.sendDrawing = () => { canvas.toBlob((blob) => { if(blob) { uploadImage(blob, true); toggleDrawingPad(); initCanvas(); } }, 'image/png'); };
+
+    // 📋 [추가됨] 이미지 붙여넣기 감지 기능
+    window.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file' && items[i].type.includes('image/')) {
+                const file = items[i].getAsFile();
+                if(confirm("📋 클립보드에 있는 이미지를 전송하시겠습니까?")) {
+                    uploadImage(file);
+                }
+            }
+        }
+    });
 
     // ==========================================
     // 🚀 [실행 시작] 자동 로그인 및 초기화
