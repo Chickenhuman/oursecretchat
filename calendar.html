@@ -48,19 +48,16 @@
         .today { background: #fff5f5; border: 1px solid #ff6b6b; }
         .other-month { opacity: 0.3; pointer-events: none; }
         
-        /* [수정됨] 일정 표시 (말줄임표 적용) */
+        /* 일정 표시 (말줄임표 적용) */
         .event-dot { 
             background: #ff6b6b; color: white; font-size: 10px; 
             padding: 2px 4px; border-radius: 4px; margin-top: 2px;
-            width: 90%; /* 너비 꽉 채움 */
-            text-align: center; 
-            
-            /* 말줄임표 핵심 속성 */
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis;
+            width: 90%; text-align: center; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             display: block;
         }
+        /* 알림 설정된 일정은 아이콘 표시 */
+        .event-dot.notified::before { content: "🔔 "; font-size: 8px; }
 
         /* 팝업 (일정 입력) */
         #event-modal { 
@@ -79,13 +76,23 @@
             font-family: inherit; font-size: 14px;
         }
         textarea { height: 100px; resize: none; }
+        
+        /* 스위치 스타일 (알림 설정) */
+        .switch-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 10px; }
+        .switch-label { font-size: 14px; color: #555; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #ff6b6b; }
+        input:checked + .slider:before { transform: translateX(18px); }
+
         .btn-group { display: flex; gap: 10px; margin-top: 10px; }
         .btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 14px; }
         .btn-save { background: #ff6b6b; color: white; }
         .btn-cancel { background: #eee; color: #555; }
         .btn-delete { background: #333; color: white; margin-top: 10px; width: 100%; }
 
-        /* 로딩 */
         #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ff6b6b; font-weight: bold; display: none; }
     </style>
 </head>
@@ -116,6 +123,14 @@
             <input type="text" id="event-title" placeholder="제목 (달력에 표시됨)" maxlength="15">
             <textarea id="event-desc" placeholder="상세 내용을 적어보세요."></textarea>
             
+            <div class="switch-container">
+                <span class="switch-label">🔔 알림 받기</span>
+                <label class="switch">
+                    <input type="checkbox" id="event-notify">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
             <div class="btn-group">
                 <button class="btn btn-cancel" onclick="closeModal()">취소</button>
                 <button class="btn btn-save" onclick="saveEvent()">저장</button>
@@ -130,7 +145,7 @@
     import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot, query, where } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // 🔴 [필수] 본인의 firebaseConfig로 꼭 교체하세요!
+    // 🔴 [필수] 본인의 firebaseConfig로 교체하세요!
     const firebaseConfig = {
       apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
       authDomain: "lovechatproject-2db11.firebaseapp.com",
@@ -148,6 +163,14 @@
     let selectedDateStr = "";
     let eventsCache = {}; 
 
+    // [알림 기능] 권한 요청
+    function requestNotiPermission() {
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+    }
+
+    // 1. 달력 그리기 함수
     function renderCalendar() {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth(); 
@@ -172,9 +195,9 @@
             
             let eventHtml = '';
             if (eventsCache[dateKey]) {
-                // [수정됨] 2글자 자르기 삭제 -> 전체 제목 사용 (CSS가 ... 처리)
                 const fullTitle = eventsCache[dateKey].title;
-                eventHtml = `<div class="event-dot">${fullTitle}</div>`;
+                const notiClass = eventsCache[dateKey].notify ? 'notified' : '';
+                eventHtml = `<div class="event-dot ${notiClass}">${fullTitle}</div>`;
             }
 
             grid.innerHTML += `
@@ -199,7 +222,6 @@
 
     function loadEvents() {
         document.getElementById('loading').style.display = 'block';
-        // 전체 이벤트를 실시간 구독 (데이터 양이 많지 않으므로 효율적)
         const colRef = collection(db, "calendar_events");
         onSnapshot(colRef, (snapshot) => {
             eventsCache = {}; 
@@ -207,8 +229,46 @@
                 eventsCache[doc.id] = doc.data();
             });
             renderCalendar();
+            checkDailyNotifications(); // 데이터 로드될 때 알림 체크
             document.getElementById('loading').style.display = 'none';
         });
+    }
+
+    // [핵심] 오늘/내일 일정 체크해서 알림 보내기
+    function checkDailyNotifications() {
+        if (Notification.permission !== "granted") return;
+
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const todayStr = today.toISOString().split('T')[0];
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+        // 오늘 일정 알림
+        if (eventsCache[todayStr] && eventsCache[todayStr].notify) {
+            // 이미 알림 보냈는지 로컬스토리지로 체크 (중복 방지)
+            const logKey = `noti_${todayStr}`;
+            if (!localStorage.getItem(logKey)) {
+                new Notification(`📅 오늘 일정: ${eventsCache[todayStr].title}`, {
+                    body: eventsCache[todayStr].desc || "잊지 마세요!",
+                    icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png'
+                });
+                localStorage.setItem(logKey, "sent");
+            }
+        }
+
+        // 내일 일정 알림 (미리 알림)
+        if (eventsCache[tomorrowStr] && eventsCache[tomorrowStr].notify) {
+            const logKey = `noti_pre_${tomorrowStr}`;
+            if (!localStorage.getItem(logKey)) {
+                new Notification(`🔔 내일 일정: ${eventsCache[tomorrowStr].title}`, {
+                    body: "내일 일정이 있습니다. 준비해주세요!",
+                    icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png'
+                });
+                localStorage.setItem(logKey, "sent");
+            }
+        }
     }
 
     window.openModal = (dateStr) => {
@@ -219,9 +279,11 @@
         if (eventsCache[dateStr]) {
             document.getElementById('event-title').value = eventsCache[dateStr].title;
             document.getElementById('event-desc').value = eventsCache[dateStr].desc;
+            document.getElementById('event-notify').checked = eventsCache[dateStr].notify || false;
         } else {
             document.getElementById('event-title').value = "";
             document.getElementById('event-desc').value = "";
+            document.getElementById('event-notify').checked = false;
         }
     };
 
@@ -232,13 +294,18 @@
     window.saveEvent = async () => {
         const title = document.getElementById('event-title').value;
         const desc = document.getElementById('event-desc').value;
+        const notify = document.getElementById('event-notify').checked;
 
         if (!title.trim()) return alert("제목을 입력해주세요!");
+
+        // 알림 켠 경우 권한 요청
+        if (notify) requestNotiPermission();
 
         try {
             await setDoc(doc(db, "calendar_events", selectedDateStr), {
                 title: title,
                 desc: desc,
+                notify: notify, // 알림 여부 저장
                 updatedAt: new Date()
             });
             closeModal();
@@ -257,6 +324,7 @@
         }
     };
 
+    requestNotiPermission(); // 접속 시 권한 요청
     loadEvents();
 
 </script>
