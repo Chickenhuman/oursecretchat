@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Casino - Hol/Jjak</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    <style>
+        body { font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #222; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* 상단 정보창 */
+        .header { 
+            padding: 15px; background: #2c3e50; 
+            display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 20;
+        }
+        .title-group { display: flex; align-items: center; gap: 8px; }
+        .btn-help {
+            width: 24px; height: 24px; border-radius: 50%; background: white; color: #333;
+            border: none; font-weight: bold; font-size: 14px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .money-box { font-size: 18px; font-weight: bold; color: #f1c40f; text-shadow: 1px 1px 0 #000; }
+        
+        /* 게임 스테이지 (초록색 포커 판) */
+        .stage { 
+            flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            /* 포커 테이블 느낌의 그린 그라데이션 */
+            background: radial-gradient(circle at center, #27ae60 0%, #145a32 100%); 
+            position: relative; 
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5); 
+        }
+        
+        .cup-container { position: relative; width: 200px; height: 200px; display: flex; justify-content: center; align-items: center; }
+        .cup { font-size: 120px; z-index: 10; transition: transform 0.3s; cursor: pointer; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6)); }
+        .dice-group { position: absolute; top: 80px; display: flex; gap: 20px; opacity: 0; transition: 0.3s; }
+        .dice { width: 50px; height: 50px; background: white; border-radius: 8px; color: black; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 24px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+        
+        /* 쉐이킹 애니메이션 */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .shaking { animation: shake 0.5s; animation-iteration-count: infinite; }
+        .cup-lift { transform: translateY(-80px) rotate(-20deg); }
+
+        .result-text { 
+            margin-top: 30px; font-size: 20px; font-weight: bold; min-height: 50px; 
+            color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
+            text-align: center; white-space: pre-line; line-height: 1.4;
+        }
+
+        /* 컨트롤 패널 */
+        .control-panel { background: #fff; color: #333; padding: 20px; border-top-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); }
+        
+        .bet-input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .input-money { flex: 1; padding: 10px; font-size: 18px; border: 2px solid #ccc; border-radius: 8px; text-align: right; font-weight: bold; }
+        .btn-set { background: #95a5a6; color: white; border: none; border-radius: 8px; padding: 0 15px; font-weight: bold; cursor: pointer; }
+
+        .choice-group { display: flex; gap: 15px; height: 60px; }
+        .btn-choice { flex: 1; border: none; border-radius: 10px; font-size: 20px; font-weight: bold; color: white; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 0 rgba(0,0,0,0.2); position: relative; overflow: hidden; }
+        .btn-choice:active { transform: translateY(4px); box-shadow: none; }
+        
+        .btn-odd { background: #3498db; } /* 홀: 파랑 */
+        .btn-even { background: #e74c3c; } /* 짝: 빨강 */
+        .btn-choice.selected { border: 4px solid #f1c40f; transform: scale(1.02); }
+
+        .action-bar { margin-top: 20px; display: flex; gap: 10px; }
+        .btn-main { flex: 1; padding: 15px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; cursor: pointer; }
+        
+        .btn-back { background: #7f8c8d; width: 80px; flex: none; box-shadow: 0 4px 0 #5f6c6d; }
+        .btn-back:active { transform: translateY(4px); box-shadow: none; }
+
+        .btn-reset { background: #e67e22; color: white; width: 80px; flex: none; box-shadow: 0 4px 0 #d35400; }
+        .btn-reset:active { transform: translateY(4px); box-shadow: none; }
+
+        .btn-start { background: #2ecc71; box-shadow: 0 4px 0 #27ae60; }
+        .btn-start:active { transform: translateY(4px); box-shadow: none; }
+        .btn-start:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
+
+        /* 도움말 모달 */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; justify-content: center; align-items: center; }
+        .modal-content { 
+            background: #fff; color: #333; width: 80%; max-width: 350px; padding: 25px; 
+            border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: left;
+            border: 1px solid #ddd; position: relative;
+        }
+        .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 15px; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px;}
+        .modal-text { font-size: 14px; line-height: 1.6; margin-bottom: 20px; color: #555; }
+        .modal-close { background: #333; color: white; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="title-group">
+            <span>🎲 주사위 홀짝</span>
+            <button class="btn-help" onclick="toggleHelp()">?</button>
+        </div>
+        <div class="money-box" id="wallet-bal">0</div>
+    </div>
+
+    <div class="stage">
+        <div class="cup-container">
+            <div id="dice-group" class="dice-group">
+                <div class="dice" id="d1">?</div>
+                <div class="dice" id="d2">?</div>
+            </div>
+            <div id="cup" class="cup">🥡</div>
+        </div>
+        <div id="result-text" class="result-text">배팅 후 홀/짝을 선택해주세요.</div>
+    </div>
+
+    <div class="control-panel">
+        <div class="bet-input-group">
+            <input type="number" id="bet-amount" class="input-money" placeholder="배팅금액">
+            <button class="btn-set" onclick="setBet(1000)">+1천</button>
+            <button class="btn-set" onclick="setBet(10000)">+1만</button>
+            <button class="btn-set" style="background:#e67e22;" onclick="setBet('ALL')">올인</button>
+        </div>
+
+        <div class="choice-group">
+            <button class="btn-choice btn-odd" onclick="selectChoice('ODD')">홀 (Odd)</button>
+            <button class="btn-choice btn-even" onclick="selectChoice('EVEN')">짝 (Even)</button>
+        </div>
+
+        <div class="action-bar">
+            <button class="btn-main btn-back" onclick="location.href='game3.html'">나가기</button>
+            <button class="btn-main btn-reset" onclick="resetBet()">초기화</button>
+            <button id="btn-start" class="btn-main btn-start" onclick="startGame()" disabled>선택하세요</button>
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal" onclick="toggleHelp()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-title">게임 방법</div>
+            <div class="modal-text">
+                <b>1. 기본 규칙</b><br>
+                주사위 2개를 굴려 나온 합이 <b>홀(Odd)</b>인지 <b>짝(Even)</b>인지 예측하는 게임입니다.<br><br>
+                <b>2. 배당률</b><br>
+                승리 시 배팅 금액의 <b>1.95배</b>를 지급합니다.<br><br>
+                <b>3. 진행 방법</b><br>
+                금액을 설정하고 홀/짝 버튼을 누른 뒤 [결과 확인] 버튼을 눌러주세요.
+            </div>
+            <button class="modal-close" onclick="toggleHelp()">닫기</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
+          authDomain: "lovechatproject-2db11.firebaseapp.com",
+          projectId: "lovechatproject-2db11",
+          storageBucket: "lovechatproject-2db11.firebasestorage.app",
+          messagingSenderId: "1069136590072",
+          appId: "1:1069136590072:web:7712e718db03c70bff370d",
+          measurementId: "G-ERG2LL283F"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        let myId = localStorage.getItem('chat_uid');
+        const userRef = doc(db, "users", myId);
+
+        let myBalance = 0;
+        let selectedChoice = null; 
+        let isPlaying = false;
+
+        getDoc(userRef).then(snap => {
+            if(snap.exists()) {
+                myBalance = snap.data().coins;
+                document.getElementById('wallet-bal').innerText = myBalance.toLocaleString();
+            }
+        });
+
+        // [도움말 토글]
+        window.toggleHelp = () => {
+            const el = document.getElementById('help-modal');
+            el.style.display = (el.style.display === 'flex') ? 'none' : 'flex';
+        };
+
+        window.setBet = (amount) => {
+            if(isPlaying) return;
+            const input = document.getElementById('bet-amount');
+            let current = parseInt(input.value) || 0;
+            let target = 0;
+
+            if(amount === 'ALL') {
+                target = myBalance;
+            } else {
+                target = current + amount;
+            }
+
+            if (target > myBalance) target = myBalance;
+            input.value = target;
+        };
+
+        window.resetBet = () => {
+            if(isPlaying) return;
+            document.getElementById('bet-amount').value = '';
+        };
+
+        window.selectChoice = (choice) => {
+            if(isPlaying) return;
+            selectedChoice = choice;
+            
+            document.querySelectorAll('.btn-choice').forEach(b => b.classList.remove('selected'));
+            if(choice === 'ODD') document.querySelector('.btn-odd').classList.add('selected');
+            else document.querySelector('.btn-even').classList.add('selected');
+
+            checkStartable();
+        };
+
+        function checkStartable() {
+            const btn = document.getElementById('btn-start');
+            if(selectedChoice) {
+                btn.disabled = false;
+                btn.innerText = "결과 확인 (Start)";
+            }
+        }
+
+        window.startGame = async () => {
+            const betInput = document.getElementById('bet-amount');
+            let betMoney = parseInt(betInput.value) || 0;
+
+            if(betMoney <= 0) return alert("배팅 금액을 입력해주세요.");
+            if(betMoney > myBalance) return alert("보유 코인이 부족합니다.");
+            
+            myBalance -= betMoney;
+            document.getElementById('wallet-bal').innerText = myBalance.toLocaleString();
+            await updateDoc(userRef, { coins: myBalance });
+
+            isPlaying = true;
+            document.getElementById('btn-start').disabled = true;
+            document.getElementById('result-text').innerText = "결과 확인 중...";
+            
+            const cup = document.getElementById('cup');
+            const diceGroup = document.getElementById('dice-group');
+            cup.classList.remove('cup-lift');
+            diceGroup.style.opacity = '0';
+
+            setTimeout(() => { cup.classList.add('shaking'); }, 100);
+
+            setTimeout(async () => {
+                cup.classList.remove('shaking');
+                
+                const d1 = Math.floor(Math.random() * 6) + 1;
+                const d2 = Math.floor(Math.random() * 6) + 1;
+                const sum = d1 + d2;
+                const resultType = (sum % 2 !== 0) ? 'ODD' : 'EVEN';
+                const resultStr = resultType === 'ODD' ? '홀 (ODD)' : '짝 (EVEN)';
+
+                document.getElementById('d1').innerText = d1;
+                document.getElementById('d2').innerText = d2;
+                
+                cup.classList.add('cup-lift');
+                diceGroup.style.opacity = '1';
+
+                const resText = document.getElementById('result-text');
+
+                if(selectedChoice === resultType) {
+                    const winMoney = Math.floor(betMoney * 1.95);
+                    resText.innerText = `🎉 축하합니다! ${resultStr}입니다.\n(+${winMoney.toLocaleString()} 획득)`;
+                    resText.style.color = "#f1c40f"; 
+                    
+                    myBalance += winMoney;
+                    await updateDoc(userRef, { coins: increment(winMoney) });
+                } else {
+                    resText.innerText = `아쉽습니다. 결과는 ${resultStr}입니다.`;
+                    resText.style.color = "#e74c3c";
+                }
+                
+                document.getElementById('wallet-bal').innerText = myBalance.toLocaleString();
+                isPlaying = false;
+                document.getElementById('btn-start').disabled = false;
+            }, 2000);
+        };
+    </script>
+</body>
+</html>
