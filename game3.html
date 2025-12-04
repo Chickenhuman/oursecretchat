@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Casino Lobby</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" href="icon.png">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { 
+            font-family: 'Apple SD Gothic Neo', sans-serif; 
+            background-color: #2c3e50; color: white; margin: 0; 
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100vh; overflow-y: auto; 
+        }
+        
+        .container { width: 90%; max-width: 450px; padding: 20px 0; display: flex; flex-direction: column; gap: 15px; }
+
+        /* 헤더 (내 지갑) */
+        .wallet-card {
+            background: linear-gradient(135deg, #f1c40f, #d35400);
+            padding: 20px; border-radius: 20px; text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3); position: relative;
+        }
+        .wallet-label { font-size: 14px; opacity: 0.8; margin-bottom: 5px; }
+        .wallet-balance { font-size: 32px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .btn-charge {
+            background: rgba(255,255,255,0.2); border: 1px solid white; color: white;
+            padding: 5px 15px; border-radius: 15px; font-size: 12px; cursor: pointer;
+            margin-top: 10px; transition: 0.2s;
+        }
+        .btn-charge:hover { background: rgba(255,255,255,0.4); }
+
+        /* 게임 메뉴 */
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .menu-item {
+            background: #34495e; padding: 20px; border-radius: 15px; 
+            text-align: center; cursor: pointer; transition: 0.2s; text-decoration: none; color: white;
+            box-shadow: 0 5px 0 #2c3e50; border: 1px solid #465f75;
+        }
+        .menu-item:active { transform: translateY(5px); box-shadow: none; }
+        .menu-icon { font-size: 40px; display: block; margin-bottom: 10px; }
+        .menu-title { font-weight: bold; font-size: 16px; }
+
+        /* 랭킹 */
+        .rank-panel { background: white; color: #333; border-radius: 15px; padding: 15px; }
+        .rank-header { font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .rank-list { display: flex; flex-direction: column; gap: 8px; }
+        .rank-row { display: flex; justify-content: space-between; font-size: 14px; }
+        .rank-name { font-weight: bold; }
+        .rank-coin { color: #d35400; }
+        
+        .back-btn { margin-top: 20px; color: #aaa; text-decoration: underline; cursor: pointer; text-align: center; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="text-align:center; margin:0;">🎰 CASINO LOBBY</h2>
+    
+    <div class="wallet-card">
+        <div class="wallet-label">MY WALLET</div>
+        <div class="wallet-balance" id="my-coin">0 💰</div>
+        <button class="btn-charge" onclick="chargeCoin()">💸 무료 충전소 (+1,000)</button>
+    </div>
+
+    <div class="menu-grid">
+        <a href="game3-1.html" class="menu-item">
+            <span class="menu-icon">🐎</span>
+            <span class="menu-title">경마 (Derby)</span>
+        </a>
+        <div class="menu-item" style="opacity:0.5; cursor:not-allowed;">
+            <span class="menu-icon">🃏</span>
+            <span class="menu-title">준비 중...</span>
+        </div>
+    </div>
+
+    <div class="rank-panel">
+        <div class="rank-header"><span>🏆 부자 랭킹</span><span>보유 자산</span></div>
+        <div id="rank-list" class="rank-list">로딩 중...</div>
+    </div>
+
+    <a href="gamelist.html" class="back-btn">오락실로 돌아가기</a>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, onSnapshot, increment } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // 🔴 Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
+      authDomain: "lovechatproject-2db11.firebaseapp.com",
+      projectId: "lovechatproject-2db11",
+      storageBucket: "lovechatproject-2db11.firebasestorage.app",
+      messagingSenderId: "1069136590072",
+      appId: "1:1069136590072:web:7712e718db03c70bff370d",
+      measurementId: "G-ERG2LL283F"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    let myId = localStorage.getItem('chat_uid');
+    let myName = localStorage.getItem('chat_nickname') || "익명";
+    if(!myId) { myId = 'user_' + Date.now(); localStorage.setItem('chat_uid', myId); }
+
+    const userRef = doc(db, "users", myId);
+
+    // 1. 내 정보 초기화 및 로드
+    async function initUser() {
+        const snap = await getDoc(userRef);
+        if (!snap.exists()) {
+            // 첫 방문 시 10,000 코인 지급
+            await setDoc(userRef, {
+                name: myName,
+                coins: 10000,
+                lastLogin: new Date()
+            });
+        } else {
+            // 이름 동기화
+            if(snap.data().name !== myName) updateDoc(userRef, { name: myName });
+        }
+
+        // 실시간 잔액 감시
+        onSnapshot(userRef, (doc) => {
+            if(doc.exists()) {
+                const coins = doc.data().coins || 0;
+                document.getElementById('my-coin').innerText = coins.toLocaleString() + " 💰";
+            }
+        });
+    }
+
+    // 2. 전체 랭킹 로드
+    function loadRanking() {
+        const q = query(collection(db, "users"), orderBy("coins", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const list = document.getElementById('rank-list');
+            list.innerHTML = "";
+            let rank = 1;
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                const isMe = doc.id === myId ? " (나)" : "";
+                list.innerHTML += `
+                    <div class="rank-row" style="${isMe ? 'color:#d35400;font-weight:bold;' : ''}">
+                        <span class="rank-name">${rank}. ${d.name}${isMe}</span>
+                        <span class="rank-coin">${d.coins.toLocaleString()}</span>
+                    </div>
+                `;
+                rank++;
+            });
+        });
+    }
+
+    // 3. 무료 충전소
+    window.chargeCoin = async () => {
+        const snap = await getDoc(userRef);
+        if(snap.exists() && snap.data().coins < 1000) {
+            await updateDoc(userRef, { coins: increment(1000) });
+            alert("1,000 코인이 충전되었습니다! (파산 구조대 도착 🚑)");
+        } else {
+            alert("코인이 1,000원 미만일 때만 충전 가능합니다! 😅");
+        }
+    };
+
+    initUser();
+    loadRanking();
+</script>
+</body>
+</html>

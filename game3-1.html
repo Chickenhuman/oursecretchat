@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Horse Racing - Tip Sheet Edition</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    <style>
+        body { font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #333; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* --- [1] 경기장 영역 --- */
+        #race-track { 
+            flex: 1.3; 
+            background: #2c3e50; position: relative; overflow: hidden; 
+            border-bottom: 5px solid #f1c40f; 
+            display: flex; flex-direction: column; 
+            padding-top: 20px; 
+        }
+        
+        .track-line { 
+            flex: 1; 
+            border-bottom: 1px dashed rgba(255,255,255,0.15); 
+            position: relative; display: flex; align-items: center; 
+        }
+        
+        .horse { 
+            font-size: 32px; 
+            position: absolute; left: 10px; 
+            transition: left 0.1s linear, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            z-index: 10; transform: scaleX(-1); 
+            transform-origin: center bottom;
+        }
+        .horse-name-tag {
+            position: absolute; top: -16px; left: 0; font-size: 10px; 
+            background: rgba(0,0,0,0.6); color: #fff; padding: 2px 6px; border-radius: 4px; 
+            white-space: nowrap; transform: scaleX(-1); pointer-events: none;
+        }
+        
+        .tag-S { background: linear-gradient(45deg, #ffd700, #ffaa00); color: #000; font-weight: bold; box-shadow: 0 0 5px #ffd700; }
+        .tag-A { background: #3498db; font-weight: bold; }
+        .tag-F { background: #555; color: #aaa; }
+
+        .finish-line { 
+            position: absolute; right: 30px; top: 0; height: 100%; width: 5px; 
+            background: repeating-linear-gradient(45deg, white, white 10px, black 10px, black 20px); 
+            z-index: 5;
+        }
+
+        /* --- [2] 배팅 패널 --- */
+        #betting-panel { 
+            flex: 1; background: #fff; color: #333; padding: 10px; 
+            overflow-y: auto; display: flex; flex-direction: column; 
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.3); z-index: 20;
+        }
+        
+        .info-bar { display: flex; justify-content: space-between; align-items: center; font-weight: bold; padding-bottom: 10px; border-bottom: 2px solid #eee; margin-bottom: 10px; }
+        .my-money { color: #d35400; font-size: 18px; }
+        
+        .top-btn-group { display: flex; gap: 8px; }
+        .icon-btn { background: #95a5a6; color: white; border: none; border-radius: 15px; padding: 4px 10px; font-size: 12px; cursor: pointer; font-weight: bold; }
+        .btn-tip { background: #2c3e50; color: #f1c40f; border: 1px solid #f1c40f; }
+
+        .horse-list { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px;}
+        
+        .horse-card { 
+            display: flex; flex-direction: column; 
+            background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #eee; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .card-top { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px; }
+        .card-bottom { display: flex; align-items: center; justify-content: space-between; width: 100%; background: #eee; padding: 5px; border-radius: 8px;}
+
+        .h-info { flex: 1; }
+        .h-name { font-weight: bold; font-size: 15px; color: #333; display: flex; align-items: center; gap: 5px; }
+        .tier-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; color: white; font-weight: bold; min-width: 15px; text-align: center; }
+        
+        .tier-S { background: linear-gradient(135deg, #ffd700, #f1c40f); color: black; box-shadow: 0 0 5px #f1c40f; }
+        .tier-A { background: #e74c3c; }
+        .tier-B { background: #3498db; }
+        .tier-C { background: #2ecc71; }
+        .tier-D { background: #95a5a6; }
+        .tier-F { background: #7f8c8d; opacity: 0.7; }
+
+        .h-stats { font-size: 12px; color: #666; margin-top: 3px; }
+        .h-odds { font-size: 18px; font-weight: bold; color: #c0392b; width: 80px; text-align: right;}
+        
+        .bet-btn-group { display: flex; gap: 4px; flex: 1; }
+        .bet-btn { 
+            padding: 6px 8px; border: none; border-radius: 5px; font-size: 11px; font-weight: bold; 
+            cursor: pointer; background: #fff; border: 1px solid #ccc; color: #555; transition: 0.1s;
+        }
+        .bet-btn:active { background: #ddd; transform: scale(0.95); }
+        .btn-allin { background: #e74c3c; color: white; border: 1px solid #c0392b; }
+
+        .bet-input { 
+            width: 70px; padding: 6px; border: 1px solid #ccc; border-radius: 5px; 
+            text-align: right; font-size: 14px; margin-left: 5px;
+        }
+/* 초기화 버튼 스타일 */
+.btn-reset { 
+    background: #e67e22; /* 주황색 */
+    color: white; 
+    width: 80px; 
+    flex: none; /* 크기 고정 */
+    box-shadow: 0 4px 0 #d35400; 
+    margin-right: 5px; /* 오른쪽 버튼과 간격 */
+}
+.btn-reset:active { 
+    transform: translateY(4px); 
+    box-shadow: none; 
+}
+        .control-bar { 
+            margin-top: auto; padding-top: 10px; display: flex; gap: 10px; 
+        }
+        .btn { flex: 1; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-start { background: #27ae60; color: white; box-shadow: 0 4px 0 #219150; }
+        .btn-start:active { transform: translateY(4px); box-shadow: none; }
+        .btn-start:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
+        .btn-back { background: #95a5a6; color: white; width: 80px; flex: none; box-shadow: 0 4px 0 #7f8c8d; }
+
+        #caster-msg {
+            position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: #f1c40f; padding: 8px 20px; border-radius: 30px;
+            font-size: 16px; font-weight: bold; pointer-events: none; display: none; z-index: 30;
+            white-space: nowrap; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-shadow: 0 2px 4px black;
+        }
+
+        /* 모달 */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; justify-content: center; align-items: center; }
+        
+        .tip-paper { 
+            background: #f4e1d2; color: #333; width: 90%; max-width: 500px; height: 80vh; 
+            padding: 20px; border-radius: 2px; overflow-y: auto; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 1px solid #d3c0b0;
+            font-family: 'Gungsuh', 'Batang', serif; 
+        }
+        .tip-header { text-align: center; border-bottom: 3px double #333; padding-bottom: 10px; margin-bottom: 15px; }
+        .tip-title { font-size: 24px; font-weight: bold; color: #c0392b; text-decoration: underline; }
+        .tip-date { font-size: 12px; color: #555; margin-top: 5px; }
+        
+        .tip-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .tip-table th { background: #333; color: #f4e1d2; padding: 5px; font-size: 12px; }
+        .tip-table td { border-bottom: 1px solid #bbb; padding: 8px 5px; font-size: 13px; vertical-align: middle; }
+        .tip-highlight { color: #c0392b; font-weight: bold; background: rgba(255,0,0,0.1); }
+        
+        .stamp-box { 
+            border: 3px solid #c0392b; border-radius: 10px; padding: 10px; 
+            text-align: center; margin-top: 15px; transform: rotate(-2deg);
+        }
+        .stamp-text { color: #c0392b; font-weight: bold; font-size: 18px; }
+
+        .help-content { background: white; color: #333; width: 80%; max-width: 400px; padding: 20px; border-radius: 15px; line-height: 1.6; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div id="race-track">
+        <div class="finish-line"></div>
+        <div id="caster-msg">중계 시작...</div>
+        <div class="track-line" id="lane-0"></div>
+        <div class="track-line" id="lane-1"></div>
+        <div class="track-line" id="lane-2"></div>
+        <div class="track-line" id="lane-3"></div>
+        <div class="track-line" id="lane-4"></div>
+    </div>
+
+    <div id="betting-panel">
+<div class="info-bar">
+    <div>
+        <span>내 지갑: <span id="wallet-bal" class="my-money">0</span></span>
+        <span style="margin-left: 10px; font-size: 14px; color: #555;">(총 배팅: <span id="total-bet" style="color: #c0392b; font-weight: bold;">0</span>)</span>
+    </div>
+    <div class="top-btn-group">
+        <button class="icon-btn btn-tip" onclick="toggleTip()">📰 예상지</button>
+        <button class="icon-btn" onclick="toggleHelp()">?</button>
+    </div>
+</div>
+
+        <div id="horse-list" class="horse-list"></div>
+
+<div class="control-bar">
+    <button class="btn btn-back" onclick="location.href='game3.html'">나가기</button>
+    
+    <button class="btn btn-reset" onclick="resetAllBets()">초기화</button>
+    <button id="btn-start" class="btn btn-start" onclick="startRace()" disabled>배팅하세요</button>
+</div>
+
+    <div id="tip-modal" class="modal" onclick="toggleTip()">
+        <div class="tip-paper" onclick="event.stopPropagation()">
+            <div class="tip-header">
+                <div class="tip-title">⚡ 금요 경마 적중 예상지 ⚡</div>
+                <div class="tip-date">제 3경주 - 특별 대상 경주</div>
+            </div>
+            <table class="tip-table">
+                <thead>
+                    <tr>
+                        <th width="15%">번호</th>
+                        <th width="20%">최근성적</th>
+                        <th>전문가 분석 (한줄평)</th>
+                    </tr>
+                </thead>
+                <tbody id="tip-list-body"></tbody>
+            </table>
+            <div class="stamp-box">
+                <div>★ 오늘의 강력 추천 ★</div>
+                <div id="recommend-horse" class="stamp-text">???</div>
+            </div>
+            <button class="btn btn-back" style="width:100%; margin-top:15px; background:#555;" onclick="toggleTip()">덮기</button>
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal" onclick="toggleHelp()">
+        <div class="help-content" onclick="event.stopPropagation()">
+            <h3>🐎 게임 가이드</h3>
+            <p><b>1. 배팅 규칙</b></p>
+            <p>S급은 안정적이지만 배당이 낮고, F급은 위험하지만 <b>인생 역전 배당</b>이 터집니다.</p>
+            <button class="btn btn-back" style="width:100%; margin-top:10px;" onclick="toggleHelp()">닫기</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// [추가] 배팅 금액 초기화 함수
+window.resetAllBets = () => {
+    if(isRacing) return; // 경기 중엔 초기화 불가
+    
+    // 1. 모든 말의 배팅 데이터 0으로 리셋
+    horses.forEach(h => {
+        h.bet = 0;
+        // 입력창 비우기
+        const inputEl = document.getElementById(`input-${h.id}`);
+        if(inputEl) inputEl.value = '';
+    });
+
+    // 2. 시작 버튼 상태 원상복구
+    const btn = document.getElementById('btn-start');
+    btn.disabled = true;
+    btn.innerText = "배팅하세요";
+    btn.style.background = "#ccc";
+    btn.style.animation = "none";
+
+    // 3. (선택사항) 만약 총 배팅금액 표시 기능(total-bet)을 넣었다면 그것도 0으로
+    const totalEl = document.getElementById('total-bet');
+    if(totalEl) totalEl.innerText = "0";
+};
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
+      authDomain: "lovechatproject-2db11.firebaseapp.com",
+      projectId: "lovechatproject-2db11",
+      storageBucket: "lovechatproject-2db11.firebasestorage.app",
+      messagingSenderId: "1069136590072",
+      appId: "1:1069136590072:web:7712e718db03c70bff370d",
+      measurementId: "G-ERG2LL283F"
+    };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        let myId = localStorage.getItem('chat_uid');
+        const userRef = doc(db, "users", myId);
+
+        const COMMENT_DB = {
+            highTier: ["우승이 당연시됨.", "컨디션 절정.", "안정적인 주행.", "기수와의 호흡 환상.", "지난 대회 우승마.", "체력 관리 완벽."],
+            midTier: ["입상 가능성 충분.", "기복이 있으나 해볼 만함.", "중위권 싸움의 핵심.", "초반 스타트가 관건.", "눈여겨볼 복병."],
+            lowTier: ["잠재력 있음.", "새벽 훈련 시 괴력 발휘!", "수상하다.", "사고 칠 관상.", "배당판의 핵폭탄.", "인생 역전의 기회."]
+        };
+        const ADJECTIVES = ["바람", "천둥", "황금", "불꽃", "무적", "날쌘", "거대", "미친", "행운", "폭풍", "강철", "신비", "얼음", "어둠", "빛의", "푸른", "붉은", "하얀", "검은", "슈퍼", "대왕", "킹갓", "전설", "방구", "똥", "코", "핵", "재은", "경환", "사랑", "귀염", "깜찍"];
+        const NOUNS = ["돌이", "순이", "토마", "대장", "기사", "요정", "망치", "주먹", "다리", "날개", "발톱", "이빨", "꼬리", "방구", "콧물", "재은", "경환", "호랑", "사자", "토끼", "거북", "독수리", "상어", "고래", "치킨", "피자", "버거", "국밥", "라면", "공주", "왕자"];
+        const TIERS = ['F', 'D', 'C', 'B', 'A', 'S'];
+
+        let horses = [];
+        let myBalance = 0;
+        let isRacing = false;
+        let raceInterval = null;
+        const FINISH_DIST = 86; 
+
+        function initGame() {
+            getDoc(userRef).then(snap => {
+                if(snap.exists()) {
+                    myBalance = snap.data().coins;
+                    updateBalanceUI();
+                }
+            });
+
+            horses = [];
+            let totalPower = 0;
+            const horseListEl = document.getElementById('horse-list');
+            horseListEl.innerHTML = "";
+
+            for(let i=0; i<5; i++) {
+                let adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+                let noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+                let name = adj + noun;
+                if(horses.some(h => h.name === name)) name += "주니어";
+
+                let tierIdx = Math.floor(Math.random() * TIERS.length); 
+                let tier = TIERS[tierIdx];
+                let multiplier = 0.7 + (tierIdx * 0.1); 
+
+                let baseSpd = Math.floor(Math.random() * 50) + 30; 
+                let baseSta = Math.floor(Math.random() * 60) + 40; 
+                let baseLuk = Math.floor(Math.random() * 90) + 10; 
+
+                let spd = Math.floor(baseSpd * multiplier);
+                let sta = Math.floor(baseSta * multiplier);
+                let luk = baseLuk; 
+                let power = (spd * 2.5) + (sta * 1.5) + (luk * 0.5);
+                totalPower += power;
+
+                let records = [];
+                for(let k=0; k<3; k++) {
+                    let r = 0;
+                    if(tier === 'S' || tier === 'A') r = Math.floor(Math.random() * 3) + 1;
+                    else if(tier === 'F' || tier === 'D') r = Math.floor(Math.random() * 5) + 4;
+                    else r = Math.floor(Math.random() * 6) + 2;
+                    records.push(r + "착");
+                }
+                let recordStr = records.join("-");
+
+                let commentList = [];
+                if(tier === 'S' || tier === 'A') commentList = COMMENT_DB.highTier;
+                else if(tier === 'F' || tier === 'D') commentList = COMMENT_DB.lowTier;
+                else commentList = COMMENT_DB.midTier;
+                let comment = commentList[Math.floor(Math.random() * commentList.length)];
+
+                horses.push({ 
+                    id: i, name, tier, spd, sta, luk, power, 
+                    pos: 0, curSta: sta, odds: 0, bet: 0, lastSpurt: false,
+                    recordStr: recordStr, comment: comment
+                });
+
+                const lane = document.getElementById(`lane-${i}`);
+                const tagClass = tier === 'S' ? 'tag-S' : (tier === 'F' ? 'tag-F' : (tier === 'A' ? 'tag-A' : ''));
+                lane.innerHTML = `<div class="horse" id="horse-icon-${i}">🐎<div class="horse-name-tag ${tagClass}">${name}</div></div>`;
+            }
+
+            let tempOddsList = [];
+            let inverseOddsSum = 0; 
+            horses.forEach(h => {
+                let winRate = h.power / totalPower;
+                let tierBonus = {'F': 5.0, 'D': 3.5, 'C': 2.5, 'B': 1.5, 'A': 1.2, 'S': 1.0};
+                let rawOdds = (1 / winRate) * tierBonus[h.tier];
+                tempOddsList.push(rawOdds);
+                inverseOddsSum += (1 / rawOdds);
+            });
+
+            const TARGET_OVERROUND = 1.15; 
+            let scaleFactor = inverseOddsSum / TARGET_OVERROUND; 
+
+            horses.forEach((h, idx) => {
+                let adjustedOdds = tempOddsList[idx] * scaleFactor;
+                if (adjustedOdds < 1.1) adjustedOdds = 1.1;
+                if (adjustedOdds > 300) adjustedOdds = 300; 
+                h.odds = adjustedOdds.toFixed(1);
+
+                const card = document.createElement('div');
+                card.className = 'horse-card';
+                card.innerHTML = `
+                    <div class="card-top">
+                        <div class="h-info">
+                            <div class="h-name"><span class="tier-badge tier-${h.tier}">${h.tier}</span>${h.name}</div>
+                            <div class="h-stats">🚀${h.spd} ❤️${h.sta} 🍀${h.luk}</div>
+                        </div>
+                        <div class="h-odds">x${h.odds}</div>
+                    </div>
+                    <div class="card-bottom">
+                        <div class="bet-btn-group">
+                            <button class="bet-btn" onclick="addBet(${h.id}, 100)">+100</button>
+                            <button class="bet-btn" onclick="addBet(${h.id}, 1000)">+1천</button>
+                            <button class="bet-btn" onclick="addBet(${h.id}, 10000)">+1만</button>
+                            <button class="bet-btn btn-allin" onclick="addBet(${h.id}, 'ALL')">올인</button>
+                        </div>
+                        <input type="number" id="input-${h.id}" class="bet-input" placeholder="0" oninput="updateBet(${h.id}, this.value)">
+                    </div>`;
+                horseListEl.appendChild(card);
+            });
+
+            updateTipSheetUI();
+        }
+
+        function updateTipSheetUI() {
+            const tbody = document.getElementById('tip-list-body');
+            tbody.innerHTML = "";
+            let recommendHorse = horses[0];
+            if(Math.random() < 0.1) {
+                let riskyHorses = horses.filter(h => h.tier === 'F' || h.tier === 'D');
+                if(riskyHorses.length > 0) recommendHorse = riskyHorses[Math.floor(Math.random() * riskyHorses.length)];
+            } else {
+                let bestHorses = [...horses].sort((a,b) => b.power - a.power);
+                recommendHorse = bestHorses[0];
+            }
+            document.getElementById('recommend-horse').innerHTML = `<span style="font-size:14px; color:#333;">${recommendHorse.tier}급</span><br>${recommendHorse.name} (x${recommendHorse.odds})`;
+
+            horses.forEach(h => {
+                const tr = document.createElement('tr');
+                let highlightClass = (h.id === recommendHorse.id) ? 'tip-highlight' : '';
+                tr.innerHTML = `<td><span class="tier-badge tier-${h.tier}">${h.tier}</span><br><b>${h.name}</b></td><td style="font-size:11px; color:#555;">${h.recordStr}</td><td class="tip-comment ${highlightClass}">${h.comment}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // [추가됨] 버튼 배팅 기능 (누락 수정)
+window.addBet = (id, amount) => {
+            if(isRacing) return;
+            let currentBet = horses[id].bet;
+            let currentTotalBet = horses.reduce((sum, h) => sum + h.bet, 0);
+            let remainingMoney = myBalance - currentTotalBet;
+
+            let addAmount = 0;
+            if (amount === 'ALL') {
+                addAmount = remainingMoney;
+            } else {
+                addAmount = Math.min(amount, remainingMoney);
+            }
+
+            if (addAmount <= 0 && amount !== 'ALL') return; 
+
+            let newBet = currentBet + addAmount;
+            
+            // 입력창 값 업데이트
+            document.getElementById(`input-${id}`).value = newBet > 0 ? newBet : '';
+            
+            // ✅ [핵심 수정] 버튼 상태 갱신을 위해 updateBet 호출
+            updateBet(id, newBet); 
+        };
+        window.updateBet = (id, amount) => {
+            if(isRacing) return;
+            amount = parseInt(amount);
+            if(isNaN(amount) || amount < 0) amount = 0;
+
+            // 여기서는 잔액 체크 안함 (단순 입력 반영) - 버튼 클릭 시 경고
+            horses[id].bet = amount;
+
+            let total = horses.reduce((sum, h) => sum + h.bet, 0);
+            document.getElementById('total-bet').innerText = total.toLocaleString();
+
+            const btn = document.getElementById('btn-start');
+            if(total > 0) {
+                btn.disabled = false; // 일단 활성화
+                if (total > myBalance) {
+                    btn.innerText = "잔액 부족! (충전 필요)";
+                    btn.style.background = "#e74c3c"; // 빨강 (경고)
+                    btn.style.animation = "pulse 1s infinite";
+                } else {
+                    btn.innerText = `경기 시작! (-${total.toLocaleString()})`;
+                    btn.style.background = "#27ae60"; // 초록 (정상)
+                    btn.style.animation = "none";
+                }
+            } else {
+                btn.disabled = true;
+                btn.innerText = "배팅하세요";
+                btn.style.background = "#ccc";
+                btn.style.animation = "none";
+            }
+        };
+
+        function updateBalanceUI() {
+            document.getElementById('wallet-bal').innerText = myBalance.toLocaleString();
+        }
+
+        window.startRace = async () => {
+            let totalBet = horses.reduce((sum, h) => sum + h.bet, 0);
+            if(totalBet === 0) return;
+            if(totalBet > myBalance) return alert("돈이 부족합니다! 로비에서 무료 충전소를 이용하세요.");
+            if(!confirm(`총 ${totalBet.toLocaleString()} 코인을 걸고 시작할까요?`)) return;
+
+            myBalance -= totalBet;
+            await updateDoc(userRef, { coins: myBalance });
+            updateBalanceUI();
+
+            isRacing = true;
+            document.getElementById('betting-panel').style.pointerEvents = "none";
+            document.getElementById('betting-panel').style.opacity = "0.6";
+            
+            showCaster("🏁 출발했습니다!!!!", 2000);
+            raceInterval = setInterval(gameLoop, 100);
+        };
+
+        function gameLoop() {
+            let leader = null;
+            let maxPos = 0;
+            let isFinished = false;
+
+            horses.forEach(h => {
+                if(h.pos >= FINISH_DIST) { isFinished = true; return; }
+
+                let baseSpeed = h.spd * 0.01; 
+                let condition = Math.random(); 
+                if(h.tier === 'F' || h.tier === 'D') { if(Math.random() < 0.15) condition *= 2.5; else condition *= 0.6; }
+
+                let move = baseSpeed * (0.8 + condition); 
+                let burnRate = 0.15 + (h.spd * 0.003); 
+                h.curSta -= burnRate;
+
+                if (h.curSta < 20) move *= 0.7;
+                if (h.curSta <= 0) { move *= 0.4; h.curSta = 0; }
+
+                if(Math.random() < 0.015 && (Math.random() * 100 < h.luk)) {
+                    move += 5.0; showCaster(`🔥 ${h.name}, 미친듯한 질주!!!`, 800);
+                }
+
+                if(h.pos > 70 && h.pos < 82 && !h.lastSpurt) {
+                    if(h.curSta > 10 && Math.random() > 0.4) {
+                        h.lastSpurt = true; move += 4.5; showCaster(`⚡ ${h.name}, 마지막 스퍼트!`, 1000);
+                    }
+                }
+                h.pos += move;
+                const horseEl = document.getElementById(`horse-icon-${h.id}`);
+                horseEl.style.left = Math.min(h.pos, FINISH_DIST) + '%';
+                if(h.pos > maxPos) { maxPos = h.pos; leader = h; horseEl.style.zIndex = 100; }
+            });
+
+            if(Math.random() < 0.02 && leader) {
+                const comments = [`현재 선두 ${leader.name}!`, `${leader.name} 빠릅니다!`, `뒤쪽 말들이 무섭게 쫓아옵니다!`, `아직 결과는 모릅니다!!`, `가자아아아!!!`];
+                showCaster(comments[Math.floor(Math.random() * comments.length)], 1000);
+            }
+            if (isFinished) finishRace();
+        }
+
+        let casterTimer = null;
+        function showCaster(msg, duration = 2000) {
+            const el = document.getElementById('caster-msg');
+            el.innerText = msg; el.style.display = 'block';
+            if(casterTimer) clearTimeout(casterTimer);
+            casterTimer = setTimeout(() => { el.style.display = 'none'; }, duration);
+        }
+
+        async function finishRace() {
+            clearInterval(raceInterval);
+            isRacing = false;
+            horses.sort((a, b) => b.pos - a.pos);
+            const winner = horses[0];
+            showCaster(`🎉 우승! ${winner.name}!!!`, 5000);
+            
+            setTimeout(async () => {
+                let winningMoney = 0;
+                let msg = `🏆 우승마: ${winner.name}\n(등급: ${winner.tier} / 배당: x${winner.odds})\n\n`;
+                if (winner.bet > 0) {
+                    winningMoney = Math.floor(winner.bet * winner.odds);
+                    msg += `✨ 대박 터졌습니다! 축하합니다! ✨\n💰 획득: ${winningMoney.toLocaleString()} 코인`;
+                    await updateDoc(userRef, { coins: increment(winningMoney) });
+                } else { msg += "아쉽네요.. 꽝입니다. 😭\n다음엔 대박을 노려보세요!"; }
+                alert(msg); location.reload();
+            }, 800);
+        }
+
+        window.toggleHelp = () => { const modal = document.getElementById('help-modal'); modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex'; };
+        window.toggleTip = () => { const modal = document.getElementById('tip-modal'); modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex'; };
+
+        initGame();
+    </script>
+</body>
+</html>

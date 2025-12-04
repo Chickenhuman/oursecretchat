@@ -10,31 +10,61 @@
     <link rel="manifest" href="manifest.json">
     
     <style>
-        body { font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #f0f0f0; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; }
+        /* [전체 레이아웃] 화면 꽉 채우기 & 스크롤 방지 */
+        body { 
+            font-family: 'Apple SD Gothic Neo', sans-serif; 
+            background-color: #f0f0f0; margin: 0; 
+            display: flex; flex-direction: column; align-items: center; 
+            height: 100dvh; overflow: hidden; 
+        }
         
-        .container { width: 100%; max-width: 450px; background: white; height: 100%; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        .container { 
+            width: 100%; max-width: 450px; background: white; 
+            height: 100%; display: flex; flex-direction: column; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.1); 
+        }
         
         /* 헤더 디자인 */
-        .header { padding: 20px; background: #ff6b6b; color: white; text-align: center; font-weight: bold; font-size: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; position: relative; }
-        .back-btn { position: absolute; left: 20px; background: none; border: none; color: white; font-size: 24px; cursor: pointer; text-decoration: none; }
+        .header { 
+            padding: 20px; background: #ff6b6b; color: white; 
+            text-align: center; font-weight: bold; font-size: 18px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            display: flex; align-items: center; justify-content: center; 
+            position: relative; flex-shrink: 0; 
+        }
+        .back-btn { 
+            position: absolute; left: 20px; background: none; border: none; 
+            color: white; font-size: 24px; cursor: pointer; text-decoration: none; 
+        }
 
-        /* 게임 리스트 영역 */
-        .game-list { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        /* [핵심] 리스트 영역 스크롤 설정 */
+        .game-list { 
+            flex: 1; /* 남은 공간 모두 차지 */
+            padding: 20px; 
+            overflow-y: auto; /* 세로 스크롤 허용 */
+            -webkit-overflow-scrolling: touch; /* 부드러운 스크롤 */
+            display: flex; flex-direction: column; gap: 15px; 
+        }
         
         /* 게임 카드 디자인 */
         .game-card {
             background: white; border: 1px solid #eee; border-radius: 15px; padding: 20px;
             display: flex; align-items: center; gap: 15px; cursor: pointer;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.05); transition: 0.2s; text-decoration: none; color: #333;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05); transition: 0.2s; 
+            text-decoration: none; color: #333; /* 링크 색상 제거 */
         }
-        .game-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: #ff6b6b; }
+        .game-card:hover, .game-card:active { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            border-color: #ff6b6b; 
+        }
         
         .game-icon { font-size: 30px; width: 50px; height: 50px; background: #fff0f0; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
         .game-info { flex: 1; }
         .game-title { font-weight: bold; font-size: 16px; margin-bottom: 4px; display: block; }
         .game-desc { font-size: 12px; color: #888; }
         
-        /* 잠긴 카드 디자인 */
+        /* 잠긴 카드 */
         .game-card.locked { opacity: 0.6; cursor: default; background: #f9f9f9; }
         .game-card.locked:hover { transform: none; border-color: #eee; }
 
@@ -63,6 +93,15 @@
             <div class="game-info">
                 <span class="game-title">협력 턴제 테트리스</span>
                 <span class="game-desc">돌아가면서 쌓는 기괴한 블록!</span>
+            </div>
+            <span style="color:#ccc;">ᐳ</span>
+        </a>
+
+<a href="game3.html" class="game-card">
+            <div class="game-icon">🎰</div>
+            <div class="game-info">
+                <span class="game-title">인생은 한방 카지노</span>
+                <span class="game-desc">인생은 한방! 각종 미니게임 대축제</span>
             </div>
             <span style="color:#ccc;">ᐳ</span>
         </a>
