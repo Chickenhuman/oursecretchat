@@ -126,16 +126,31 @@
         }
 
         /* 모달 */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; justify-content: center; align-items: center; }
-        
-        .tip-paper { 
-            background: #f4e1d2; color: #333; width: 90%; max-width: 500px; height: 80vh; 
-            padding: 20px; border-radius: 2px; overflow-y: auto; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 1px solid #d3c0b0;
-            font-family: 'Gungsuh', 'Batang', serif; 
+.modal { 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); /* 배경을 좀 더 진하게 */
+            z-index: 9999; /* 최상위 레이어로 설정 */
+            display: none; 
+            justify-content: center; align-items: center; 
+            backdrop-filter: blur(2px); /* 배경 블러 효과 추가 */
         }
+        
+        /* 예상지 종이 스타일 */
+        .tip-paper { 
+            background: #f4e1d2; color: #333; 
+            width: 90%; max-width: 500px; 
+            max-height: 90vh; /* 화면 높이의 90%까지만 차지 */
+            overflow-y: auto; /* 내용이 길면 스크롤 생김 */
+            padding: 20px; border-radius: 5px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
+            border: 1px solid #d3c0b0;
+            font-family: 'Gungsuh', 'Batang', serif; 
+            position: relative;
+        }
+        
         .tip-header { text-align: center; border-bottom: 3px double #333; padding-bottom: 10px; margin-bottom: 15px; }
-        .tip-title { font-size: 24px; font-weight: bold; color: #c0392b; text-decoration: underline; }
+        .tip-title { font-size: 22px; font-weight: bold; color: #c0392b; text-decoration: underline; word-break: keep-all;}
         .tip-date { font-size: 12px; color: #555; margin-top: 5px; }
         
         .tip-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
@@ -149,7 +164,16 @@
         }
         .stamp-text { color: #c0392b; font-weight: bold; font-size: 18px; }
 
-        .help-content { background: white; color: #333; width: 80%; max-width: 400px; padding: 20px; border-radius: 15px; line-height: 1.6; font-size: 14px; }
+        /* 도움말 스타일 */
+        .help-content { 
+            background: white; color: #333; 
+            width: 85%; max-width: 400px; 
+            max-height: 80vh; /* 높이 제한 */
+            overflow-y: auto; /* 스크롤 허용 */
+            padding: 25px; border-radius: 15px; 
+            line-height: 1.6; font-size: 14px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
