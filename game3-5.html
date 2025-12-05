@@ -104,6 +104,24 @@
         }
         .btn-main { background: #2ecc71; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 15px; width: 100%; }
 
+        /* [추가] 입력창 및 이름 변경 스타일 */
+        .name-input {
+            width: 80%; padding: 10px; font-size: 16px; 
+            border: 2px solid #ddd; border-radius: 8px; 
+            text-align: center; margin-bottom: 10px; font-weight: bold;
+        }
+        .btn-edit {
+            background: none; border: none; cursor: pointer; 
+            font-size: 16px; margin-left: 5px; opacity: 0.7; transition: 0.2s;
+        }
+        .btn-edit:hover { opacity: 1; transform: scale(1.2); }
+        
+        .btn-sub { 
+            background: #95a5a6; color: white; border: none; 
+            padding: 10px 20px; border-radius: 8px; font-weight: bold; 
+            cursor: pointer; margin-top: 10px; width: 100%; 
+        }
+
     </style>
 </head>
 <body>
@@ -122,7 +140,11 @@
         <div class="horse-card">
             <div id="h-avatar" class="horse-avatar">🐎</div>
             <div class="horse-info">
-                <h2 id="h-name">이름없음</h2>
+                <div style="display:flex; align-items:center; justify-content:center; gap:5px;">
+                    <h2 id="h-name">이름없음</h2>
+                    <button class="btn-edit" onclick="openRenameModal()">✏️</button>
+                </div>
+
                 <div style="margin-top:5px;">
                     <span id="h-grade" class="horse-grade">F급</span>
                     <span style="font-size:12px; color:#aaa; margin-left:5px;">(친밀도 <span id="h-bond">0</span>)</span>
@@ -190,9 +212,22 @@
     <div id="adopt-modal" class="modal">
         <div class="modal-box">
             <h2>🐴 마구간이 비었습니다</h2>
-            <p>아직 소유한 경주마가 없습니다.<br>무료로 한 마리 분양받으시겠습니까?</p>
+            <p>나만의 경주마를 분양받으세요!<br>(초기 이름 설정)</p>
+            
+            <input type="text" id="input-first-name" class="name-input" placeholder="이름 (최대 10자)" maxlength="10">
+
             <div style="margin:20px 0; font-size:50px;">📦</div>
             <button class="btn-main" onclick="createFirstHorse()">분양받기</button>
+        </div>
+    </div>
+
+    <div id="rename-modal" class="modal">
+        <div class="modal-box">
+            <h2>✏️ 이름 변경</h2>
+            <p>새로운 이름을 지어주세요.</p>
+            <input type="text" id="input-rename" class="name-input" placeholder="새 이름 (최대 10자)" maxlength="10">
+            <button class="btn-main" onclick="confirmRename()">변경하기</button>
+            <button class="btn-sub" onclick="document.getElementById('rename-modal').style.display='none'">취소</button>
         </div>
     </div>
 
@@ -201,7 +236,6 @@
         import { getFirestore, doc, getDoc, updateDoc, increment } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
-        // ⭐ 데이터 파일 import
         import { FOODS, TRAININGS, GACHA_PRICE, EQUIPMENT_TIERS, ADJECTIVES, NOUNS } from "./js/items.js";
 
         const firebaseConfig = {
@@ -230,7 +264,6 @@
             myData = snap.data();
             updateCoinUI();
 
-            // 말 데이터 확인
             if(myData.horse) {
                 myHorse = myData.horse;
                 renderMainScreen();
@@ -244,7 +277,6 @@
             document.getElementById('my-coin').innerText = (myData.coins || 0).toLocaleString() + " 💰";
         }
 
-        // 2. 탭 전환
         window.switchTab = (tabName) => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.action-grid').forEach(d => d.style.display = 'none');
@@ -253,17 +285,14 @@
             document.getElementById(`tab-${tabName}`).style.display = (tabName === 'shop' ? 'grid' : 'grid');
         };
 
-        // 3. UI 렌더링 (말 정보, 버튼 등)
         function renderMainScreen() {
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('main-screen').style.display = 'flex';
 
-            // 말 정보 표시
             document.getElementById('h-name').innerText = myHorse.name;
             document.getElementById('h-grade').innerText = myHorse.grade || 'F급';
             document.getElementById('h-bond').innerText = myHorse.bond || 0;
             
-            // 스탯 바 (최대 200 기준)
             const spdP = Math.min(100, (myHorse.spd / 200) * 100);
             const staP = Math.min(100, (myHorse.sta / 200) * 100);
             const lukP = Math.min(100, (myHorse.luk / 200) * 100);
@@ -275,13 +304,11 @@
             document.getElementById('bar-luk').style.width = lukP + '%';
             document.getElementById('val-luk').innerText = myHorse.luk;
 
-            // 피로도
             const fatigue = myHorse.fatigue || 0;
             const fEl = document.getElementById('h-fatigue');
             fEl.innerText = `${fatigue} / 100`;
             fEl.style.color = fatigue > 80 ? 'red' : (fatigue > 50 ? 'orange' : '#2ecc71');
 
-            // 장비 표시 (0:편자, 1:안장, 2:가면)
             const gears = myHorse.equip || [null, null, null];
             const slots = ['👟','💺','🎭'];
             gears.forEach((g, idx) => {
@@ -295,12 +322,10 @@
                 }
             });
 
-            // 행동 버튼 생성
             renderActionButtons();
         }
 
         function renderActionButtons() {
-            // 먹이 버튼
             const feedContainer = document.getElementById('tab-feed');
             feedContainer.innerHTML = "";
             FOODS.forEach(food => {
@@ -312,7 +337,6 @@
                     </button>`;
             });
 
-            // 훈련 버튼
             const trainContainer = document.getElementById('tab-train');
             trainContainer.innerHTML = "";
             TRAININGS.forEach(tr => {
@@ -325,66 +349,86 @@
             });
         }
 
-        // --- [기능] 1. 말 생성 ---
+        // --- [수정됨] 1. 말 생성 (초기 스탯 하향 & 이름 입력) ---
         window.createFirstHorse = async () => {
-            const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-            const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
-            
+            const nameInput = document.getElementById('input-first-name');
+            const name = nameInput.value.trim();
+
+            if(!name) return alert("말의 이름을 지어주세요!");
+            if(name.length > 10) return alert("이름은 10자 이내여야 합니다.");
+
+            // 초기 스탯 대폭 하향 (5 ~ 15)
+            const baseStat = () => Math.floor(Math.random() * 11) + 5; 
+
             const newHorse = {
-                name: adj + noun,
+                name: name,
                 grade: 'F',
-                spd: Math.floor(Math.random()*30)+20,
-                sta: Math.floor(Math.random()*30)+20,
-                luk: Math.floor(Math.random()*30)+20,
+                spd: baseStat(),
+                sta: baseStat(),
+                luk: baseStat(),
                 bond: 0,
                 fatigue: 0,
-                equip: [null, null, null] // 장비 없음
+                equip: [null, null, null] 
             };
 
             await updateDoc(userRef, { horse: newHorse });
-            alert(`축하합니다! '${newHorse.name}'(이)가 태어났습니다!`);
+            
+            document.getElementById('adopt-modal').style.display = 'none';
+            alert(`축하합니다! '${newHorse.name}'(이)가 태어났습니다!\n열심히 훈련시켜주세요.`);
             location.reload();
         };
 
-        // --- [기능] 2. 먹이 주기 ---
+        // --- [추가됨] 이름 변경 기능 ---
+        window.openRenameModal = () => {
+            document.getElementById('input-rename').value = myHorse.name;
+            document.getElementById('rename-modal').style.display = 'flex';
+        };
+
+        window.confirmRename = async () => {
+            const input = document.getElementById('input-rename');
+            const newName = input.value.trim();
+
+            if(!newName) return alert("이름을 입력해주세요.");
+            if(newName.length > 10) return alert("이름은 10자 이내여야 합니다.");
+
+            myHorse.name = newName;
+            await updateDoc(userRef, { horse: myHorse });
+
+            document.getElementById('h-name').innerText = newName;
+            document.getElementById('rename-modal').style.display = 'none';
+            alert(`이름이 '${newName}'(으)로 변경되었습니다.`);
+        };
+
         window.feedHorse = async (foodId) => {
             const item = FOODS.find(f => f.id === foodId);
             if(myData.coins < item.price) return alert("돈이 부족합니다!");
             if(myHorse.fatigue <= 0 && item.fatigueRec > 0) return alert("말이 이미 쌩쌩합니다!");
 
-            // 계산
             let newFatigue = Math.max(0, (myHorse.fatigue || 0) - item.fatigueRec);
             let newBond = (myHorse.bond || 0) + item.bond;
             let newCoins = myData.coins - item.price;
 
-            // 업데이트
             myHorse.fatigue = newFatigue;
             myHorse.bond = newBond;
             myData.coins = newCoins;
 
-            await updateDoc(userRef, {
-                coins: newCoins,
-                horse: myHorse
-            });
+            await updateDoc(userRef, { coins: newCoins, horse: myHorse });
 
             alert(`${item.name}을(를) 먹였습니다.\n피로도가 회복되고 친밀도가 올랐습니다! ❤️`);
             updateCoinUI();
             renderMainScreen();
         };
 
-        // --- [기능] 3. 훈련 하기 ---
         window.trainHorse = async (trainId) => {
             const tr = TRAININGS.find(t => t.id === trainId);
             if(myData.coins < tr.cost) return alert("훈련비가 부족합니다!");
             if((myHorse.fatigue || 0) >= 100) return alert("말이 너무 지쳤습니다! 입원하기 싫으면 쉬세요. 🏥");
 
-            // 애니메이션
             const avatar = document.getElementById('h-avatar');
             avatar.classList.add('training');
             setTimeout(() => avatar.classList.remove('training'), 1000);
 
-            // 성공/실패 판정 (피로도가 높으면 실패율 증가)
-            const fatiguePenalty = (myHorse.fatigue || 0) / 200; // 피로도 100이면 +50% 실패확률
+            const fatiguePenalty = (myHorse.fatigue || 0) / 200; 
             const finalFailRate = tr.fail + fatiguePenalty;
             const isFail = Math.random() < finalFailRate;
 
@@ -394,12 +438,8 @@
 
             if(isFail) {
                 msg = `💥 훈련 실패!\n말이 부상을 입었습니다.\n스탯이 오르지 않고 피로도만 쌓입니다.`;
-                // 부상 시 스탯 하락 로직을 넣고 싶으면 여기서 구현
             } else {
-                // 성공
                 let gain = Math.floor(Math.random() * (tr.max - tr.min + 1)) + tr.min;
-                
-                // 유대감 보너스 (친밀도 100당 +1 추가 보너스)
                 if(myHorse.bond >= 50 && Math.random() < 0.3) {
                     gain += 1; msg = "✨ 대성공! (주인님을 위해 힘냈습니다!)\n";
                 }
@@ -425,29 +465,22 @@
             }, 500);
         };
 
-        // --- [기능] 4. 장비 뽑기 (가챠) ---
         window.drawGacha = async () => {
             if(myData.coins < GACHA_PRICE) return alert("돈이 부족합니다! (5만 코인 필요)");
             if(!confirm("50,000 코인을 사용하여 장비를 뽑으시겠습니까?\n(기존 장비는 사라집니다!)")) return;
 
-            // 가챠 로직
-            const rand = Math.random() * 100; // 0 ~ 100
+            const rand = Math.random() * 100; 
             let cumulative = 0;
-            let picked = EQUIPMENT_TIERS[0]; // 기본 C
+            let picked = EQUIPMENT_TIERS[0]; 
 
             for(let t of EQUIPMENT_TIERS) {
                 cumulative += t.prob;
-                if(rand <= cumulative) {
-                    picked = t;
-                    break;
-                }
+                if(rand <= cumulative) { picked = t; break; }
             }
 
-            // 부위 결정 (0:편자, 1:안장, 2:가면)
             const slotIdx = Math.floor(Math.random() * 3);
             const slotNames = ["황금 편자", "가죽 안장", "행운의 가면"];
             
-            // 장비 객체 생성
             const newGear = {
                 grade: picked.grade,
                 power: picked.power,
@@ -455,16 +488,9 @@
                 name: `${picked.grade}급 ${slotNames[slotIdx]}`
             };
 
-            // 장착 (기존꺼 덮어쓰기)
             if(!myHorse.equip) myHorse.equip = [null, null, null];
             myHorse.equip[slotIdx] = newGear;
             
-            // 스탯 반영 (장비는 영구 스탯 증가로 처리할지, 착용 효과로 할지 고민. 여기선 영구 증가로 심플하게)
-            // 하지만 '착용 중'을 보여주려면 스탯에 합산하지 않고 별도로 계산해야 함.
-            // 여기서는 심플하게 "보유 효과"로 스탯을 즉시 올려버리는 방식 대신,
-            // 3-1 경마 게임에서 계산할 때 (기본스탯 + 장비보너스)로 합산하도록 하겠습니다.
-            // 일단 저장만 합니다.
-
             await updateDoc(userRef, {
                 coins: increment(-GACHA_PRICE),
                 horse: myHorse
