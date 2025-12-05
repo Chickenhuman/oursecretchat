@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Casino - Super Slots</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    <style>
+        body { font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #111; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* 헤더 */
+        .header { 
+            padding: 15px; background: #222; border-bottom: 2px solid #333;
+            display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 20;
+        }
+        .title-group { display: flex; align-items: center; gap: 8px; }
+        .btn-help {
+            width: 24px; height: 24px; border-radius: 50%; background: white; color: #333;
+            border: none; font-weight: bold; font-size: 14px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .money-box { font-size: 18px; font-weight: bold; color: #f1c40f; text-shadow: 1px 1px 0 #000; }
+        
+        /* 슬롯 머신 스테이지 */
+        .stage { 
+            flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            background: radial-gradient(circle, #2c0b4a 0%, #000 100%); /* 보라색 네온 느낌 */
+            position: relative; 
+        }
+
+        /* 슬롯 기계 본체 */
+        .slot-machine {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            padding: 15px; border-radius: 20px;
+            box-shadow: 0 10px 0 #a04000, 0 0 50px rgba(230, 126, 34, 0.3);
+            border: 4px solid #f1c40f;
+            position: relative;
+        }
+        .slot-title { text-align: center; font-weight: bold; color: #333; margin-bottom: 10px; background: #f1c40f; border-radius: 5px; font-size: 14px; padding: 2px; }
+
+        /* 릴 창문 */
+        .reels-container {
+            display: flex; gap: 10px; background: #000; padding: 10px; border-radius: 10px;
+            border: 4px solid #333; box-shadow: inset 0 0 20px #000;
+        }
+        
+        .reel {
+            width: 70px; height: 100px; 
+            background: white; border-radius: 5px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 50px; color: #333;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+            overflow: hidden; position: relative;
+        }
+        /* 돌아가는 효과 (블러) */
+        .reel.spinning { color: transparent; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .reel.spinning::after {
+            content: '🍒🍋🍇💎7️⃣'; /* 잔상 효과 */
+            position: absolute; top: -20px; left: 0; width: 100%;
+            font-size: 40px; line-height: 50px; text-align: center; color: rgba(0,0,0,0.3);
+            animation: spinBlur 0.2s linear infinite;
+        }
+        
+        @keyframes spinBlur { 0% { transform: translateY(0); } 100% { transform: translateY(-50px); } }
+        
+        /* 승리 효과 */
+        .win-glow { animation: flash 0.5s infinite; border: 4px solid #fff !important; }
+        @keyframes flash { 0% { box-shadow: 0 0 10px gold; } 50% { box-shadow: 0 0 40px red; } 100% { box-shadow: 0 0 10px gold; } }
+
+        .msg-box { margin-top: 20px; height: 30px; font-weight: bold; font-size: 18px; text-align: center; color: #f1c40f; text-shadow: 0 2px 2px #000; }
+
+        /* 컨트롤 패널 */
+        .control-panel { background: #fff; color: #333; padding: 20px; border-top-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); z-index: 10;}
+        
+        .bet-input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .input-money { flex: 1; padding: 10px; font-size: 18px; border: 2px solid #ccc; border-radius: 8px; text-align: right; font-weight: bold; }
+        .btn-set { background: #95a5a6; color: white; border: none; border-radius: 8px; padding: 0 10px; font-weight: bold; cursor: pointer; font-size: 12px; }
+
+        .spin-area { display: flex; gap: 10px; }
+        .btn-spin { 
+            flex: 2; background: #e74c3c; color: white; font-size: 24px; font-weight: bold; 
+            border: none; border-radius: 12px; padding: 15px; 
+            box-shadow: 0 5px 0 #c0392b; transition: 0.1s;
+        }
+        .btn-spin:active { transform: translateY(5px); box-shadow: none; }
+        .btn-spin:disabled { background: #555; box-shadow: none; color: #aaa; cursor: not-allowed; }
+
+        .btn-sub { flex: 1; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; color: white; font-size: 14px; }
+        .btn-back { background: #7f8c8d; box-shadow: 0 5px 0 #5f6c6d; }
+        .btn-back:active { transform: translateY(5px); box-shadow: none; }
+        .btn-reset { background: #e67e22; box-shadow: 0 5px 0 #d35400; }
+        .btn-reset:active { transform: translateY(5px); box-shadow: none; }
+
+        /* 도움말 모달 (최상단 고정) */
+        .modal { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); z-index: 9999; 
+            display: none; justify-content: center; align-items: center; 
+            backdrop-filter: blur(2px);
+        }
+        .modal-content { 
+            background: #fff; color: #333; width: 85%; max-width: 350px; 
+            max-height: 85vh; overflow-y: auto; padding: 25px; 
+            border-radius: 15px; border: 4px solid #f1c40f;
+        }
+        .modal-title { font-size: 22px; font-weight: bold; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .pay-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 14px; }
+        .pay-table td { padding: 5px; border-bottom: 1px solid #eee; }
+        .pay-table td:last-child { text-align: right; font-weight: bold; color: #c0392b; }
+        .modal-close { width: 100%; padding: 12px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="title-group">
+            <span>🎰 SUPER SLOTS</span>
+            <button class="btn-help" onclick="toggleHelp()">?</button>
+        </div>
+        <div class="money-box" id="wallet-bal">0</div>
+    </div>
+
+    <div class="stage">
+        <div class="slot-machine" id="machine-body">
+            <div class="slot-title">JACKPOT x77</div>
+            <div class="reels-container">
+                <div class="reel" id="reel-1">7️⃣</div>
+                <div class="reel" id="reel-2">7️⃣</div>
+                <div class="reel" id="reel-3">7️⃣</div>
+            </div>
+        </div>
+        <div class="msg-box" id="msg-box">배팅하고 돌리세요!</div>
+    </div>
+
+    <div class="control-panel">
+        <div class="bet-input-group">
+            <input type="number" id="bet-input" class="input-money" placeholder="배팅금액">
+            <button class="btn-set" onclick="addBet(100)">+100</button>
+            <button class="btn-set" onclick="addBet(1000)">+1천</button>
+            <button class="btn-set" onclick="addBet(10000)">+1만</button>
+            <button class="btn-set" style="background:#c0392b;" onclick="addBet('ALL')">올인</button>
+        </div>
+
+        <div class="spin-area">
+            <button class="btn-sub btn-back" onclick="location.href='game3.html'">나가기</button>
+            <button class="btn-sub btn-reset" onclick="resetBet()">초기화</button>
+            <button id="btn-spin" class="btn-spin" onclick="spinSlots()">SPIN!</button>
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal" onclick="toggleHelp()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-title">💰 배당표 (Payout)</div>
+            <table class="pay-table">
+                <tr><td>7️⃣ 7️⃣ 7️⃣ (잭팟)</td><td>x 77배</td></tr>
+                <tr><td>💎 💎 💎 (다이아)</td><td>x 20배</td></tr>
+                <tr><td>🍉 🍉 🍉 (과일)</td><td>x 10배</td></tr>
+                <tr><td>🍇 🍇 🍇 (과일)</td><td>x 10배</td></tr>
+                <tr><td>🍋 🍋 🍋 (소박)</td><td>x 5배</td></tr>
+                <tr><td>🍒 🍒 🍒 (소박)</td><td>x 5배</td></tr>
+                <tr><td>7️⃣ 7️⃣ ❓ (아까비)</td><td>x 2배</td></tr>
+            </table>
+            <div style="font-size:12px; color:#666; margin-bottom:15px; text-align:center;">
+                * 2개만 맞아도 보너스가 터질 수 있습니다!<br>
+                * 인생은 한방! 잭팟을 노리세요.
+            </div>
+            <button class="modal-close" onclick="toggleHelp()">닫기</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
+          authDomain: "lovechatproject-2db11.firebaseapp.com",
+          projectId: "lovechatproject-2db11",
+          storageBucket: "lovechatproject-2db11.firebasestorage.app",
+          messagingSenderId: "1069136590072",
+          appId: "1:1069136590072:web:7712e718db03c70bff370d",
+          measurementId: "G-ERG2LL283F"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        let myId = localStorage.getItem('chat_uid');
+        const userRef = doc(db, "users", myId);
+
+        let myBalance = 0;
+        let isSpinning = false;
+
+        // 심볼 정의 (확률 가중치 적용을 위해 배열 구성)
+        // 7(잭팟)은 적게, 체리/레몬은 많게
+        const SYMBOLS_POOL = [
+            '7️⃣', '7️⃣', // 2개 (희귀)
+            '💎', '💎', '💎', // 3개
+            '🍉', '🍉', '🍉', '🍉', // 4개
+            '🍇', '🍇', '🍇', '🍇', 
+            '🍋', '🍋', '🍋', '🍋', '🍋', 
+            '🍒', '🍒', '🍒', '🍒', '🍒', '🍒'
+        ];
+        // 표시용 전체 심볼
+        const ALL_SYMBOLS = ['7️⃣', '💎', '🍉', '🍇', '🍋', '🍒'];
+
+        getDoc(userRef).then(snap => {
+            if(snap.exists()) {
+                myBalance = snap.data().coins;
+                updateUI();
+            }
+        });
+
+        window.toggleHelp = () => {
+            const el = document.getElementById('help-modal');
+            el.style.display = (el.style.display === 'flex') ? 'none' : 'flex';
+        };
+
+        window.addBet = (amt) => {
+            if(isSpinning) return;
+            const input = document.getElementById('bet-input');
+            let current = parseInt(input.value) || 0;
+            let target = (amt === 'ALL') ? myBalance : current + amt;
+            if(target > myBalance) target = myBalance;
+            input.value = target;
+        };
+
+        window.resetBet = () => {
+            if(isSpinning) return;
+            document.getElementById('bet-input').value = '';
+        };
+
+        function getRandomSymbol() {
+            return SYMBOLS_POOL[Math.floor(Math.random() * SYMBOLS_POOL.length)];
+        }
+
+        // 릴 돌리는 애니메이션 함수
+        function animateReel(reelId, duration, finalSymbol) {
+            const reel = document.getElementById(reelId);
+            reel.classList.add('spinning');
+            
+            // 0.1초마다 심볼 랜덤 변경 (잔상 효과)
+            const interval = setInterval(() => {
+                reel.innerText = ALL_SYMBOLS[Math.floor(Math.random() * ALL_SYMBOLS.length)];
+            }, 80);
+
+            // 지정된 시간 후 멈춤
+            setTimeout(() => {
+                clearInterval(interval);
+                reel.classList.remove('spinning');
+                reel.innerText = finalSymbol;
+                // 쿵! 하는 느낌을 위해 살짝 커졌다 작아지기
+                reel.style.transform = "scale(1.2)";
+                setTimeout(() => reel.style.transform = "scale(1)", 150);
+            }, duration);
+        }
+
+        window.spinSlots = async () => {
+            const betInput = document.getElementById('bet-input');
+            const betMoney = parseInt(betInput.value) || 0;
+
+            if(betMoney <= 0) return alert("배팅금을 입력하세요!");
+            if(betMoney > myBalance) return alert("잔액이 부족합니다.");
+
+            // 게임 시작
+            isSpinning = true;
+            document.getElementById('btn-spin').disabled = true;
+            document.getElementById('machine-body').classList.remove('win-glow'); // 효과 제거
+            document.getElementById('msg-box').innerText = "행운을 빕니다...";
+            document.getElementById('msg-box').style.color = "#fff";
+
+            // 돈 차감
+            myBalance -= betMoney;
+            updateUI();
+            await updateDoc(userRef, { coins: myBalance });
+
+            // 결과 미리 결정
+            const r1 = getRandomSymbol();
+            const r2 = getRandomSymbol();
+            const r3 = getRandomSymbol();
+
+            // 릴 회전 (시간차 공격)
+            animateReel('reel-1', 1000, r1);
+            animateReel('reel-2', 1500, r2); // 0.5초 더 돎
+            animateReel('reel-3', 2200, r3); // 0.7초 더 돎 (쪼는 맛)
+
+            // 결과 판정 (모든 릴이 멈춘 후)
+            setTimeout(async () => {
+                let multiplier = 0;
+                let msg = "";
+                let color = "#e74c3c"; // 기본 패배색
+
+                // 승리 로직
+                if (r1 === r2 && r2 === r3) {
+                    // 1. 3개 모두 똑같을 때 (대박)
+                    if(r1 === '7️⃣') { multiplier = 77; msg = "🚨 잭팟! 77배! 🚨"; color = "#f1c40f"; }
+                    else if(r1 === '💎') { multiplier = 20; msg = "다이아몬드! (x20)"; color = "#2ecc71"; }
+                    else if(r1 === '🍉' || r1 === '🍇') { multiplier = 10; msg = "나이스! (x10)"; color = "#2ecc71"; }
+                    else { 
+                        // 레몬, 체리 등 나머지 심볼 3개
+                        multiplier = 5; msg = "소박 당첨 (x5)"; color = "#3498db"; 
+                    }
+                } 
+                else if (r1 === r2 || r2 === r3 || r1 === r3) {
+                    // 2. [추가됨] 2개라도 똑같을 때 (소소한 이득)
+                    // 7은 특별하니까 배당을 좀 더 줍니다
+                    if ( (r1===r2 && r1==='7️⃣') || (r2===r3 && r2==='7️⃣') || (r1===r3 && r1==='7️⃣') ) {
+                        multiplier = 3; msg = "럭키세븐 투페어! (x3)"; color = "#e67e22";
+                    } else {
+                        // 나머지 심볼 2개 일치 (본전 + 용돈)
+                        multiplier = 1.5; msg = "2개 일치! (x1.5)"; color = "#95a5a6";
+                    }
+                }
+
+                const msgBox = document.getElementById('msg-box');
+                
+                if (multiplier > 0) {
+                    const winMoney = Math.floor(betMoney * multiplier);
+                    myBalance += winMoney;
+                    await updateDoc(userRef, { coins: increment(winMoney) });
+                    
+                    msgBox.innerText = `${msg} (+${winMoney.toLocaleString()})`;
+                    msgBox.style.color = color;
+                    
+                    // 잭팟/고배당 시 기계 번쩍거림
+                    if(multiplier >= 10) document.getElementById('machine-body').classList.add('win-glow');
+                } else {
+                    msgBox.innerText = "꽝... 다음 기회에!";
+                    msgBox.style.color = "#e74c3c";
+                }
+
+                updateUI();
+                isSpinning = false;
+                document.getElementById('btn-spin').disabled = false;
+
+            }, 2300); // 릴3 멈추고 0.1초 뒤
+        };
+
+        function updateUI() {
+            document.getElementById('wallet-bal').innerText = myBalance.toLocaleString();
+        }
+    </script>
+</body>
+</html>

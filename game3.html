@@ -24,12 +24,16 @@
         }
         .wallet-label { font-size: 14px; opacity: 0.8; margin-bottom: 5px; }
         .wallet-balance { font-size: 32px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
-        .btn-charge {
-            background: rgba(255,255,255,0.2); border: 1px solid white; color: white;
-            padding: 5px 15px; border-radius: 15px; font-size: 12px; cursor: pointer;
-            margin-top: 10px; transition: 0.2s;
+        
+        /* 버튼 그룹 */
+        .wallet-btns { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-wallet {
+            border: 1px solid white; color: white;
+            padding: 8px 15px; border-radius: 15px; font-size: 13px; cursor: pointer;
+            transition: 0.2s; background: rgba(255,255,255,0.1); font-weight: bold;
         }
-        .btn-charge:hover { background: rgba(255,255,255,0.4); }
+        .btn-wallet:hover { background: rgba(255,255,255,0.3); }
+        .btn-gift { background: rgba(52, 152, 219, 0.4); border-color: #3498db; }
 
         /* 게임 메뉴 */
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -59,10 +63,16 @@
 <div class="container">
     <h2 style="text-align:center; margin:0;">🎰 CASINO LOBBY</h2>
     
-    <div class="wallet-card">
-        <div class="wallet-label">MY WALLET</div>
+ <div class="wallet-card">
+        <div class="wallet-label">
+            MY WALLET <span id="my-code" style="font-size:12px; color:#eee; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; margin-left:5px;">#????</span>
+        </div>
         <div class="wallet-balance" id="my-coin">0 💰</div>
-        <button class="btn-charge" onclick="chargeCoin()">💸 무료 충전소 (+1,000)</button>
+        
+        <div class="wallet-btns">
+            <button class="btn-wallet" onclick="chargeCoin()">💸 무료 충전</button>
+            <button class="btn-wallet btn-gift" onclick="sendGift()">🎁 선물하기</button>
+        </div>
     </div>
 
     <div class="menu-grid">
@@ -81,6 +91,11 @@
             <span class="menu-title">하이로우 (Hi-Lo)</span>
         </a>
 
+        <a href="game3-4.html" class="menu-item">
+            <span class="menu-icon">🍒</span>
+            <span class="menu-title">슬롯머신 (Slots)</span>
+        </a>
+
         <div class="menu-item" style="opacity:0.5; cursor:not-allowed;">
             <span class="menu-icon">🚧</span>
             <span class="menu-title">준비 중...</span>
@@ -88,7 +103,7 @@
     </div>
 
     <div class="rank-panel">
-        <div class="rank-header"><span>🏆 부자 랭킹</span><span>보유 자산</span></div>
+        <div class="rank-header"><span>🏆 부자 랭킹 (0원 제외)</span><span>보유 자산</span></div>
         <div id="rank-list" class="rank-list">로딩 중...</div>
     </div>
 
@@ -97,7 +112,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, onSnapshot, increment } 
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, onSnapshot, increment } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // 🔴 Firebase Config
@@ -111,7 +126,7 @@
       measurementId: "G-ERG2LL283F"
     };
 
-    const app = initializeApp(firebaseConfig);
+   const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     
     let myId = localStorage.getItem('chat_uid');
@@ -119,40 +134,45 @@
     if(!myId) { myId = 'user_' + Date.now(); localStorage.setItem('chat_uid', myId); }
 
     const userRef = doc(db, "users", myId);
+    let myCurrentCoins = 0;
 
-    // 1. 내 정보 초기화 및 로드
+    // 1. 내 정보 초기화 및 로드 (수정됨: 고유 코드 표시)
     async function initUser() {
+        // 내 고유 코드(ID 뒷 4자리) 표시
+        const shortCode = "#" + myId.slice(-4).toUpperCase();
+        document.getElementById('my-code').innerText = shortCode;
+
         const snap = await getDoc(userRef);
         if (!snap.exists()) {
-            // 첫 방문 시 10,000 코인 지급
             await setDoc(userRef, {
                 name: myName,
                 coins: 10000,
                 lastLogin: new Date()
             });
         } else {
-            // 이름 동기화
             if(snap.data().name !== myName) updateDoc(userRef, { name: myName });
         }
 
-        // 실시간 잔액 감시
         onSnapshot(userRef, (doc) => {
             if(doc.exists()) {
-                const coins = doc.data().coins || 0;
-                document.getElementById('my-coin').innerText = coins.toLocaleString() + " 💰";
+                myCurrentCoins = doc.data().coins || 0;
+                document.getElementById('my-coin').innerText = myCurrentCoins.toLocaleString() + " 💰";
             }
         });
     }
 
-    // 2. 전체 랭킹 로드
+    // 2. 전체 랭킹 로드 (기존과 동일)
     function loadRanking() {
         const q = query(collection(db, "users"), orderBy("coins", "desc"));
         onSnapshot(q, (snapshot) => {
             const list = document.getElementById('rank-list');
             list.innerHTML = "";
             let rank = 1;
+            
             snapshot.forEach(doc => {
                 const d = doc.data();
+                if (d.coins <= 0) return; // 0원 이하 숨김
+
                 const isMe = doc.id === myId ? " (나)" : "";
                 list.innerHTML += `
                     <div class="rank-row" style="${isMe ? 'color:#d35400;font-weight:bold;' : ''}">
@@ -162,10 +182,11 @@
                 `;
                 rank++;
             });
+            if(list.innerHTML === "") list.innerHTML = "<div style='text-align:center; color:#999;'>부자가 없습니다...</div>";
         });
     }
 
-    // 3. 무료 충전소
+    // 3. 무료 충전소 (기존과 동일)
     window.chargeCoin = async () => {
         const snap = await getDoc(userRef);
         if(snap.exists() && snap.data().coins < 1000) {
@@ -173,6 +194,78 @@
             alert("1,000 코인이 충전되었습니다! (파산 구조대 도착 🚑)");
         } else {
             alert("코인이 1,000원 미만일 때만 충전 가능합니다! 😅");
+        }
+    };
+
+    // 4. [수정됨] 선물하기 기능 (동명이인 처리 추가)
+    window.sendGift = async () => {
+        const targetName = prompt("누구에게 코인을 보낼까요?\n(받는 사람의 닉네임을 입력하세요)");
+        if(!targetName) return;
+        if(targetName === myName) return alert("자신에게는 보낼 수 없습니다.");
+
+        const amountStr = prompt("얼마를 보낼까요?");
+        const amount = parseInt(amountStr);
+
+        if(!amount || amount <= 0) return alert("올바른 금액을 입력해주세요.");
+        if(amount > myCurrentCoins) return alert("잔액이 부족합니다.");
+
+        // 받는 사람 검색
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("name", "==", targetName));
+        const querySnapshot = await getDocs(q);
+
+        // 검색 결과 필터링 (나 자신 제외)
+        let candidates = [];
+        querySnapshot.forEach((doc) => {
+            if(doc.id !== myId) {
+                candidates.push({ id: doc.id, ...doc.data() });
+            }
+        });
+
+        if(candidates.length === 0) {
+            alert(`'${targetName}' 님을 찾을 수 없습니다.`);
+            return;
+        }
+
+        let targetUser = null;
+
+        // [핵심] 동명이인 처리
+        if (candidates.length === 1) {
+            // 1명뿐이면 바로 선택
+            targetUser = candidates[0];
+        } else {
+            // 여러 명이면 선택창 띄우기
+            let msg = `['${targetName}']님이 ${candidates.length}명 검색되었습니다.\n번호를 입력해 선택해주세요:\n\n`;
+            
+            candidates.forEach((user, index) => {
+                const shortCode = "#" + user.id.slice(-4).toUpperCase();
+                msg += `[${index + 1}] ${user.name} (ID: ${shortCode})\n`;
+            });
+
+            const choiceStr = prompt(msg);
+            const choice = parseInt(choiceStr);
+
+            if (!choice || choice < 1 || choice > candidates.length) {
+                return alert("잘못된 선택입니다. 취소되었습니다.");
+            }
+            targetUser = candidates[choice - 1];
+        }
+
+        // 최종 확인 및 전송
+        const targetCode = "#" + targetUser.id.slice(-4).toUpperCase();
+        if(confirm(`${targetUser.name} (${targetCode})님에게\n${amount.toLocaleString()} 코인을 보내시겠습니까?`)) {
+            try {
+                // 내 돈 차감
+                await updateDoc(userRef, { coins: increment(-amount) });
+                // 상대 돈 추가
+                const targetRef = doc(db, "users", targetUser.id);
+                await updateDoc(targetRef, { coins: increment(amount) });
+                
+                alert("이체 완료! 💸");
+            } catch(e) {
+                console.error(e);
+                alert("전송 중 오류가 발생했습니다.");
+            }
         }
     };
 
