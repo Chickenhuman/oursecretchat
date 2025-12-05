@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flex Shop</title>
+    <style>
+        body { 
+            font-family: 'Apple SD Gothic Neo', sans-serif; 
+            background-color: #1a1a1a; color: white; margin: 0; 
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100vh; overflow-y: auto; padding-bottom: 30px;
+        }
+
+        .container { width: 90%; max-width: 450px; padding: 20px 0; }
+
+        .header {
+            text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px;
+        }
+        .shop-title { font-size: 24px; font-weight: bold; color: #f1c40f; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+        .my-wallet { background: #333; padding: 10px; border-radius: 10px; margin-top: 10px; font-weight: bold; }
+        .coin-val { color: #2ecc71; font-size: 18px; }
+
+        /* 섹션 스타일 */
+        .section-title { font-size: 18px; font-weight: bold; margin: 20px 0 10px 0; border-left: 4px solid #e74c3c; padding-left: 10px; }
+        
+        .item-list { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        
+        .shop-item {
+            background: #2c2c2c; padding: 15px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: space-between;
+            border: 1px solid #444; transition: 0.2s;
+        }
+        .shop-item:hover { border-color: #f1c40f; transform: translateY(-2px); }
+
+        .item-info { display: flex; align-items: center; gap: 15px; }
+        .item-icon { font-size: 30px; width: 40px; text-align: center; }
+        .item-text h4 { margin: 0; font-size: 16px; }
+        .item-text p { margin: 4px 0 0 0; font-size: 12px; color: #aaa; }
+
+        .btn-buy {
+            background: #f1c40f; color: #111; border: none; padding: 8px 12px;
+            border-radius: 8px; font-weight: bold; cursor: pointer; min-width: 80px;
+        }
+        .btn-buy:disabled { background: #555; color: #888; cursor: not-allowed; }
+        
+        /* 칭호 아이템 스타일 */
+        .title-badge { 
+            background: #333; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px; 
+            border: 1px solid #555;
+        }
+
+        .btn-back { margin-top: 30px; width: 100%; padding: 15px; background: #555; border: none; color: white; border-radius: 10px; font-weight: bold; cursor: pointer; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="shop-title">💎 FLEX SHOP</div>
+        <div class="my-wallet">내 지갑: <span id="my-coin" class="coin-val">0</span></div>
+    </div>
+
+    <div class="section-title">⚡ 능력 강화 (영구 지속)</div>
+    <div class="item-list">
+        <div class="shop-item">
+            <div class="item-info">
+                <div class="item-icon">🛡️</div>
+                <div class="item-text">
+                    <h4>파산 면책권 (Gold)</h4>
+                    <p>무료 충전 금액이 <b>10,000원</b>으로 증가합니다.</p>
+                </div>
+            </div>
+            <button id="btn-upgrade-1" class="btn-buy" onclick="buyUpgrade('chargeLevel', 1, 100000)">
+                10만
+            </button>
+        </div>
+    </div>
+
+    <div class="section-title">👑 칭호 상점 (랭킹에 표시됨)</div>
+    <div class="item-list" id="title-list">
+        </div>
+
+    <button class="btn-back" onclick="location.href='game3.html'">로비로 돌아가기</button>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, updateDoc, increment } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
+      authDomain: "lovechatproject-2db11.firebaseapp.com",
+      projectId: "lovechatproject-2db11",
+      storageBucket: "lovechatproject-2db11.firebasestorage.app",
+      messagingSenderId: "1069136590072",
+      appId: "1:1069136590072:web:7712e718db03c70bff370d",
+      measurementId: "G-ERG2LL283F"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    let myId = localStorage.getItem('chat_uid');
+    const userRef = doc(db, "users", myId);
+
+    let myCoins = 0;
+    let myData = {};
+
+    // 칭호 목록 데이터
+    const TITLE_ITEMS = [
+        { id: 'title_rich', name: '💰 [금수저]', price: 50000 },
+        { id: 'title_tazza', name: '🎴 [타짜]', price: 100000 },
+        { id: 'title_god', name: '👑 [도박의신]', price: 500000 },
+        { id: 'title_sloth', name: '🦥 [나무늘보]', price: 10000 },
+        { id: 'title_lover', name: '❤️ [사랑꾼]', price: 30000 }
+    ];
+
+    async function init() {
+        const snap = await getDoc(userRef);
+        if(snap.exists()) {
+            myData = snap.data();
+            myCoins = myData.coins || 0;
+            updateUI();
+        } else {
+            alert("로그인 정보 없음");
+            location.href = 'game3.html';
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('my-coin').innerText = myCoins.toLocaleString();
+
+        // 1. 업그레이드 버튼 상태 확인
+        const chargeLvl = myData.chargeLevel || 0;
+        const btnUp = document.getElementById('btn-upgrade-1');
+        if(chargeLvl >= 1) {
+            btnUp.innerText = "구매완료";
+            btnUp.disabled = true;
+            btnUp.style.background = "#2ecc71"; // 초록색
+        }
+
+        // 2. 칭호 리스트 렌더링
+        const titleListEl = document.getElementById('title-list');
+        titleListEl.innerHTML = "";
+        
+        const myTitles = myData.ownedTitles || []; // 내가 가진 칭호 배열 (ID 문자열)
+        const currentTitle = myData.equippedTitle || ""; // 현재 장착 중인 칭호
+
+        TITLE_ITEMS.forEach(item => {
+            const isOwned = myTitles.includes(item.id);
+            const isEquipped = currentTitle === item.name;
+            
+            let btnHtml = "";
+            if (isEquipped) {
+                btnHtml = `<button class="btn-buy" disabled style="background:#2ecc71; color:white;">장착중</button>`;
+            } else if (isOwned) {
+                btnHtml = `<button class="btn-buy" onclick="equipTitle('${item.name}')" style="background:#3498db; color:white;">장착하기</button>`;
+            } else {
+                btnHtml = `<button class="btn-buy" onclick="buyTitle('${item.id}', '${item.name}', ${item.price})">${item.price/10000}만</button>`;
+            }
+
+            const div = document.createElement('div');
+            div.className = 'shop-item';
+            div.innerHTML = `
+                <div class="item-info">
+                    <div class="item-icon">🏷️</div>
+                    <div class="item-text">
+                        <h4>${item.name}</h4>
+                        <p>${isOwned ? '보유 중' : '구매하여 닉네임을 꾸미세요'}</p>
+                    </div>
+                </div>
+                ${btnHtml}
+            `;
+            titleListEl.appendChild(div);
+        });
+        
+        // 칭호 해제 버튼 (하나라도 있으면)
+        if(myTitles.length > 0 && currentTitle) {
+            const div = document.createElement('div');
+            div.className = 'shop-item';
+            div.innerHTML = `
+                <div class="item-info"><div class="item-icon">🚫</div><div class="item-text"><h4>칭호 해제</h4><p>원래 이름으로 돌아갑니다</p></div></div>
+                <button class="btn-buy" onclick="equipTitle('')" style="background:#555; color:white;">해제</button>
+            `;
+            titleListEl.appendChild(div);
+        }
+    }
+
+    // [기능 1] 업그레이드 구매
+    window.buyUpgrade = async (field, level, price) => {
+        if(myCoins < price) return alert("돈이 부족합니다!");
+        if(!confirm("파산 면책권을 구매하시겠습니까?\n(이제 무료 충전시 10,000원을 받습니다)")) return;
+
+        try {
+            await updateDoc(userRef, {
+                coins: increment(-price),
+                [field]: level // chargeLevel: 1 저장
+            });
+            alert("구매 성공! 능력이 강화되었습니다.");
+            location.reload();
+        } catch(e) { alert("오류 발생"); }
+    };
+
+    // [기능 2] 칭호 구매
+    window.buyTitle = async (id, name, price) => {
+        if(myCoins < price) return alert("돈이 부족합니다!");
+        if(!confirm(`'${name}' 칭호를 구매하시겠습니까?`)) return;
+
+        try {
+            // Firestore 배열에 추가 (arrayUnion이 좋지만 간단히 처리)
+            let newTitles = myData.ownedTitles || [];
+            newTitles.push(id);
+
+            await updateDoc(userRef, {
+                coins: increment(-price),
+                ownedTitles: newTitles
+            });
+            alert("구매 성공! [장착하기] 버튼을 눌러 적용하세요.");
+            location.reload();
+        } catch(e) { console.error(e); alert("오류 발생"); }
+    };
+
+    // [기능 3] 칭호 장착
+    window.equipTitle = async (titleStr) => {
+        try {
+            // 현재 이름에서 칭호 부분만 교체하는 게 아니라,
+            // 'equippedTitle' 필드를 따로 두고 랭킹이나 로비에서 조합해서 보여주는 방식이 안전함.
+            // 하지만 여기선 간단히 DB에 'equippedTitle' 필드를 저장.
+            await updateDoc(userRef, {
+                equippedTitle: titleStr
+            });
+            alert(titleStr ? "칭호가 적용되었습니다!" : "칭호가 해제되었습니다.");
+            location.reload();
+        } catch(e) { console.error(e); }
+    };
+
+    init();
+</script>
+</body>
+</html>
