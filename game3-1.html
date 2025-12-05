@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Horse Racing - Tip Sheet Edition</title>
+    <title>Horse Racing - Ultimate Edition</title>
     <link rel="apple-touch-icon" href="icon.png">
     <style>
         body { font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #333; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -96,22 +96,10 @@
             width: 70px; padding: 6px; border: 1px solid #ccc; border-radius: 5px; 
             text-align: right; font-size: 14px; margin-left: 5px;
         }
-/* 초기화 버튼 스타일 */
-.btn-reset { 
-    background: #e67e22; /* 주황색 */
-    color: white; 
-    width: 80px; 
-    flex: none; /* 크기 고정 */
-    box-shadow: 0 4px 0 #d35400; 
-    margin-right: 5px; /* 오른쪽 버튼과 간격 */
-}
-.btn-reset:active { 
-    transform: translateY(4px); 
-    box-shadow: none; 
-}
-        .control-bar { 
-            margin-top: auto; padding-top: 10px; display: flex; gap: 10px; 
-        }
+        .btn-reset { background: #e67e22; color: white; width: 80px; flex: none; box-shadow: 0 4px 0 #d35400; margin-right: 5px; }
+        .btn-reset:active { transform: translateY(4px); box-shadow: none; }
+        
+        .control-bar { margin-top: auto; padding-top: 10px; display: flex; gap: 10px; }
         .btn { flex: 1; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
         .btn-start { background: #27ae60; color: white; box-shadow: 0 4px 0 #219150; }
         .btn-start:active { transform: translateY(4px); box-shadow: none; }
@@ -125,55 +113,62 @@
             white-space: nowrap; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-shadow: 0 2px 4px black;
         }
 
-        /* 모달 */
-.modal { 
-            position: fixed; 
-            top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.85); /* 배경을 좀 더 진하게 */
-            z-index: 9999; /* 최상위 레이어로 설정 */
-            display: none; 
-            justify-content: center; align-items: center; 
-            backdrop-filter: blur(2px); /* 배경 블러 효과 추가 */
+        /* 모달 공통 */
+        .modal { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); z-index: 9999; display: none; 
+            justify-content: center; align-items: center; backdrop-filter: blur(2px); 
         }
         
-        /* 예상지 종이 스타일 */
+        /* 예상지 스타일 */
         .tip-paper { 
-            background: #f4e1d2; color: #333; 
-            width: 90%; max-width: 500px; 
-            max-height: 90vh; /* 화면 높이의 90%까지만 차지 */
-            overflow-y: auto; /* 내용이 길면 스크롤 생김 */
-            padding: 20px; border-radius: 5px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
-            border: 1px solid #d3c0b0;
-            font-family: 'Gungsuh', 'Batang', serif; 
-            position: relative;
+            background: #f4e1d2; color: #333; width: 90%; max-width: 500px; max-height: 90vh; 
+            overflow-y: auto; padding: 20px; border-radius: 5px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid #d3c0b0;
+            font-family: 'Gungsuh', 'Batang', serif; position: relative;
         }
-        
         .tip-header { text-align: center; border-bottom: 3px double #333; padding-bottom: 10px; margin-bottom: 15px; }
         .tip-title { font-size: 22px; font-weight: bold; color: #c0392b; text-decoration: underline; word-break: keep-all;}
         .tip-date { font-size: 12px; color: #555; margin-top: 5px; }
-        
         .tip-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         .tip-table th { background: #333; color: #f4e1d2; padding: 5px; font-size: 12px; }
         .tip-table td { border-bottom: 1px solid #bbb; padding: 8px 5px; font-size: 13px; vertical-align: middle; }
         .tip-highlight { color: #c0392b; font-weight: bold; background: rgba(255,0,0,0.1); }
-        
-        .stamp-box { 
-            border: 3px solid #c0392b; border-radius: 10px; padding: 10px; 
-            text-align: center; margin-top: 15px; transform: rotate(-2deg);
-        }
+        .stamp-box { border: 3px solid #c0392b; border-radius: 10px; padding: 10px; text-align: center; margin-top: 15px; transform: rotate(-2deg); }
         .stamp-text { color: #c0392b; font-weight: bold; font-size: 18px; }
 
         /* 도움말 스타일 */
         .help-content { 
-            background: white; color: #333; 
-            width: 85%; max-width: 400px; 
-            max-height: 80vh; /* 높이 제한 */
-            overflow-y: auto; /* 스크롤 허용 */
-            padding: 25px; border-radius: 15px; 
-            line-height: 1.6; font-size: 14px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: white; color: #333; width: 85%; max-width: 400px; max-height: 80vh; 
+            overflow-y: auto; padding: 25px; border-radius: 15px; 
+            line-height: 1.6; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
+
+        /* 결과 화면 스타일 */
+        .result-paper { 
+            background: white; color: #333; width: 90%; max-width: 500px; max-height: 90vh; 
+            overflow-y: auto; padding: 25px; border-radius: 15px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8); border: 4px solid #f1c40f;
+        }
+        .result-header { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; color: #d35400; text-decoration: underline; }
+        .result-msg { 
+            text-align: center; background: #fff3cd; padding: 15px; 
+            border-radius: 10px; margin-bottom: 20px; font-weight: bold; color: #856404; 
+            line-height: 1.5; border: 1px solid #ffeeba;
+        }
+        .result-section-title { font-size: 14px; font-weight: bold; color: #555; margin-bottom: 5px; margin-top: 15px; }
+        
+        .rank-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .rank-table th { background: #333; color: white; padding: 8px; text-align: center; }
+        .rank-table td { border-bottom: 1px solid #ddd; padding: 8px; text-align: center; }
+        .rank-1st { background: #fffbe6; font-weight: bold; color: #d35400; }
+        .rank-injured { color: #aaa; text-decoration: line-through; }
+
+        .log-box { 
+            background: #2c3e50; color: #ecf0f1; height: 120px; overflow-y: auto; 
+            padding: 10px; border-radius: 5px; font-size: 12px; line-height: 1.6; border: 1px solid #34495e;
+        }
+        .log-item { margin-bottom: 4px; border-bottom: 1px dashed #444; padding-bottom: 2px; }
     </style>
 </head>
 <body>
@@ -189,25 +184,26 @@
     </div>
 
     <div id="betting-panel">
-<div class="info-bar">
-    <div>
-        <span>내 지갑: <span id="wallet-bal" class="my-money">0</span></span>
-        <span style="margin-left: 10px; font-size: 14px; color: #555;">(총 배팅: <span id="total-bet" style="color: #c0392b; font-weight: bold;">0</span>)</span>
-    </div>
-    <div class="top-btn-group">
-        <button class="icon-btn btn-tip" onclick="toggleTip()">📰 예상지</button>
-        <button class="icon-btn" onclick="toggleHelp()">?</button>
-    </div>
-</div>
+        <div class="info-bar">
+            <div>
+                <span>내 지갑: <span id="wallet-bal" class="my-money">0</span></span>
+                <span style="margin-left: 10px; font-size: 14px; color: #555;">(총 배팅: <span id="total-bet" style="color: #c0392b; font-weight: bold;">0</span>)</span>
+            </div>
+            <div class="top-btn-group">
+                <button class="icon-btn btn-tip" onclick="toggleTip()">📰 예상지</button>
+                <button class="icon-btn" onclick="toggleHelp()">?</button>
+            </div>
+        </div>
 
         <div id="horse-list" class="horse-list"></div>
 
-<div class="control-bar">
-    <button class="btn btn-back" onclick="location.href='game3.html'">나가기</button>
-    
-    <button class="btn btn-reset" onclick="resetAllBets()">초기화</button>
-    <button id="btn-start" class="btn btn-start" onclick="startRace()" disabled>배팅하세요</button>
-</div>
+        <div class="control-bar">
+            <button class="btn btn-back" onclick="location.href='game3.html'">나가기</button>
+            <button class="btn btn-reset" onclick="resetAllBets()">초기화</button>
+            <button id="btn-start" class="btn btn-start" onclick="startRace()" disabled>배팅하세요</button>
+        </div>
+    </div>
+
     <div id="tip-modal" class="modal" onclick="toggleTip()">
         <div class="tip-paper" onclick="event.stopPropagation()">
             <div class="tip-header">
@@ -234,86 +230,113 @@
 
     <div id="help-modal" class="modal" onclick="toggleHelp()">
         <div class="help-content" onclick="event.stopPropagation()">
-            <h3>🐎 게임 가이드</h3>
-            <p><b>1. 배팅 규칙</b></p>
-            <p>S급은 안정적이지만 배당이 낮고, F급은 위험하지만 <b>인생 역전 배당</b>이 터집니다.</p>
-            <button class="btn btn-back" style="width:100%; margin-top:10px;" onclick="toggleHelp()">닫기</button>
+            <h3 style="text-align:center; border-bottom:2px solid #ddd; padding-bottom:10px; margin-top:0;">📖 게임 가이드</h3>
+            <p style="font-size:16px; font-weight:bold; margin-bottom:5px; color:#2c3e50;">1. 등급과 배당</p>
+            <ul style="padding-left:20px; margin-top:0; color:#555;">
+                <li><b style="color:#f1c40f; background:#333; padding:0 4px; border-radius:3px;">S/A급</b> : 우승 확률이 높지만 배당이 낮습니다.</li>
+                <li><b style="color:#fff; background:#7f8c8d; padding:0 4px; border-radius:3px;">F/D급</b> : 우승하기 힘들지만, 터지면 <b>수십 배의 인생 역전</b>이 가능합니다.</li>
+            </ul>
+            <p style="font-size:16px; font-weight:bold; margin-bottom:5px; margin-top:15px; color:#c0392b;">2. 공포의 피로도 시스템 (😫)</p>
+            <div style="background:#fff0f0; padding:10px; border-radius:8px; border:1px solid #ffcccc; font-size:13px;">
+                모든 말은 랜덤한 <b>피로도(0~99)</b>를 가집니다.
+                <br><br>
+                <b style="color:#e74c3c;">💦 급감속 (비틀거림)</b><br>
+                피로도가 높을수록 달리는 도중 지쳐서 속도가 뚝 떨어질 수 있습니다.
+                <br><br>
+                <b style="color:#c0392b;">🚑 부상 (경기 포기)</b><br>
+                피로도가 <b>30 이상</b>인 말은 경기 도중 부상을 입고 <b>즉시 탈락(실격)</b>할 수 있습니다!
+            </div>
+            <p style="font-size:16px; font-weight:bold; margin-bottom:5px; margin-top:15px; color:#27ae60;">3. 능력치 설명</p>
+            <ul style="padding-left:20px; margin-top:0; color:#555; font-size:13px;">
+                <li><b>🚀 스피드:</b> 기본 주행 속도입니다.</li>
+                <li><b>❤️ 스태미너:</b> 후반까지 속도를 유지하는 힘입니다.</li>
+                <li><b>🍀 행운:</b> 스퍼트나 변수가 발생할 확률입니다.</li>
+            </ul>
+            <button class="btn btn-back" style="width:100%; margin-top:20px; background:#333;" onclick="toggleHelp()">이해했습니다!</button>
+        </div>
+    </div>
+
+    <div id="result-modal" class="modal">
+        <div class="result-paper" onclick="event.stopPropagation()">
+            <div class="result-header">🏆 경기 결과 발표 🏆</div>
+            <div id="result-msg" class="result-msg"></div>
+            <div class="result-section-title">📊 최종 순위</div>
+            <table class="rank-table">
+                <thead><tr><th>순위</th><th>마명 (등급)</th><th>기록/상태</th></tr></thead>
+                <tbody id="rank-tbody"></tbody>
+            </table>
+            <div class="result-section-title">🎙️ 중계 다시보기</div>
+            <div id="race-log-box" class="log-box"></div>
+            <button class="btn btn-start" style="width:100%; margin-top:15px;" onclick="location.reload()">다음 경기 준비 (새로고침)</button>
         </div>
     </div>
 
     <script type="module">
-        // ▼▼▼ [여기부터 붙여넣기] ▼▼▼
-        // 모달창이 패널에 갇히는 것을 방지하기 위해 강제로 body로 꺼내는 코드
+        // [모달 안전장치: 모바일 뷰 깨짐 방지]
         const moveModalToBody = (id) => {
             const el = document.getElementById(id);
-            if(el && el.parentElement !== document.body) {
-                document.body.appendChild(el);
-            }
+            if(el && el.parentElement !== document.body) { document.body.appendChild(el); }
         };
-        // 페이지 로딩 즉시 실행
         moveModalToBody('tip-modal');
         moveModalToBody('help-modal');
-        // ▲▲▲ [여기까지] ▲▲▲
+        moveModalToBody('result-modal');
 
-        // ... (나머지 기존 코드)
+        // [Firebase 라이브러리: 중복 없이 한 번만 import]
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc, updateDoc, increment } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-// [추가] 배팅 금액 초기화 함수
-window.resetAllBets = () => {
-    if(isRacing) return; // 경기 중엔 초기화 불가
-    
-    // 1. 모든 말의 배팅 데이터 0으로 리셋
-    horses.forEach(h => {
-        h.bet = 0;
-        // 입력창 비우기
-        const inputEl = document.getElementById(`input-${h.id}`);
-        if(inputEl) inputEl.value = '';
-    });
 
-    // 2. 시작 버튼 상태 원상복구
-    const btn = document.getElementById('btn-start');
-    btn.disabled = true;
-    btn.innerText = "배팅하세요";
-    btn.style.background = "#ccc";
-    btn.style.animation = "none";
+        // [이름 데이터 대폭 확장]
+        const ADJECTIVES = [
+            "재똥", "경환", "재은", "갱갱", "오빠", "설사", // (요청)
+            "바람", "천둥", "황금", "불꽃", "무적", "날쌘", "거대", "미친", "행운", "폭풍", 
+            "강철", "신비", "얼음", "어둠", "빛의", "푸른", "붉은", "하얀", "검은", "슈퍼", 
+            "대왕", "킹갓", "전설", "지옥", "천사", "악마", "그림자", "우주", "차원", "마법",
+            "방구", "똥", "코", "핵", "사랑", "귀염", "깜찍", "못난", "엉덩", "뱃살", 
+            "탈모", "발냄새", "겨털", "콧물", "침질질", "왕발", "숏다리", "롱다리", "배고픈", "졸린",
+            "미끌", "끈적", "물렁", "딱딱", "흐물", "쭈글", "탱탱", "섹시", "도망", "역전"
+        ];
+        const NOUNS = [
+            "쿵야", "람지", // (요청: 뒤 고정)
+            "경환", "재은", "갱갱", "오빠", "설사", // (요청: 섞임 가능)
+            "돌이", "순이", "토마", "대장", "기사", "요정", "망치", "주먹", "다리", "날개", 
+            "발톱", "이빨", "꼬리", "호랑", "사자", "토끼", "거북", "독수리", "상어", "고래", 
+            "드래곤", "피닉스", "타이탄", "슬라임", "오크", "엘프", "히어로", "마왕", "신", "군주",
+            "치킨", "피자", "버거", "국밥", "라면", "공주", "왕자", "거지", "노비", "바보",
+            "천재", "변태", "아재", "할배", "초딩", "관종", "백수", "사장", "알바", "모기",
+            "파리", "바퀴", "지렁이", "메뚜기", "방구", "콧물", "비듬", "각질", "여드름", "치질"
+        ];
+        const TIERS = ['F', 'D', 'C', 'B', 'A', 'S'];
+        const COMMENT_DB = {
+            highTier: ["우승이 당연시됨.", "컨디션 절정.", "안정적인 주행.", "기수와의 호흡 환상.", "지난 대회 우승마."],
+            midTier: ["입상 가능성 충분.", "기복이 있으나 해볼 만함.", "중위권 싸움의 핵심.", "초반 스타트가 관건.", "눈여겨볼 복병."],
+            lowTier: ["잠재력 있음.", "새벽 훈련 시 괴력 발휘!", "수상하다.", "사고 칠 관상.", "배당판의 핵폭탄.", "인생 역전의 기회."]
+        };
 
-    // 3. (선택사항) 만약 총 배팅금액 표시 기능(total-bet)을 넣었다면 그것도 0으로
-    const totalEl = document.getElementById('total-bet');
-    if(totalEl) totalEl.innerText = "0";
-};
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
-      authDomain: "lovechatproject-2db11.firebaseapp.com",
-      projectId: "lovechatproject-2db11",
-      storageBucket: "lovechatproject-2db11.firebasestorage.app",
-      messagingSenderId: "1069136590072",
-      appId: "1:1069136590072:web:7712e718db03c70bff370d",
-      measurementId: "G-ERG2LL283F"
-    };
+        const firebaseConfig = {
+          apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
+          authDomain: "lovechatproject-2db11.firebaseapp.com",
+          projectId: "lovechatproject-2db11",
+          storageBucket: "lovechatproject-2db11.firebasestorage.app",
+          messagingSenderId: "1069136590072",
+          appId: "1:1069136590072:web:7712e718db03c70bff370d",
+          measurementId: "G-ERG2LL283F"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         let myId = localStorage.getItem('chat_uid');
         const userRef = doc(db, "users", myId);
 
-        const COMMENT_DB = {
-            highTier: ["우승이 당연시됨.", "컨디션 절정.", "안정적인 주행.", "기수와의 호흡 환상.", "지난 대회 우승마.", "체력 관리 완벽."],
-            midTier: ["입상 가능성 충분.", "기복이 있으나 해볼 만함.", "중위권 싸움의 핵심.", "초반 스타트가 관건.", "눈여겨볼 복병."],
-            lowTier: ["잠재력 있음.", "새벽 훈련 시 괴력 발휘!", "수상하다.", "사고 칠 관상.", "배당판의 핵폭탄.", "인생 역전의 기회."]
-        };
-        const ADJECTIVES = ["바람", "천둥", "황금", "불꽃", "무적", "날쌘", "거대", "미친", "행운", "폭풍", "강철", "신비", "얼음", "어둠", "빛의", "푸른", "붉은", "하얀", "검은", "슈퍼", "대왕", "킹갓", "전설", "방구", "똥", "코", "핵", "재은", "경환", "사랑", "귀염", "깜찍"];
-        const NOUNS = ["돌이", "순이", "토마", "대장", "기사", "요정", "망치", "주먹", "다리", "날개", "발톱", "이빨", "꼬리", "방구", "콧물", "재은", "경환", "호랑", "사자", "토끼", "거북", "독수리", "상어", "고래", "치킨", "피자", "버거", "국밥", "라면", "공주", "왕자"];
-        const TIERS = ['F', 'D', 'C', 'B', 'A', 'S'];
-
         let horses = [];
         let myBalance = 0;
         let isRacing = false;
         let raceInterval = null;
+        let raceLogs = [];
         const FINISH_DIST = 86; 
 
         function initGame() {
+            raceLogs = [];
             getDoc(userRef).then(snap => {
                 if(snap.exists()) {
                     myBalance = snap.data().coins;
@@ -327,6 +350,7 @@ window.resetAllBets = () => {
             horseListEl.innerHTML = "";
 
             for(let i=0; i<5; i++) {
+                // [이름 생성 로직]
                 let adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
                 let noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
                 let name = adj + noun;
@@ -343,6 +367,10 @@ window.resetAllBets = () => {
                 let spd = Math.floor(baseSpd * multiplier);
                 let sta = Math.floor(baseSta * multiplier);
                 let luk = baseLuk; 
+                
+                // [피로도 생성: 0~99 랜덤]
+                let baseFatigue = Math.floor(Math.random() * 100); 
+                
                 let power = (spd * 2.5) + (sta * 1.5) + (luk * 0.5);
                 totalPower += power;
 
@@ -356,16 +384,11 @@ window.resetAllBets = () => {
                 }
                 let recordStr = records.join("-");
 
-                let commentList = [];
-                if(tier === 'S' || tier === 'A') commentList = COMMENT_DB.highTier;
-                else if(tier === 'F' || tier === 'D') commentList = COMMENT_DB.lowTier;
-                else commentList = COMMENT_DB.midTier;
-                let comment = commentList[Math.floor(Math.random() * commentList.length)];
-
                 horses.push({ 
                     id: i, name, tier, spd, sta, luk, power, 
                     pos: 0, curSta: sta, odds: 0, bet: 0, lastSpurt: false,
-                    recordStr: recordStr, comment: comment
+                    recordStr: recordStr, 
+                    fatigue: baseFatigue, isInjured: false 
                 });
 
                 const lane = document.getElementById(`lane-${i}`);
@@ -373,6 +396,7 @@ window.resetAllBets = () => {
                 lane.innerHTML = `<div class="horse" id="horse-icon-${i}">🐎<div class="horse-name-tag ${tagClass}">${name}</div></div>`;
             }
 
+            // 배당률 계산
             let tempOddsList = [];
             let inverseOddsSum = 0; 
             horses.forEach(h => {
@@ -382,7 +406,6 @@ window.resetAllBets = () => {
                 tempOddsList.push(rawOdds);
                 inverseOddsSum += (1 / rawOdds);
             });
-
             const TARGET_OVERROUND = 1.15; 
             let scaleFactor = inverseOddsSum / TARGET_OVERROUND; 
 
@@ -394,11 +417,16 @@ window.resetAllBets = () => {
 
                 const card = document.createElement('div');
                 card.className = 'horse-card';
+                let fatigueColor = h.fatigue >= 30 ? '#e74c3c' : '#2ecc71'; 
+                
                 card.innerHTML = `
                     <div class="card-top">
                         <div class="h-info">
                             <div class="h-name"><span class="tier-badge tier-${h.tier}">${h.tier}</span>${h.name}</div>
-                            <div class="h-stats">🚀${h.spd} ❤️${h.sta} 🍀${h.luk}</div>
+                            <div class="h-stats">
+                                🚀${h.spd} ❤️${h.sta} 🍀${h.luk}
+                                <span style="color:${fatigueColor}; font-weight:bold; margin-left:3px;">😫${h.fatigue}</span>
+                            </div>
                         </div>
                         <div class="h-odds">x${h.odds}</div>
                     </div>
@@ -417,57 +445,90 @@ window.resetAllBets = () => {
             updateTipSheetUI();
         }
 
+        // [스마트 예상지 로직]
         function updateTipSheetUI() {
             const tbody = document.getElementById('tip-list-body');
             tbody.innerHTML = "";
-            let recommendHorse = horses[0];
-            if(Math.random() < 0.1) {
-                let riskyHorses = horses.filter(h => h.tier === 'F' || h.tier === 'D');
-                if(riskyHorses.length > 0) recommendHorse = riskyHorses[Math.floor(Math.random() * riskyHorses.length)];
+            
+            horses.forEach(h => {
+                let comments = [];
+                // 1. 피로도 코멘트
+                if (h.fatigue >= 40) comments.push("다리가 무거워 보임.", "최근 훈련 강도가 높았음.", "피로 누적이 변수.", "후반에 퍼질 위험 있음.");
+                else if (h.fatigue <= 10) comments.push("몸놀림이 매우 가벼움!", "최상의 컨디션 유지.", "새벽 조교 상태 최상.", "오늘 사고 칠 기세.");
+                // 2. 스탯 코멘트
+                if (h.spd >= 80) comments.push("총알 같은 스타트 능력.", "초반 선두 장악 유력.", "단거리 주파 능력 탁월.");
+                else if (h.sta >= 80) comments.push("지치지 않는 심장.", "막판 역전극의 주인공.", "후반 스퍼트가 관건.");
+                else if (h.luk >= 80) comments.push("승리의 여신이 함께함.", "전개 운이 따를 듯.", "알 수 없는 힘이 느껴짐.");
+                // 3. 기본 코멘트
+                if (comments.length === 0) {
+                    if(h.tier === 'S' || h.tier === 'A') comments = COMMENT_DB.highTier;
+                    else if(h.tier === 'F' || h.tier === 'D') comments = COMMENT_DB.lowTier;
+                    else comments = COMMENT_DB.midTier;
+                }
+                h.analyzedComment = comments[Math.floor(Math.random() * comments.length)];
+            });
+
+            // 추천마 선정
+            let recommendHorse = null;
+            let recommendReason = "";
+            let dice = Math.random();
+
+            if (dice < 0.6) { 
+                let bestHorses = [...horses].sort((a,b) => (a.power - a.fatigue * 1.5) - (b.power - b.fatigue * 1.5));
+                recommendHorse = bestHorses[bestHorses.length-1]; // 내림차순이라 마지막이 1등
+                recommendReason = "★ 오늘의 강력 추천 ★";
+            } else if (dice < 0.9) {
+                let darkHorses = horses.filter(h => h.tier !== 'S' && h.tier !== 'A' && h.fatigue < 20);
+                if (darkHorses.length > 0) {
+                    darkHorses.sort((a,b) => b.luk - a.luk);
+                    recommendHorse = darkHorses[0];
+                    recommendReason = "⚡ 기자가 몰래 픽한 복병 ⚡";
+                } else {
+                    recommendHorse = horses.reduce((p, c) => (p.power > c.power ? p : c));
+                    recommendReason = "★ 오늘의 강력 추천 ★";
+                }
             } else {
-                let bestHorses = [...horses].sort((a,b) => b.power - a.power);
-                recommendHorse = bestHorses[0];
+                let riskyHorses = [...horses].sort((a,b) => a.power - b.power); 
+                recommendHorse = riskyHorses[0]; 
+                recommendReason = "💣 인생 역전 노림수 💣";
             }
-            document.getElementById('recommend-horse').innerHTML = `<span style="font-size:14px; color:#333;">${recommendHorse.tier}급</span><br>${recommendHorse.name} (x${recommendHorse.odds})`;
+
+            document.getElementById('recommend-horse').innerHTML = 
+                `<div style="font-size:12px; margin-bottom:5px; color:#555;">${recommendReason}</div>
+                 <span style="font-size:16px; font-weight:bold;">${recommendHorse.name}</span> 
+                 <span style="font-size:14px; color:#c0392b;">(x${recommendHorse.odds})</span>`;
 
             horses.forEach(h => {
                 const tr = document.createElement('tr');
                 let highlightClass = (h.id === recommendHorse.id) ? 'tip-highlight' : '';
-                tr.innerHTML = `<td><span class="tier-badge tier-${h.tier}">${h.tier}</span><br><b>${h.name}</b></td><td style="font-size:11px; color:#555;">${h.recordStr}</td><td class="tip-comment ${highlightClass}">${h.comment}</td>`;
+                let commentStyle = h.fatigue >= 40 ? "color:#e74c3c; font-weight:bold;" : "";
+                if(h.id === recommendHorse.id) commentStyle = "color:#c0392b; font-weight:bold; background:rgba(255,0,0,0.1);";
+
+                tr.innerHTML = `
+                    <td><span class="tier-badge tier-${h.tier}">${h.tier}</span><br><b>${h.name}</b></td>
+                    <td style="font-size:11px; color:#555;">${h.recordStr}</td>
+                    <td style="${commentStyle}; font-size:13px;">${h.analyzedComment}</td>`;
                 tbody.appendChild(tr);
             });
         }
 
-        // [추가됨] 버튼 배팅 기능 (누락 수정)
-window.addBet = (id, amount) => {
+        window.addBet = (id, amount) => {
             if(isRacing) return;
             let currentBet = horses[id].bet;
             let currentTotalBet = horses.reduce((sum, h) => sum + h.bet, 0);
             let remainingMoney = myBalance - currentTotalBet;
-
-            let addAmount = 0;
-            if (amount === 'ALL') {
-                addAmount = remainingMoney;
-            } else {
-                addAmount = Math.min(amount, remainingMoney);
-            }
-
+            let addAmount = (amount === 'ALL') ? remainingMoney : Math.min(amount, remainingMoney);
             if (addAmount <= 0 && amount !== 'ALL') return; 
 
             let newBet = currentBet + addAmount;
-            
-            // 입력창 값 업데이트
             document.getElementById(`input-${id}`).value = newBet > 0 ? newBet : '';
-            
-            // ✅ [핵심 수정] 버튼 상태 갱신을 위해 updateBet 호출
             updateBet(id, newBet); 
         };
+
         window.updateBet = (id, amount) => {
             if(isRacing) return;
             amount = parseInt(amount);
             if(isNaN(amount) || amount < 0) amount = 0;
-
-            // 여기서는 잔액 체크 안함 (단순 입력 반영) - 버튼 클릭 시 경고
             horses[id].bet = amount;
 
             let total = horses.reduce((sum, h) => sum + h.bet, 0);
@@ -475,22 +536,31 @@ window.addBet = (id, amount) => {
 
             const btn = document.getElementById('btn-start');
             if(total > 0) {
-                btn.disabled = false; // 일단 활성화
+                btn.disabled = false; 
                 if (total > myBalance) {
                     btn.innerText = "잔액 부족! (충전 필요)";
-                    btn.style.background = "#e74c3c"; // 빨강 (경고)
-                    btn.style.animation = "pulse 1s infinite";
+                    btn.style.background = "#e74c3c"; btn.style.animation = "pulse 1s infinite";
                 } else {
                     btn.innerText = `경기 시작! (-${total.toLocaleString()})`;
-                    btn.style.background = "#27ae60"; // 초록 (정상)
-                    btn.style.animation = "none";
+                    btn.style.background = "#27ae60"; btn.style.animation = "none";
                 }
             } else {
                 btn.disabled = true;
                 btn.innerText = "배팅하세요";
-                btn.style.background = "#ccc";
-                btn.style.animation = "none";
+                btn.style.background = "#ccc"; btn.style.animation = "none";
             }
+        };
+
+        window.resetAllBets = () => {
+            if(isRacing) return; 
+            horses.forEach(h => {
+                h.bet = 0;
+                const inputEl = document.getElementById(`input-${h.id}`);
+                if(inputEl) inputEl.value = '';
+            });
+            const btn = document.getElementById('btn-start');
+            btn.disabled = true; btn.innerText = "배팅하세요"; btn.style.background = "#ccc";
+            document.getElementById('total-bet').innerText = "0";
         };
 
         function updateBalanceUI() {
@@ -500,7 +570,7 @@ window.addBet = (id, amount) => {
         window.startRace = async () => {
             let totalBet = horses.reduce((sum, h) => sum + h.bet, 0);
             if(totalBet === 0) return;
-            if(totalBet > myBalance) return alert("돈이 부족합니다! 로비에서 무료 충전소를 이용하세요.");
+            if(totalBet > myBalance) return alert("잔액이 부족합니다.");
             if(!confirm(`총 ${totalBet.toLocaleString()} 코인을 걸고 시작할까요?`)) return;
 
             myBalance -= totalBet;
@@ -521,6 +591,7 @@ window.addBet = (id, amount) => {
             let isFinished = false;
 
             horses.forEach(h => {
+                if(h.isInjured) return; 
                 if(h.pos >= FINISH_DIST) { isFinished = true; return; }
 
                 let baseSpeed = h.spd * 0.01; 
@@ -543,6 +614,21 @@ window.addBet = (id, amount) => {
                         h.lastSpurt = true; move += 4.5; showCaster(`⚡ ${h.name}, 마지막 스퍼트!`, 1000);
                     }
                 }
+
+                // [피로도 로직: 부상 및 급감속]
+                if (h.fatigue >= 30 && Math.random() < (h.fatigue * 0.00002)) {
+                    h.isInjured = true;
+                    showCaster(`🚑 ${h.name}, 갑작스런 부상! 경기 포기!`, 2500);
+                    const horseEl = document.getElementById(`horse-icon-${h.id}`);
+                    horseEl.style.filter = "grayscale(100%) blur(1px)";
+                    horseEl.innerHTML = "🏥"; 
+                    return; 
+                }
+                if (Math.random() < (h.fatigue * 0.0005)) {
+                    move *= 0.1; 
+                    if(Math.random() < 0.3) showCaster(`💦 ${h.name}, 지쳤나요? 비틀거립니다!`, 1000);
+                }
+
                 h.pos += move;
                 const horseEl = document.getElementById(`horse-icon-${h.id}`);
                 horseEl.style.left = Math.min(h.pos, FINISH_DIST) + '%';
@@ -562,54 +648,80 @@ window.addBet = (id, amount) => {
             el.innerText = msg; el.style.display = 'block';
             if(casterTimer) clearTimeout(casterTimer);
             casterTimer = setTimeout(() => { el.style.display = 'none'; }, duration);
+            if(raceLogs.length === 0 || raceLogs[raceLogs.length-1] !== msg) {
+                raceLogs.push(msg);
+            }
         }
 
         async function finishRace() {
             clearInterval(raceInterval);
             isRacing = false;
+            
             horses.sort((a, b) => b.pos - a.pos);
             const winner = horses[0];
-            showCaster(`🎉 우승! ${winner.name}!!!`, 5000);
-            
-            setTimeout(async () => {
-                let winningMoney = 0;
-                let msg = `🏆 우승마: ${winner.name}\n(등급: ${winner.tier} / 배당: x${winner.odds})\n\n`;
-                if (winner.bet > 0) {
-                    winningMoney = Math.floor(winner.bet * winner.odds);
-                    msg += `✨ 대박 터졌습니다! 축하합니다! ✨\n💰 획득: ${winningMoney.toLocaleString()} 코인`;
-                    await updateDoc(userRef, { coins: increment(winningMoney) });
-                } else { msg += "아쉽네요.. 꽝입니다. 😭\n다음엔 대박을 노려보세요!"; }
-                alert(msg); location.reload();
-            }, 800);
+            showCaster(`🎉 경기 종료! 우승마는 [${winner.name}] 입니다!`, 5000);
+
+            let winningMoney = 0;
+            let resultText = "";
+            if (winner.bet > 0) {
+                winningMoney = Math.floor(winner.bet * winner.odds);
+                resultText = `축하합니다! <span style="color:#c0392b;">${winner.name}</span> 우승!<br>
+                              배당률 <span style="color:#d35400;">x${winner.odds}</span> 적중!<br>
+                              <span style="font-size:20px; color:#27ae60;">💰 +${winningMoney.toLocaleString()} 획득</span>`;
+                await updateDoc(userRef, { coins: increment(winningMoney) });
+            } else {
+                resultText = `아쉽습니다. <span style="color:#c0392b;">${winner.name}</span>(이)가 우승했습니다.<br>
+                              (배당률: x${winner.odds})<br><span style="font-size:14px; color:#7f8c8d;">다음 기회에 대박을 노려보세요!</span>`;
+            }
+
+            // 결과 모달 UI 채우기
+            document.getElementById('result-msg').innerHTML = resultText;
+            const rankBody = document.getElementById('rank-tbody');
+            rankBody.innerHTML = "";
+            horses.forEach((h, index) => {
+                const tr = document.createElement('tr');
+                if(index === 0) tr.classList.add('rank-1st');
+                let rankDisplay = `${index + 1}위`;
+                let statusDisplay = "완주";
+                if(h.isInjured) {
+                    tr.classList.add('rank-injured');
+                    rankDisplay = "실격";
+                    statusDisplay = "🚑 부상(DNF)";
+                }
+                tr.innerHTML = `<td>${rankDisplay}</td><td><span class="tier-badge tier-${h.tier}">${h.tier}</span> ${h.name} ${h.id === winner.id ? '🥇' : ''}</td><td>${statusDisplay}</td>`;
+                rankBody.appendChild(tr);
+            });
+
+            const logBox = document.getElementById('race-log-box');
+            logBox.innerHTML = raceLogs.map(log => `<div class="log-item">▪ ${log}</div>`).join('');
+            logBox.scrollTop = logBox.scrollHeight;
+
+            setTimeout(() => {
+                const modal = document.getElementById('result-modal');
+                modal.style.display = 'flex';
+            }, 1000);
         }
 
-// ▼▼▼ [수정된 코드: 경기장 숨기기 기능 추가] ▼▼▼
+        // [모바일 잘림 해결: 경기장 숨기기 로직 적용]
         window.toggleTip = () => { 
             const modal = document.getElementById('tip-modal'); 
-            const raceTrack = document.getElementById('race-track'); // 경기장 요소
-
+            const raceTrack = document.getElementById('race-track');
             if (modal.style.display === 'none' || modal.style.display === '') {
-                modal.style.display = 'flex';
-                raceTrack.style.display = 'none'; // 경기장을 숨겨서 공간 확보!
+                modal.style.display = 'flex'; raceTrack.style.display = 'none';
             } else {
-                modal.style.display = 'none';
-                raceTrack.style.display = 'flex'; // 다시 보이게 원상복구
+                modal.style.display = 'none'; raceTrack.style.display = 'flex';
             }
         };
-
         window.toggleHelp = () => { 
             const modal = document.getElementById('help-modal'); 
             const raceTrack = document.getElementById('race-track');
-
             if (modal.style.display === 'none' || modal.style.display === '') {
-                modal.style.display = 'flex';
-                raceTrack.style.display = 'none';
+                modal.style.display = 'flex'; raceTrack.style.display = 'none';
             } else {
-                modal.style.display = 'none';
-                raceTrack.style.display = 'flex';
+                modal.style.display = 'none'; raceTrack.style.display = 'flex';
             }
         };
-        // ▲▲▲ [여기까지] ▲▲▲
+
         initGame();
     </script>
 </body>
