@@ -30,6 +30,14 @@
             z-index: 10; transform: scaleX(-1); 
             transform-origin: center bottom;
         }
+        
+        /* [추가] 비틀거리는 효과 (상태이상) */
+        .stumbling {
+            filter: grayscale(100%); /* 흑백 처리 */
+            transform: scaleX(-1) rotate(15deg) !important; /* 앞으로 고꾸라짐 */
+            transition: transform 0.2s;
+        }
+
         .horse-name-tag {
             position: absolute; top: -16px; left: 0; font-size: 10px; 
             background: rgba(0,0,0,0.6); color: #fff; padding: 2px 6px; border-radius: 4px; 
@@ -241,7 +249,7 @@
                 모든 말은 랜덤한 <b>피로도(0~99)</b>를 가집니다.
                 <br><br>
                 <b style="color:#e74c3c;">💦 급감속 (비틀거림)</b><br>
-                피로도가 높을수록 달리는 도중 지쳐서 속도가 뚝 떨어질 수 있습니다.
+                피로도가 높을수록 달리는 도중 지쳐서 <b>1~2초간</b> 속도가 뚝 떨어질 수 있습니다.
                 <br><br>
                 <b style="color:#c0392b;">🚑 부상 (경기 포기)</b><br>
                 피로도가 <b>30 이상</b>인 말은 경기 도중 부상을 입고 <b>즉시 탈락(실격)</b>할 수 있습니다!
@@ -281,14 +289,14 @@
         moveModalToBody('help-modal');
         moveModalToBody('result-modal');
 
-        // [Firebase 라이브러리: 중복 없이 한 번만 import]
+        // [Firebase 라이브러리]
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc, updateDoc, increment } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // [이름 데이터 대폭 확장]
+        // [이름 데이터]
         const ADJECTIVES = [
-            "재똥", "경환", "재은", "갱갱", "오빠", "설사", // (요청)
+            "재똥", "경환", "재은", "갱갱", "오빠", "설사", 
             "바람", "천둥", "황금", "불꽃", "무적", "날쌘", "거대", "미친", "행운", "폭풍", 
             "강철", "신비", "얼음", "어둠", "빛의", "푸른", "붉은", "하얀", "검은", "슈퍼", 
             "대왕", "킹갓", "전설", "지옥", "천사", "악마", "그림자", "우주", "차원", "마법",
@@ -297,8 +305,8 @@
             "미끌", "끈적", "물렁", "딱딱", "흐물", "쭈글", "탱탱", "섹시", "도망", "역전"
         ];
         const NOUNS = [
-            "쿵야", "람지", // (요청: 뒤 고정)
-            "경환", "재은", "갱갱", "오빠", "설사", // (요청: 섞임 가능)
+            "쿵야", "람지", 
+            "경환", "재은", "갱갱", "오빠", "설사", 
             "돌이", "순이", "토마", "대장", "기사", "요정", "망치", "주먹", "다리", "날개", 
             "발톱", "이빨", "꼬리", "호랑", "사자", "토끼", "거북", "독수리", "상어", "고래", 
             "드래곤", "피닉스", "타이탄", "슬라임", "오크", "엘프", "히어로", "마왕", "신", "군주",
@@ -363,14 +371,17 @@
                 let baseSpd = Math.floor(Math.random() * 50) + 30; 
                 let baseSta = Math.floor(Math.random() * 60) + 40; 
                 let baseLuk = Math.floor(Math.random() * 90) + 10; 
-
+                
+                // ▼▼▼ [누락되었던 spd, sta, luk 변수 정의 복구] ▼▼▼
                 let spd = Math.floor(baseSpd * multiplier);
                 let sta = Math.floor(baseSta * multiplier);
                 let luk = baseLuk; 
-                
+                // ▲▲▲
+
                 // [피로도 생성: 0~99 랜덤]
                 let baseFatigue = Math.floor(Math.random() * 100); 
                 
+                // 이제 spd가 정의되었으므로 에러가 나지 않습니다.
                 let power = (spd * 2.5) + (sta * 1.5) + (luk * 0.5);
                 totalPower += power;
 
@@ -388,7 +399,8 @@
                     id: i, name, tier, spd, sta, luk, power, 
                     pos: 0, curSta: sta, odds: 0, bet: 0, lastSpurt: false,
                     recordStr: recordStr, 
-                    fatigue: baseFatigue, isInjured: false 
+                    fatigue: baseFatigue, isInjured: false,
+                    stumbleTimer: 0 // 상태이상 타이머
                 });
 
                 const lane = document.getElementById(`lane-${i}`);
@@ -452,14 +464,11 @@
             
             horses.forEach(h => {
                 let comments = [];
-                // 1. 피로도 코멘트
                 if (h.fatigue >= 40) comments.push("다리가 무거워 보임.", "최근 훈련 강도가 높았음.", "피로 누적이 변수.", "후반에 퍼질 위험 있음.");
                 else if (h.fatigue <= 10) comments.push("몸놀림이 매우 가벼움!", "최상의 컨디션 유지.", "새벽 조교 상태 최상.", "오늘 사고 칠 기세.");
-                // 2. 스탯 코멘트
                 if (h.spd >= 80) comments.push("총알 같은 스타트 능력.", "초반 선두 장악 유력.", "단거리 주파 능력 탁월.");
                 else if (h.sta >= 80) comments.push("지치지 않는 심장.", "막판 역전극의 주인공.", "후반 스퍼트가 관건.");
                 else if (h.luk >= 80) comments.push("승리의 여신이 함께함.", "전개 운이 따를 듯.", "알 수 없는 힘이 느껴짐.");
-                // 3. 기본 코멘트
                 if (comments.length === 0) {
                     if(h.tier === 'S' || h.tier === 'A') comments = COMMENT_DB.highTier;
                     else if(h.tier === 'F' || h.tier === 'D') comments = COMMENT_DB.lowTier;
@@ -468,14 +477,13 @@
                 h.analyzedComment = comments[Math.floor(Math.random() * comments.length)];
             });
 
-            // 추천마 선정
             let recommendHorse = null;
             let recommendReason = "";
             let dice = Math.random();
 
             if (dice < 0.6) { 
                 let bestHorses = [...horses].sort((a,b) => (a.power - a.fatigue * 1.5) - (b.power - b.fatigue * 1.5));
-                recommendHorse = bestHorses[bestHorses.length-1]; // 내림차순이라 마지막이 1등
+                recommendHorse = bestHorses[bestHorses.length-1];
                 recommendReason = "★ 오늘의 강력 추천 ★";
             } else if (dice < 0.9) {
                 let darkHorses = horses.filter(h => h.tier !== 'S' && h.tier !== 'A' && h.fatigue < 20);
@@ -591,6 +599,8 @@
             let isFinished = false;
 
             horses.forEach(h => {
+                const horseIcon = document.getElementById(`horse-icon-${h.id}`);
+                
                 if(h.isInjured) return; 
                 if(h.pos >= FINISH_DIST) { isFinished = true; return; }
 
@@ -615,24 +625,34 @@
                     }
                 }
 
-                // [피로도 로직: 부상 및 급감속]
-                if (h.fatigue >= 30 && Math.random() < (h.fatigue * 0.00002)) {
+                // [피로도 로직: 부상 및 급감속(타이머 적용)]
+                // 1. 부상 체크
+                if (h.fatigue >= 30 && Math.random() < (h.fatigue * 0.00001)) {
                     h.isInjured = true;
-                    showCaster(`🚑 ${h.name}, 갑작스런 부상! 경기 포기!`, 2500);
-                    const horseEl = document.getElementById(`horse-icon-${h.id}`);
-                    horseEl.style.filter = "grayscale(100%) blur(1px)";
-                    horseEl.innerHTML = "🏥"; 
+                    showCaster(`🚑 ${h.name}, 부상 발생! 경기 포기!`, 2500);
+                    horseIcon.style.filter = "grayscale(100%) blur(1px)";
+                    horseIcon.innerHTML = "🏥"; 
                     return; 
                 }
-                if (Math.random() < (h.fatigue * 0.0005)) {
-                    move *= 0.1; 
-                    if(Math.random() < 0.3) showCaster(`💦 ${h.name}, 지쳤나요? 비틀거립니다!`, 1000);
+
+                // 2. 급감속 (비틀거림) - 지속형
+                if (h.stumbleTimer > 0) {
+                    h.stumbleTimer--; // 타이머 감소
+                    move *= 0.2; // 속도 대폭 감소
+                    horseIcon.classList.add('stumbling'); // 시각 효과
+                } else {
+                    // 확률 체크 (0.0005)
+                    if (Math.random() < (h.fatigue * 0.0005)) {
+                        h.stumbleTimer = Math.floor(Math.random() * 10) + 10; // 1~2초 지속
+                        showCaster(`💦 ${h.name}, 지쳤나요? 급격히 느려집니다!`, 1000);
+                    } else {
+                        horseIcon.classList.remove('stumbling');
+                    }
                 }
 
                 h.pos += move;
-                const horseEl = document.getElementById(`horse-icon-${h.id}`);
-                horseEl.style.left = Math.min(h.pos, FINISH_DIST) + '%';
-                if(h.pos > maxPos) { maxPos = h.pos; leader = h; horseEl.style.zIndex = 100; }
+                horseIcon.style.left = Math.min(h.pos, FINISH_DIST) + '%';
+                if(h.pos > maxPos) { maxPos = h.pos; leader = h; horseIcon.style.zIndex = 100; }
             });
 
             if(Math.random() < 0.02 && leader) {
@@ -674,7 +694,6 @@
                               (배당률: x${winner.odds})<br><span style="font-size:14px; color:#7f8c8d;">다음 기회에 대박을 노려보세요!</span>`;
             }
 
-            // 결과 모달 UI 채우기
             document.getElementById('result-msg').innerHTML = resultText;
             const rankBody = document.getElementById('rank-tbody');
             rankBody.innerHTML = "";
@@ -702,7 +721,6 @@
             }, 1000);
         }
 
-        // [모바일 잘림 해결: 경기장 숨기기 로직 적용]
         window.toggleTip = () => { 
             const modal = document.getElementById('tip-modal'); 
             const raceTrack = document.getElementById('race-track');
