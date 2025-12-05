@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Stable</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    <style>
+        body { 
+            font-family: 'Apple SD Gothic Neo', sans-serif; 
+            background-color: #1e272e; color: white; margin: 0; 
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+        }
+
+        /* 헤더 */
+        .header { 
+            padding: 15px; background: #2f3640; display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 10;
+        }
+        .title { font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 5px; }
+        .coin-box { background: #000; padding: 5px 12px; border-radius: 20px; color: #f1c40f; font-weight: bold; font-size: 14px; border: 1px solid #444; }
+
+        /* 메인 컨텐츠 (스크롤 가능) */
+        .content { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; padding-bottom: 80px; }
+
+        /* 1. 말 상태창 */
+        .horse-card {
+            background: linear-gradient(135deg, #353b48, #2f3640);
+            border-radius: 15px; padding: 20px; border: 2px solid #444;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3); position: relative;
+        }
+        .horse-avatar { font-size: 80px; margin-bottom: 10px; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5)); transition: 0.3s; }
+        .horse-avatar.training { animation: bounce 0.5s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .horse-info h2 { margin: 0; font-size: 24px; color: #f5f6fa; }
+        .horse-grade { 
+            background: #e74c3c; color: white; padding: 2px 8px; border-radius: 5px; 
+            font-size: 12px; font-weight: bold; vertical-align: middle; margin-left: 5px; 
+        }
+
+        /* 스탯 바 */
+        .stat-grid { width: 100%; margin-top: 20px; display: grid; grid-template-columns: 1fr; gap: 8px; }
+        .stat-row { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .stat-label { width: 50px; font-weight: bold; color: #aaa; }
+        .bar-bg { flex: 1; height: 10px; background: #111; border-radius: 5px; overflow: hidden; position: relative; }
+        .bar-fill { height: 100%; border-radius: 5px; transition: width 0.5s; }
+        .stat-val { width: 40px; text-align: right; font-weight: bold; }
+
+        /* 피로도 (특별 취급) */
+        .fatigue-box { 
+            width: 100%; background: #111; border-radius: 10px; padding: 10px; margin-top: 15px; 
+            display: flex; align-items: center; justify-content: space-between; box-sizing: border-box;
+            border: 1px solid #444;
+        }
+        .fatigue-text { font-size: 12px; color: #aaa; }
+        .fatigue-val { font-weight: bold; color: #e74c3c; }
+
+        /* 2. 장비 슬롯 */
+        .equip-section { display: flex; gap: 10px; justify-content: center; }
+        .equip-slot { 
+            width: 60px; height: 60px; background: #222; border: 2px dashed #555; border-radius: 10px; 
+            display: flex; justify-content: center; align-items: center; font-size: 24px; color: #555;
+            position: relative;
+        }
+        .equip-slot.equipped { border: 2px solid #f1c40f; background: #2c2c2c; color: #fff; }
+        .equip-badge { position: absolute; bottom: -5px; right: -5px; font-size: 10px; background: #c0392b; color: white; padding: 2px 4px; border-radius: 4px; }
+
+        /* 3. 행동 버튼 그리드 */
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .act-btn {
+            background: #34495e; border: none; border-radius: 10px; padding: 15px; 
+            color: white; text-align: left; cursor: pointer; transition: 0.2s;
+            display: flex; flex-direction: column; gap: 5px; border-bottom: 4px solid #2c3e50;
+        }
+        .act-btn:active { transform: translateY(4px); border-bottom: 0; margin-bottom: 4px; }
+        .act-btn h3 { margin: 0; font-size: 16px; }
+        .act-btn p { margin: 0; font-size: 11px; color: #bdc3c7; }
+        .act-cost { font-size: 12px; color: #f1c40f; font-weight: bold; }
+
+        /* 탭 버튼 */
+        .tab-menu { display: flex; gap: 5px; margin-bottom: 10px; }
+        .tab-btn { flex: 1; padding: 10px; background: #222; border: none; color: #777; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        .tab-btn.active { background: #f1c40f; color: #000; }
+
+        /* 하단 네비게이션 */
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: #222; 
+            display: flex; border-top: 1px solid #444; z-index: 20;
+        }
+        .nav-btn { flex: 1; padding: 15px; background: none; border: none; color: #aaa; font-weight: bold; cursor: pointer; }
+        .nav-btn.back { background: #c0392b; color: white; }
+
+        /* 모달 (분양, 가챠 결과 등) */
+        .modal { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); z-index: 100; display: none; 
+            justify-content: center; align-items: center; 
+        }
+        .modal-box { 
+            background: #fff; color: #333; width: 85%; max-width: 350px; padding: 25px; 
+            border-radius: 15px; text-align: center; box-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+        .btn-main { background: #2ecc71; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 15px; width: 100%; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="title">🛖 내 마구간</div>
+        <div class="coin-box" id="my-coin">0 💰</div>
+    </div>
+
+    <div id="loading-screen" class="content" style="align-items:center; justify-content:center;">
+        <h2>말 불러오는 중...</h2>
+    </div>
+
+    <div id="main-screen" class="content" style="display:none;">
+        
+        <div class="horse-card">
+            <div id="h-avatar" class="horse-avatar">🐎</div>
+            <div class="horse-info">
+                <h2 id="h-name">이름없음</h2>
+                <div style="margin-top:5px;">
+                    <span id="h-grade" class="horse-grade">F급</span>
+                    <span style="font-size:12px; color:#aaa; margin-left:5px;">(친밀도 <span id="h-bond">0</span>)</span>
+                </div>
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-row">
+                    <span class="stat-label">SPD</span>
+                    <div class="bar-bg"><div id="bar-spd" class="bar-fill" style="width:0%; background:#e67e22;"></div></div>
+                    <span id="val-spd" class="stat-val">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">STA</span>
+                    <div class="bar-bg"><div id="bar-sta" class="bar-fill" style="width:0%; background:#27ae60;"></div></div>
+                    <span id="val-sta" class="stat-val">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">LUK</span>
+                    <div class="bar-bg"><div id="bar-luk" class="bar-fill" style="width:0%; background:#9b59b6;"></div></div>
+                    <span id="val-luk" class="stat-val">0</span>
+                </div>
+            </div>
+
+            <div class="fatigue-box">
+                <span class="fatigue-text">피로도 (100되면 입원🏥)</span>
+                <span id="h-fatigue" class="fatigue-val">0 / 100</span>
+            </div>
+        </div>
+
+        <div style="text-align:center; margin-bottom:-10px; font-size:14px; font-weight:bold; color:#aaa;">장착 장비</div>
+        <div class="equip-section">
+            <div id="slot-0" class="equip-slot">👟</div> <div id="slot-1" class="equip-slot">💺</div> <div id="slot-2" class="equip-slot">🎭</div> </div>
+
+        <div>
+            <div class="tab-menu">
+                <button class="tab-btn active" onclick="switchTab('feed')">🥕 먹이</button>
+                <button class="tab-btn" onclick="switchTab('train')">🏋️ 훈련</button>
+                <button class="tab-btn" onclick="switchTab('shop')">🎁 뽑기</button>
+            </div>
+
+            <div id="tab-feed" class="action-grid"></div>
+
+            <div id="tab-train" class="action-grid" style="display:none;"></div>
+
+            <div id="tab-shop" class="action-grid" style="display:none; grid-template-columns:1fr;">
+                <button class="act-btn" style="border-color:#9b59b6; background:#8e44ad;" onclick="drawGacha()">
+                    <h3>🎁 장비 뽑기 (랜덤)</h3>
+                    <p>C ~ SS등급 장비 획득 (기존 장비 파괴됨)</p>
+                    <span class="act-cost">50,000 코인</span>
+                </button>
+                <div style="font-size:12px; color:#aaa; padding:10px;">
+                    * SS급(1%) / S급(4%) / A급(10%) / B급(25%) / C급(60%)<br>
+                    * 장비는 스탯을 영구적으로 올려줍니다.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <button class="nav-btn back" onclick="location.href='game3.html'">나가기</button>
+        <button class="nav-btn" onclick="location.reload()">새로고침</button>
+    </div>
+
+    <div id="adopt-modal" class="modal">
+        <div class="modal-box">
+            <h2>🐴 마구간이 비었습니다</h2>
+            <p>아직 소유한 경주마가 없습니다.<br>무료로 한 마리 분양받으시겠습니까?</p>
+            <div style="margin:20px 0; font-size:50px;">📦</div>
+            <button class="btn-main" onclick="createFirstHorse()">분양받기</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        
+        // ⭐ 데이터 파일 import
+        import { FOODS, TRAININGS, GACHA_PRICE, EQUIPMENT_TIERS, ADJECTIVES, NOUNS } from "./js/items.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
+          authDomain: "lovechatproject-2db11.firebaseapp.com",
+          projectId: "lovechatproject-2db11",
+          storageBucket: "lovechatproject-2db11.firebasestorage.app",
+          messagingSenderId: "1069136590072",
+          appId: "1:1069136590072:web:7712e718db03c70bff370d",
+          measurementId: "G-ERG2LL283F"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        let myId = localStorage.getItem('chat_uid');
+        const userRef = doc(db, "users", myId);
+
+        let myData = null;
+        let myHorse = null;
+
+        // 1. 초기화
+        async function init() {
+            const snap = await getDoc(userRef);
+            if(!snap.exists()) { alert("로그인 정보 없음"); location.href='game3.html'; return; }
+
+            myData = snap.data();
+            updateCoinUI();
+
+            // 말 데이터 확인
+            if(myData.horse) {
+                myHorse = myData.horse;
+                renderMainScreen();
+            } else {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('adopt-modal').style.display = 'flex';
+            }
+        }
+
+        function updateCoinUI() {
+            document.getElementById('my-coin').innerText = (myData.coins || 0).toLocaleString() + " 💰";
+        }
+
+        // 2. 탭 전환
+        window.switchTab = (tabName) => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.action-grid').forEach(d => d.style.display = 'none');
+            
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).style.display = (tabName === 'shop' ? 'grid' : 'grid');
+        };
+
+        // 3. UI 렌더링 (말 정보, 버튼 등)
+        function renderMainScreen() {
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('main-screen').style.display = 'flex';
+
+            // 말 정보 표시
+            document.getElementById('h-name').innerText = myHorse.name;
+            document.getElementById('h-grade').innerText = myHorse.grade || 'F급';
+            document.getElementById('h-bond').innerText = myHorse.bond || 0;
+            
+            // 스탯 바 (최대 200 기준)
+            const spdP = Math.min(100, (myHorse.spd / 200) * 100);
+            const staP = Math.min(100, (myHorse.sta / 200) * 100);
+            const lukP = Math.min(100, (myHorse.luk / 200) * 100);
+
+            document.getElementById('bar-spd').style.width = spdP + '%';
+            document.getElementById('val-spd').innerText = myHorse.spd;
+            document.getElementById('bar-sta').style.width = staP + '%';
+            document.getElementById('val-sta').innerText = myHorse.sta;
+            document.getElementById('bar-luk').style.width = lukP + '%';
+            document.getElementById('val-luk').innerText = myHorse.luk;
+
+            // 피로도
+            const fatigue = myHorse.fatigue || 0;
+            const fEl = document.getElementById('h-fatigue');
+            fEl.innerText = `${fatigue} / 100`;
+            fEl.style.color = fatigue > 80 ? 'red' : (fatigue > 50 ? 'orange' : '#2ecc71');
+
+            // 장비 표시 (0:편자, 1:안장, 2:가면)
+            const gears = myHorse.equip || [null, null, null];
+            const slots = ['👟','💺','🎭'];
+            gears.forEach((g, idx) => {
+                const el = document.getElementById(`slot-${idx}`);
+                if(g) {
+                    el.classList.add('equipped');
+                    el.innerHTML = `${slots[idx]}<div class="equip-badge" style="background:${g.color}">${g.grade}</div>`;
+                } else {
+                    el.classList.remove('equipped');
+                    el.innerHTML = slots[idx];
+                }
+            });
+
+            // 행동 버튼 생성
+            renderActionButtons();
+        }
+
+        function renderActionButtons() {
+            // 먹이 버튼
+            const feedContainer = document.getElementById('tab-feed');
+            feedContainer.innerHTML = "";
+            FOODS.forEach(food => {
+                feedContainer.innerHTML += `
+                    <button class="act-btn" onclick="feedHorse('${food.id}')">
+                        <h3>${food.name}</h3>
+                        <p>${food.desc}</p>
+                        <span class="act-cost">-${food.price.toLocaleString()} 코인</span>
+                    </button>`;
+            });
+
+            // 훈련 버튼
+            const trainContainer = document.getElementById('tab-train');
+            trainContainer.innerHTML = "";
+            TRAININGS.forEach(tr => {
+                trainContainer.innerHTML += `
+                    <button class="act-btn" onclick="trainHorse('${tr.id}')">
+                        <h3>${tr.name}</h3>
+                        <p>${tr.desc}</p>
+                        <span class="act-cost">-${tr.cost.toLocaleString()} 코인</span>
+                    </button>`;
+            });
+        }
+
+        // --- [기능] 1. 말 생성 ---
+        window.createFirstHorse = async () => {
+            const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+            const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+            
+            const newHorse = {
+                name: adj + noun,
+                grade: 'F',
+                spd: Math.floor(Math.random()*30)+20,
+                sta: Math.floor(Math.random()*30)+20,
+                luk: Math.floor(Math.random()*30)+20,
+                bond: 0,
+                fatigue: 0,
+                equip: [null, null, null] // 장비 없음
+            };
+
+            await updateDoc(userRef, { horse: newHorse });
+            alert(`축하합니다! '${newHorse.name}'(이)가 태어났습니다!`);
+            location.reload();
+        };
+
+        // --- [기능] 2. 먹이 주기 ---
+        window.feedHorse = async (foodId) => {
+            const item = FOODS.find(f => f.id === foodId);
+            if(myData.coins < item.price) return alert("돈이 부족합니다!");
+            if(myHorse.fatigue <= 0 && item.fatigueRec > 0) return alert("말이 이미 쌩쌩합니다!");
+
+            // 계산
+            let newFatigue = Math.max(0, (myHorse.fatigue || 0) - item.fatigueRec);
+            let newBond = (myHorse.bond || 0) + item.bond;
+            let newCoins = myData.coins - item.price;
+
+            // 업데이트
+            myHorse.fatigue = newFatigue;
+            myHorse.bond = newBond;
+            myData.coins = newCoins;
+
+            await updateDoc(userRef, {
+                coins: newCoins,
+                horse: myHorse
+            });
+
+            alert(`${item.name}을(를) 먹였습니다.\n피로도가 회복되고 친밀도가 올랐습니다! ❤️`);
+            updateCoinUI();
+            renderMainScreen();
+        };
+
+        // --- [기능] 3. 훈련 하기 ---
+        window.trainHorse = async (trainId) => {
+            const tr = TRAININGS.find(t => t.id === trainId);
+            if(myData.coins < tr.cost) return alert("훈련비가 부족합니다!");
+            if((myHorse.fatigue || 0) >= 100) return alert("말이 너무 지쳤습니다! 입원하기 싫으면 쉬세요. 🏥");
+
+            // 애니메이션
+            const avatar = document.getElementById('h-avatar');
+            avatar.classList.add('training');
+            setTimeout(() => avatar.classList.remove('training'), 1000);
+
+            // 성공/실패 판정 (피로도가 높으면 실패율 증가)
+            const fatiguePenalty = (myHorse.fatigue || 0) / 200; // 피로도 100이면 +50% 실패확률
+            const finalFailRate = tr.fail + fatiguePenalty;
+            const isFail = Math.random() < finalFailRate;
+
+            let msg = "";
+            let newCoins = myData.coins - tr.cost;
+            let newFatigue = Math.min(100, (myHorse.fatigue || 0) + tr.fatigue);
+
+            if(isFail) {
+                msg = `💥 훈련 실패!\n말이 부상을 입었습니다.\n스탯이 오르지 않고 피로도만 쌓입니다.`;
+                // 부상 시 스탯 하락 로직을 넣고 싶으면 여기서 구현
+            } else {
+                // 성공
+                let gain = Math.floor(Math.random() * (tr.max - tr.min + 1)) + tr.min;
+                
+                // 유대감 보너스 (친밀도 100당 +1 추가 보너스)
+                if(myHorse.bond >= 50 && Math.random() < 0.3) {
+                    gain += 1; msg = "✨ 대성공! (주인님을 위해 힘냈습니다!)\n";
+                }
+
+                if(tr.stat === 'all') {
+                    myHorse.spd += gain; myHorse.sta += gain; myHorse.luk += gain;
+                    msg += `모든 능력치가 +${gain} 상승했습니다!`;
+                } else {
+                    myHorse[tr.stat] += gain;
+                    msg += `${tr.stat.toUpperCase()} +${gain} 상승했습니다!`;
+                }
+            }
+
+            myHorse.fatigue = newFatigue;
+            myData.coins = newCoins;
+
+            await updateDoc(userRef, { coins: newCoins, horse: myHorse });
+            
+            setTimeout(() => {
+                alert(msg);
+                updateCoinUI();
+                renderMainScreen();
+            }, 500);
+        };
+
+        // --- [기능] 4. 장비 뽑기 (가챠) ---
+        window.drawGacha = async () => {
+            if(myData.coins < GACHA_PRICE) return alert("돈이 부족합니다! (5만 코인 필요)");
+            if(!confirm("50,000 코인을 사용하여 장비를 뽑으시겠습니까?\n(기존 장비는 사라집니다!)")) return;
+
+            // 가챠 로직
+            const rand = Math.random() * 100; // 0 ~ 100
+            let cumulative = 0;
+            let picked = EQUIPMENT_TIERS[0]; // 기본 C
+
+            for(let t of EQUIPMENT_TIERS) {
+                cumulative += t.prob;
+                if(rand <= cumulative) {
+                    picked = t;
+                    break;
+                }
+            }
+
+            // 부위 결정 (0:편자, 1:안장, 2:가면)
+            const slotIdx = Math.floor(Math.random() * 3);
+            const slotNames = ["황금 편자", "가죽 안장", "행운의 가면"];
+            
+            // 장비 객체 생성
+            const newGear = {
+                grade: picked.grade,
+                power: picked.power,
+                color: picked.color,
+                name: `${picked.grade}급 ${slotNames[slotIdx]}`
+            };
+
+            // 장착 (기존꺼 덮어쓰기)
+            if(!myHorse.equip) myHorse.equip = [null, null, null];
+            myHorse.equip[slotIdx] = newGear;
+            
+            // 스탯 반영 (장비는 영구 스탯 증가로 처리할지, 착용 효과로 할지 고민. 여기선 영구 증가로 심플하게)
+            // 하지만 '착용 중'을 보여주려면 스탯에 합산하지 않고 별도로 계산해야 함.
+            // 여기서는 심플하게 "보유 효과"로 스탯을 즉시 올려버리는 방식 대신,
+            // 3-1 경마 게임에서 계산할 때 (기본스탯 + 장비보너스)로 합산하도록 하겠습니다.
+            // 일단 저장만 합니다.
+
+            await updateDoc(userRef, {
+                coins: increment(-GACHA_PRICE),
+                horse: myHorse
+            });
+
+            myData.coins -= GACHA_PRICE;
+            updateCoinUI();
+            renderMainScreen();
+
+            alert(`[뽑기 결과]\n${newGear.name} 획득!\n등급: ${picked.grade} (능력치 +${picked.power})`);
+        };
+
+        init();
+    </script>
+</body>
+</html>
