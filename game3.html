@@ -63,7 +63,7 @@
 <div class="container">
     <h2 style="text-align:center; margin:0;">🎰 CASINO LOBBY</h2>
     
- <div class="wallet-card">
+    <div class="wallet-card">
         <div class="wallet-label">
             MY WALLET <span id="my-code" style="font-size:12px; color:#eee; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; margin-left:5px;">#????</span>
         </div>
@@ -76,7 +76,17 @@
     </div>
 
     <div class="menu-grid">
-        <a href="game3-1.html" class="menu-item">
+        
+
+        <a href="game3-5.html" class="menu-item" style="border:1px solid #e67e22;">
+            <span class="menu-icon">🛖</span>
+            <span class="menu-title" style="color:#e67e22;">내 마구간</span>
+        </a>
+        <a href="shop.html" class="menu-item" style="background:#222; border:1px solid #f1c40f;">
+            <span class="menu-icon">🏪</span>
+            <span class="menu-title" style="color:#f1c40f;">FLEX 상점</span>
+        </a>
+<a href="game3-1.html" class="menu-item">
             <span class="menu-icon">🐎</span>
             <span class="menu-title">경마 (Derby)</span>
         </a>
@@ -126,7 +136,7 @@
       measurementId: "G-ERG2LL283F"
     };
 
-   const app = initializeApp(firebaseConfig);
+    const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     
     let myId = localStorage.getItem('chat_uid');
@@ -136,9 +146,8 @@
     const userRef = doc(db, "users", myId);
     let myCurrentCoins = 0;
 
-    // 1. 내 정보 초기화 및 로드 (수정됨: 고유 코드 표시)
+    // 1. 내 정보 초기화 및 로드
     async function initUser() {
-        // 내 고유 코드(ID 뒷 4자리) 표시
         const shortCode = "#" + myId.slice(-4).toUpperCase();
         document.getElementById('my-code').innerText = shortCode;
 
@@ -161,7 +170,7 @@
         });
     }
 
-    // 2. 전체 랭킹 로드 (기존과 동일)
+    // 2. 전체 랭킹 로드 (0원 제외 + 칭호)
     function loadRanking() {
         const q = query(collection(db, "users"), orderBy("coins", "desc"));
         onSnapshot(q, (snapshot) => {
@@ -171,33 +180,51 @@
             
             snapshot.forEach(doc => {
                 const d = doc.data();
-                if (d.coins <= 0) return; // 0원 이하 숨김
+                if (d.coins <= 0) return; 
 
+                const title = d.equippedTitle ? d.equippedTitle + " " : "";
+                const displayName = title + d.name;
                 const isMe = doc.id === myId ? " (나)" : "";
+                
                 list.innerHTML += `
                     <div class="rank-row" style="${isMe ? 'color:#d35400;font-weight:bold;' : ''}">
-                        <span class="rank-name">${rank}. ${d.name}${isMe}</span>
+                        <span class="rank-name">${rank}. ${displayName}${isMe}</span>
                         <span class="rank-coin">${d.coins.toLocaleString()}</span>
                     </div>
                 `;
                 rank++;
             });
+
             if(list.innerHTML === "") list.innerHTML = "<div style='text-align:center; color:#999;'>부자가 없습니다...</div>";
         });
     }
 
-    // 3. 무료 충전소 (기존과 동일)
+    // 3. 무료 충전소 (업그레이드 반영)
     window.chargeCoin = async () => {
         const snap = await getDoc(userRef);
-        if(snap.exists() && snap.data().coins < 1000) {
-            await updateDoc(userRef, { coins: increment(1000) });
-            alert("1,000 코인이 충전되었습니다! (파산 구조대 도착 🚑)");
+        if(!snap.exists()) return;
+
+        const data = snap.data();
+        const currentCoins = data.coins || 0;
+        const chargeLevel = data.chargeLevel || 0; 
+
+        let limitAmount = 1000;
+        let chargeAmount = 1000;
+
+        if (chargeLevel >= 1) {
+            limitAmount = 10000;
+            chargeAmount = 10000;
+        }
+
+        if(currentCoins < limitAmount) {
+            await updateDoc(userRef, { coins: increment(chargeAmount) });
+            alert(`${chargeAmount.toLocaleString()} 코인이 충전되었습니다! 🚑`);
         } else {
-            alert("코인이 1,000원 미만일 때만 충전 가능합니다! 😅");
+            alert(`코인이 ${limitAmount.toLocaleString()}원 미만일 때만 충전 가능합니다!`);
         }
     };
 
-    // 4. [수정됨] 선물하기 기능 (동명이인 처리 추가)
+    // 4. 선물하기 (동명이인 처리)
     window.sendGift = async () => {
         const targetName = prompt("누구에게 코인을 보낼까요?\n(받는 사람의 닉네임을 입력하세요)");
         if(!targetName) return;
@@ -209,12 +236,10 @@
         if(!amount || amount <= 0) return alert("올바른 금액을 입력해주세요.");
         if(amount > myCurrentCoins) return alert("잔액이 부족합니다.");
 
-        // 받는 사람 검색
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("name", "==", targetName));
         const querySnapshot = await getDocs(q);
 
-        // 검색 결과 필터링 (나 자신 제외)
         let candidates = [];
         querySnapshot.forEach((doc) => {
             if(doc.id !== myId) {
@@ -229,14 +254,10 @@
 
         let targetUser = null;
 
-        // [핵심] 동명이인 처리
         if (candidates.length === 1) {
-            // 1명뿐이면 바로 선택
             targetUser = candidates[0];
         } else {
-            // 여러 명이면 선택창 띄우기
             let msg = `['${targetName}']님이 ${candidates.length}명 검색되었습니다.\n번호를 입력해 선택해주세요:\n\n`;
-            
             candidates.forEach((user, index) => {
                 const shortCode = "#" + user.id.slice(-4).toUpperCase();
                 msg += `[${index + 1}] ${user.name} (ID: ${shortCode})\n`;
@@ -244,20 +265,16 @@
 
             const choiceStr = prompt(msg);
             const choice = parseInt(choiceStr);
-
             if (!choice || choice < 1 || choice > candidates.length) {
                 return alert("잘못된 선택입니다. 취소되었습니다.");
             }
             targetUser = candidates[choice - 1];
         }
 
-        // 최종 확인 및 전송
         const targetCode = "#" + targetUser.id.slice(-4).toUpperCase();
         if(confirm(`${targetUser.name} (${targetCode})님에게\n${amount.toLocaleString()} 코인을 보내시겠습니까?`)) {
             try {
-                // 내 돈 차감
                 await updateDoc(userRef, { coins: increment(-amount) });
-                // 상대 돈 추가
                 const targetRef = doc(db, "users", targetUser.id);
                 await updateDoc(targetRef, { coins: increment(amount) });
                 
