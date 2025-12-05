@@ -242,6 +242,21 @@
     </div>
 
     <script type="module">
+        // ▼▼▼ [여기부터 붙여넣기] ▼▼▼
+        // 모달창이 패널에 갇히는 것을 방지하기 위해 강제로 body로 꺼내는 코드
+        const moveModalToBody = (id) => {
+            const el = document.getElementById(id);
+            if(el && el.parentElement !== document.body) {
+                document.body.appendChild(el);
+            }
+        };
+        // 페이지 로딩 즉시 실행
+        moveModalToBody('tip-modal');
+        moveModalToBody('help-modal');
+        // ▲▲▲ [여기까지] ▲▲▲
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        // ... (나머지 기존 코드)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc, updateDoc, increment } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
