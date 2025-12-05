@@ -255,7 +255,6 @@
         moveModalToBody('help-modal');
         // ▲▲▲ [여기까지] ▲▲▲
 
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         // ... (나머지 기존 코드)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc, updateDoc, increment } 
@@ -584,9 +583,33 @@ window.addBet = (id, amount) => {
             }, 800);
         }
 
-        window.toggleHelp = () => { const modal = document.getElementById('help-modal'); modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex'; };
-        window.toggleTip = () => { const modal = document.getElementById('tip-modal'); modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex'; };
+// ▼▼▼ [수정된 코드: 경기장 숨기기 기능 추가] ▼▼▼
+        window.toggleTip = () => { 
+            const modal = document.getElementById('tip-modal'); 
+            const raceTrack = document.getElementById('race-track'); // 경기장 요소
 
+            if (modal.style.display === 'none' || modal.style.display === '') {
+                modal.style.display = 'flex';
+                raceTrack.style.display = 'none'; // 경기장을 숨겨서 공간 확보!
+            } else {
+                modal.style.display = 'none';
+                raceTrack.style.display = 'flex'; // 다시 보이게 원상복구
+            }
+        };
+
+        window.toggleHelp = () => { 
+            const modal = document.getElementById('help-modal'); 
+            const raceTrack = document.getElementById('race-track');
+
+            if (modal.style.display === 'none' || modal.style.display === '') {
+                modal.style.display = 'flex';
+                raceTrack.style.display = 'none';
+            } else {
+                modal.style.display = 'none';
+                raceTrack.style.display = 'flex';
+            }
+        };
+        // ▲▲▲ [여기까지] ▲▲▲
         initGame();
     </script>
 </body>
