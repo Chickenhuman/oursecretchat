@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2076/2076218.png">
     <link rel="manifest" href="manifest.json">
 
-    <title>Our Secret Chat</title>
+    <title>잰갱이톡</title>
     <style>
         /* [기본 설정] */
         body { font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #f0f0f0; margin: 0; display: flex; justify-content: center; height: 100dvh; overflow: hidden; touch-action: manipulation; }
@@ -202,8 +202,8 @@
             </div>
         </div>
         
-        <div id="search-container">
-            <input type="text" id="search-input" placeholder="대화 내용 검색..." onkeyup="filterMessages()" disabled>
+<div id="search-container">
+            <input type="hidden" id="search-input" placeholder="대화 내용 검색..." onkeyup="filterMessages()" disabled>
         </div>
         
         <div id="messages">
@@ -274,8 +274,8 @@
                 </div>
             </div>
 
-            <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃 (자동로그인 해제)</span></div>
-            <div class="version-info">Ver 1.73 (Reply Feature Added) - 25/12/3</div>
+            <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃</span></div>
+            <div class="version-info">Ver 1.74 - 2025/12/15 Update</div>
         </div>
     </div>
 
@@ -342,6 +342,16 @@
     let galleryLastSnap = null;
     let isGalleryLoading = false;
     let isGalleryEnd = false;
+    
+    // [날짜 구분선용 변수]
+    let lastPrintedDate = null;
+    function getDateString(timestamp) {
+        if (!timestamp) return null;
+        const date = timestamp.toDate();
+        return new Intl.DateTimeFormat('ko-KR', { 
+            year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' 
+        }).format(date);
+    }
 
     // 5. [NEW] 답장 기능 관련 변수
     let currentReplyTarget = null; // { id: "msgId", text: "내용", sender: "보낸이" }
@@ -573,46 +583,60 @@
         } catch (e) { alert("전송 실패"); } finally { document.getElementById('loading').style.display = 'none'; document.getElementById('photo-input').value = ''; } 
     };
 
+    // [수정 완료] 새로운 loadMessages 함수
     function loadMessages() {
         const q = query(collection(db, "chats"), orderBy("timestamp", "asc"), limitToLast(30));
         
         onSnapshot(q, (snapshot) => {
             const msgBox = document.getElementById('messages');
-            if (isInitialLoad && snapshot.docs.length > 0) oldestMessageSnap = snapshot.docs[0];
-
-            if (!isInitialLoad) {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === "added") {
-                        const data = change.doc.data();
-                        const isNotiEnabled = localStorage.getItem('noti_enabled') !== 'false';
-                        const isPreviewEnabled = localStorage.getItem('noti_preview') !== 'false';
-                        
-                        if (data.sender !== myName) {
-                            if (document.hidden) {
-                                startTabNotification();
-                                if (isNotiEnabled && Notification.permission === "granted") {
-                                    let bodyText = "비밀 메시지가 도착했습니다. 🔒";
-                                    if (isPreviewEnabled) bodyText = data.type === 'image' ? '사진/그림이 도착했습니다.' : data.text;
-                                    new Notification(`💌 ${data.sender}`, { body: bodyText, icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png' });
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
+            
+            // 초기 로딩 시 날짜 추적 초기화
             if (isInitialLoad) { 
                 msgBox.innerHTML = '<div id="top-loading"></div>'; 
                 allImages = []; 
                 lastPartnerMsgTime = 0; 
+                lastPrintedDate = null; // 초기화
+                if (snapshot.docs.length > 0) oldestMessageSnap = snapshot.docs[0];
             }
 
             snapshot.docChanges().forEach((change) => {
                 if (change.type === "added") {
                     const data = change.doc.data();
-                    const docId = change.doc.id; // 메시지 ID 가져오기
+                    const docId = change.doc.id;
+                    
+                    // --- [날짜 구분선 로직 시작] ---
+                    // 메시지의 날짜 문자열 생성
+                    const msgDateStr = getDateString(data.timestamp);
+                    
+                    // 마지막으로 출력한 날짜와 다르면 구분선 추가
+                    if (msgDateStr && lastPrintedDate !== msgDateStr) {
+                        const dateDividerHTML = `
+                            <div class="date-divider">
+                                <span>${msgDateStr}</span>
+                            </div>`;
+                        msgBox.insertAdjacentHTML('beforeend', dateDividerHTML);
+                        lastPrintedDate = msgDateStr; // 기준 날짜 업데이트
+                    }
+                    // --- [날짜 구분선 로직 끝] ---
+
+                    // 알림 로직 (기존과 동일)
+                    if (!isInitialLoad && data.sender !== myName) {
+                        const isNotiEnabled = localStorage.getItem('noti_enabled') !== 'false';
+                        const isPreviewEnabled = localStorage.getItem('noti_preview') !== 'false';
+                        if (document.hidden) {
+                            startTabNotification();
+                            if (isNotiEnabled && Notification.permission === "granted") {
+                                let bodyText = "비밀 메시지가 도착했습니다. 🔒";
+                                if (isPreviewEnabled) bodyText = data.type === 'image' ? '사진/그림이 도착했습니다.' : data.text;
+                                new Notification(`💌 ${data.sender}`, { body: bodyText, icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png' });
+                            }
+                        }
+                    }
+
+                    // 메시지 추가 (기존과 동일)
                     const msgHTML = createMessageHTML(data, docId);
                     msgBox.insertAdjacentHTML('beforeend', msgHTML); 
+                    
                     if(data.type === 'image') allImages.push(data.imageUrl);
                     if(isInitialLoad) oldestMessageSnap = change.doc; 
                     
@@ -623,8 +647,12 @@
                 }
             });
 
-            if (isInitialLoad) { scrollToBottom(); isInitialLoad = false; if(snapshot.docs.length > 0) oldestMessageSnap = snapshot.docs[0]; } 
-            else { scrollToBottom(); }
+            if (isInitialLoad) { 
+                scrollToBottom(); 
+                isInitialLoad = false; 
+            } else { 
+                scrollToBottom(); 
+            }
             
             updateReadStatus();
             updateGalleryPreview(); 
@@ -636,31 +664,66 @@
         });
     }
 
+    // [수정 완료] loadMoreMessages 함수
     async function loadMoreMessages() {
         if (isFetchingOlder) return;
         isFetchingOlder = true;
-        document.getElementById('top-loading').style.display = 'block';
+        const topLoading = document.getElementById('top-loading');
+        topLoading.style.display = 'block';
+        
         const q = query(collection(db, "chats"), orderBy("timestamp", "desc"), startAfter(oldestMessageSnap), limit(30));
         const snapshot = await getDocs(q);
+        
         if (!snapshot.empty) {
-            const oldHeight = document.getElementById('messages').scrollHeight;
-            const docs = snapshot.docs.reverse();
+            const msgBox = document.getElementById('messages');
+            const oldHeight = msgBox.scrollHeight;
+            
+            // 불러온 데이터를 시간순(과거->미래)으로 정렬
+            const docs = snapshot.docs.reverse(); 
             oldestMessageSnap = docs[0]; 
+            
             let html = "";
+            let tempLastDate = null; // 이번 배치 안에서 날짜 체크용
+
+            // 현재 화면의 맨 위에 있는 날짜 구분선이 있다면 날짜를 가져옴 (중복 방지용)
+            const existingTopDivider = msgBox.querySelector('.date-divider');
+            const existingTopDate = existingTopDivider ? existingTopDivider.innerText.trim() : null;
+
             docs.forEach(doc => { 
-                html += createMessageHTML(doc.data(), doc.id); 
-                if(doc.data().type === 'image') allImages.unshift(doc.data().imageUrl); 
-                if(doc.data().sender !== myName && doc.data().timestamp) {
-                    const time = doc.data().timestamp.toMillis();
+                const data = doc.data();
+                const msgDateStr = getDateString(data.timestamp);
+
+                // 이번 배치 내에서 날짜가 바뀌었으면 구분선 추가
+                if (msgDateStr && tempLastDate !== msgDateStr) {
+                    html += `<div class="date-divider"><span>${msgDateStr}</span></div>`;
+                    tempLastDate = msgDateStr;
+                }
+
+                html += createMessageHTML(data, doc.id); 
+                
+                if(data.type === 'image') allImages.unshift(data.imageUrl); 
+                if(data.sender !== myName && data.timestamp) {
+                    const time = data.timestamp.toMillis();
                     if(time > lastPartnerMsgTime) lastPartnerMsgTime = time;
                 }
             });
-            document.getElementById('top-loading').insertAdjacentHTML('afterend', html);
-            const newHeight = document.getElementById('messages').scrollHeight;
-            document.getElementById('messages').scrollTop = newHeight - oldHeight;
+
+            // [중요] 새로 로딩한 마지막 날짜와 기존 화면의 첫 날짜가 같으면
+            // 기존 화면 맨 위에 있던 구분선은 중복이므로 삭제
+            if (tempLastDate === existingTopDate && existingTopDivider) {
+                existingTopDivider.remove();
+            }
+
+            topLoading.insertAdjacentHTML('afterend', html);
+            
+            const newHeight = msgBox.scrollHeight;
+            msgBox.scrollTop = newHeight - oldHeight;
             updateReadStatus(); 
-        } else { document.getElementById('top-loading').innerText = "대화의 시작입니다."; }
-        document.getElementById('top-loading').style.display = 'none';
+        } else { 
+            topLoading.innerText = "대화의 시작입니다."; 
+        }
+        
+        topLoading.style.display = 'none';
         isFetchingOlder = false;
     }
 
@@ -791,11 +854,24 @@
         } catch(e) { console.error(e); alert("삭제 실패"); location.reload(); }
     }
 
-    window.toggleSearch = () => { 
+window.toggleSearch = () => { 
         const sb = document.getElementById('search-container'); 
         const input = document.getElementById('search-input');
-        if (sb.style.display === 'block') { sb.style.display = 'none'; input.value = ''; input.disabled = true; filterMessages(); } 
-        else { sb.style.display = 'block'; input.disabled = false; input.focus(); }
+        
+        if (sb.style.display === 'block') { 
+            // [닫기] 다시 hidden으로 변경하여 키보드 탐색에서 제외
+            input.setAttribute('type', 'hidden'); 
+            sb.style.display = 'none'; 
+            input.value = ''; 
+            input.disabled = true; 
+            filterMessages(); 
+        } else { 
+            // [열기] text로 변경하여 입력 가능하게 만듦
+            input.setAttribute('type', 'text'); 
+            sb.style.display = 'block'; 
+            input.disabled = false; 
+            input.focus(); 
+        }
     };
     
     window.filterMessages = () => { const q = document.getElementById('search-input').value.toLowerCase(); document.querySelectorAll('.message').forEach(msg => msg.style.display = (msg.getAttribute('data-text')||"").toLowerCase().includes(q)?'block':'none'); };
