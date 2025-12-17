@@ -821,11 +821,17 @@ window.toggleSticker = () => {
                     // --- [날짜 구분선 로직 끝] ---
 
                     // 알림 로직 (기존과 동일)
-                    if (!isInitialLoad && data.sender !== myName) {
-                        const isNotiEnabled = localStorage.getItem('noti_enabled') !== 'false';
-                        const isPreviewEnabled = localStorage.getItem('noti_preview') !== 'false';
-                        if (document.hidden) {
-                            startTabNotification();
+if (!isInitialLoad && data.sender !== myName) {
+
+    // ✅ [위치 이동] 무조건 신호를 보냄 (exe가 알아서 포커스 없으면 깜빡임)
+    if (window.electronAPI) {
+        window.electronAPI.triggerFlash();
+    }
+
+    // 탭 깜빡임과 윈도우 알림은 화면이 안 보일 때만
+    if (document.hidden) {
+        startTabNotification();
+
                             if (isNotiEnabled && Notification.permission === "granted") {
                                 let bodyText = "비밀 메시지가 도착했습니다. 🔒";
                                 if (isPreviewEnabled) bodyText = data.type === 'image' ? '사진/그림이 도착했습니다.' : data.text;
