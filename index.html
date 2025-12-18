@@ -289,7 +289,7 @@
     </div>
 <div id="update-modal" style="display: none;">
     <div class="update-content">
-        <h3 style="margin-top:0; color:#ff6b6b;">🚀 업데이트 알림 (Ver 1.1)</h3>
+        <h3 style="margin-top:0; color:#ff6b6b;">🚀 업데이트 알림 (Ver 1.8)</h3>
         <ul style="text-align:left; padding-left:20px; color:#555; font-size:14px; line-height:1.6;">
             <li>📝 입력창이 최대 3줄까지 늘어나요!</li>
             <li>💻 PC에서 메시지 알림 시 작업표시줄이 깜빡여요.</li>
@@ -409,7 +409,7 @@
             </div>
 
             <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃</span></div>
-            <div class="version-info">Ver 1.84 - 2025/12/18 Update</div>
+            <div class="version-info">Ver 1.85 - 2025/12/18 Update</div>
         </div>
     </div>
 
@@ -922,12 +922,13 @@ input.value = "";
     });
 
     // 스크롤 이벤트 리스너 (한 번만 등록되도록 외부 확인 필요 없으면 유지)
+const msgBox = document.getElementById('messages'); 
     msgBox.onscroll = () => {
         if (msgBox.scrollTop === 0 && !isFetchingOlder && oldestMessageSnap) { 
             loadMoreMessages(); 
         }
     };
-}
+} // loadMessages 함수 끝
 
     // [수정 완료] loadMoreMessages 함수
     async function loadMoreMessages() {
@@ -1236,24 +1237,36 @@ window.toggleSearch = () => {
         else { showScreen('name-screen'); }
     }
 // [추가] 입력창 자동 높이 조절 및 엔터키 전송 설정
-    const msgInputBox = document.getElementById('msg-input');
+const msgInputBox = document.getElementById('msg-input');
 
-    msgInputBox.addEventListener('input', function() {
-        this.style.height = '45px'; // 일단 기본 높이로 줄였다가
-        this.style.height = (this.scrollHeight) + 'px'; // 글자만큼 늘림
-    });
+// 1. 자동 높이 조절 (input 이벤트)
+msgInputBox.addEventListener('input', function() {
+    this.style.height = '45px'; // 초기화
+    let newHeight = this.scrollHeight;
+    if (newHeight > 90) newHeight = 90; // 최대 3줄 제한
+    this.style.height = newHeight + 'px';
+});
 
-    msgInputBox.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) { // Shift 없이 엔터만 누르면 전송
-            e.preventDefault(); // 줄바꿈 방지
-            sendMessage();
-            this.style.height = '45px'; // 높이 초기화
-        }
-    });
-// ==========================================
+// 2. 엔터키 전송 설정 (keydown 이벤트)
+msgInputBox.addEventListener('keydown', function(e) {
+    // 한글 입력 시 마지막 글자 중복 전송 방지
+    if (e.isComposing) return;
+
+    if (e.key === 'Enter') {
+        if (!e.shiftKey) { 
+            // Shift 없이 Enter만 누른 경우
+            e.preventDefault(); // 중요: 기본 줄바꿈 동작을 막음
+            window.sendMessage(); // 전송 함수 호출
+            
+            // 전송 후 높이와 내용 초기화는 sendMessage 안에서 처리되지만, 여기서도 한 번 더 보정
+            this.style.height = '45px';
+        } 
+        // Shift + Enter인 경우에는 여기서 아무것도 안 함 (기본 줄바꿈 허용)
+    }
+});// ==========================================
     // 📢 [추가] 업데이트 팝업 로직
     // ==========================================
-    const CURRENT_VERSION = "1.1"; // 👈 [중요] 패치할 때마다 이 숫자를 바꾸세요!
+    const CURRENT_VERSION = "1.8"; // 👈 [중요] 패치할 때마다 이 숫자를 바꾸세요!
 
     window.checkUpdatePopup = function() {
         const savedVersion = localStorage.getItem('seen_version');
