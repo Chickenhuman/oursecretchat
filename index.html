@@ -68,7 +68,23 @@
             background: white; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; 
             position: relative; flex-shrink: 0; 
         }
-        #msg-input { flex: 1; margin: 0; padding: 12px; border-radius: 20px; border: 1px solid #ddd; background: #f8f8f8; }
+       #msg-input { 
+    flex: 1; 
+    margin: 0; 
+    padding: 12px; 
+    border-radius: 20px; 
+    border: 1px solid #ddd; 
+    background: #f8f8f8; 
+    
+    /* ▼▼▼ [여기서부터 변경된 부분] ▼▼▼ */
+    resize: none;          /* 사용자 임의 조절 방지 */
+    font-family: inherit;  /* 폰트 상속 */
+    line-height: 1.4;      /* 줄 간격 */
+    height: 45px;          /* 기본 높이 고정 */
+    max-height: 90px;      /* 최대 높이 (약 3~4줄) */
+    overflow-y: auto;      /* 3줄 넘어가면 스크롤 생김 */
+    box-sizing: border-box;
+}
         #send-btn { width: 50px; height: 40px; border: none; background: #333; color: white; border-radius: 12px; cursor: pointer; }
         .tool-btn { cursor: pointer; font-size: 24px; padding: 0 5px; color: #888; background: none; border: none; }
         #photo-input { position: absolute; top: -9999px; left: -9999px; opacity: 0; pointer-events: none; }
@@ -230,6 +246,30 @@
     border-bottom: 3px solid #ff6b6b; /* 활성화된 탭 색상 */
     color: #ff6b6b;
 }
+/* [추가] 업데이트 팝업 스타일 */
+#update-modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); /* 반투명 검은 배경 */
+    z-index: 9999; /* 제일 위에 뜨도록 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.update-content {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    width: 85%;
+    max-width: 320px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    animation: popIn 0.3s ease-out;
+}
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
     </style>
 </head>
 <body>
@@ -247,7 +287,17 @@
             </div>
         </div>
     </div>
-
+<div id="update-modal" style="display: none;">
+    <div class="update-content">
+        <h3 style="margin-top:0; color:#ff6b6b;">🚀 업데이트 알림 (Ver 1.1)</h3>
+        <ul style="text-align:left; padding-left:20px; color:#555; font-size:14px; line-height:1.6;">
+            <li>📝 입력창이 최대 3줄까지 늘어나요!</li>
+            <li>💻 PC에서 메시지 알림 시 작업표시줄이 깜빡여요.</li>
+            <li>🐛 기타 버그 수정 및 최적화 완료.</li>
+        </ul>
+        <button class="btn-primary" onclick="closeUpdatePopup()">확인했어요</button>
+    </div>
+</div>
     <div id="login-screen" class="screen active">
         <div class="auth-container">
             <h2 style="color:#ff6b6b;">🔒 Secret Access</h2>
@@ -310,7 +360,7 @@
     <button class="tool-btn" onclick="toggleSticker()">🐻</button> <button class="tool-btn" onclick="toggleDrawingPad()">🖌️</button>
     <button class="tool-btn" onclick="triggerFileUpload()">📷</button>
     
-    <input type="text" id="msg-input" placeholder="메시지..." onkeypress="if(event.keyCode==13) sendMessage()">
+  <textarea id="msg-input" placeholder="메시지..." rows="1"></textarea>
     <button id="send-btn" onclick="sendMessage()">➤</button>
 </div>
         <input type="file" id="photo-input" accept="image/*" onchange="uploadImage(this.files[0])" disabled>
@@ -359,7 +409,7 @@
             </div>
 
             <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃</span></div>
-            <div class="version-info">Ver 1.82 - 2025/12/18 Update</div>
+            <div class="version-info">Ver 1.84 - 2025/12/18 Update</div>
         </div>
     </div>
 
@@ -766,12 +816,13 @@ document.addEventListener("visibilitychange", () => {
                 payload.replyTo = currentReplyTarget;
             }
             await addDoc(collection(db, "chats"), payload); 
-            input.value = ""; 
-            cancelReply(); // 답장 상태 초기화
-            markAsRead(); scrollToBottom(); 
-        } catch (e) { alert("전송 실패"); } 
-    };
-
+input.value = ""; 
+        input.style.height = '45px'; // 전송 후 높이 초기화 (이 위치가 가장 안전합니다)
+        cancelReply();
+        markAsRead(); 
+        scrollToBottom(); 
+    } catch (e) { alert("전송 실패"); } 
+};
     window.uploadImage = async function(fileOrBlob, isDrawing = false) { 
         if (!fileOrBlob) return; 
         document.getElementById('loading').style.display = 'flex'; 
@@ -791,91 +842,92 @@ document.addEventListener("visibilitychange", () => {
     };
 
     // [수정 완료] 새로운 loadMessages 함수
-    function loadMessages() {
-        const q = query(collection(db, "chats"), orderBy("timestamp", "asc"), limitToLast(30));
+ function loadMessages() {
+    // 실시간 감시 시작 (최근 30개)
+    const q = query(collection(db, "chats"), orderBy("timestamp", "asc"), limitToLast(30));
+    
+    onSnapshot(q, (snapshot) => {
+        const msgBox = document.getElementById('messages');
         
-        onSnapshot(q, (snapshot) => {
-            const msgBox = document.getElementById('messages');
-            
-            // 초기 로딩 시 날짜 추적 초기화
-            if (isInitialLoad) { 
-                msgBox.innerHTML = '<div id="top-loading"></div>'; 
-                allImages = []; 
-                lastPartnerMsgTime = 0; 
-                lastPrintedDate = null; // 초기화
-                if (snapshot.docs.length > 0) oldestMessageSnap = snapshot.docs[0];
-            }
+        // 1. 초기 로딩 시 레이아웃 초기화
+        if (isInitialLoad) { 
+            msgBox.innerHTML = '<div id="top-loading" style="display:none;">불러오는 중... ⏳</div>'; 
+            allImages = []; 
+            lastPartnerMsgTime = 0; 
+            lastPrintedDate = null; 
+            if (snapshot.docs.length > 0) oldestMessageSnap = snapshot.docs[0];
+        }
 
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === "added") {
-                    const data = change.doc.data();
-                    const docId = change.doc.id;
-                    
-                    // --- [날짜 구분선 로직 시작] ---
-                    // 메시지의 날짜 문자열 생성
-                    const msgDateStr = getDateString(data.timestamp);
-                    
-                    // 마지막으로 출력한 날짜와 다르면 구분선 추가
-                    if (msgDateStr && lastPrintedDate !== msgDateStr) {
-                        const dateDividerHTML = `
-                            <div class="date-divider">
-                                <span>${msgDateStr}</span>
-                            </div>`;
-                        msgBox.insertAdjacentHTML('beforeend', dateDividerHTML);
-                        lastPrintedDate = msgDateStr; // 기준 날짜 업데이트
+        // 2. 변경된 부분만 처리
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                const data = change.doc.data();
+                const docId = change.doc.id;
+
+                // [중복 방지] 이미 화면에 존재하는 메시지라면 스킵 (실시간 갱신 오류 방지)
+                if (document.getElementById(`msg-${docId}`)) return;
+
+                // 3. 날짜 구분선 처리
+                const msgDateStr = getDateString(data.timestamp);
+                if (msgDateStr && lastPrintedDate !== msgDateStr) {
+                    const dateDividerHTML = `
+                        <div class="date-divider">
+                            <span>${msgDateStr}</span>
+                        </div>`;
+                    msgBox.insertAdjacentHTML('beforeend', dateDividerHTML);
+                    lastPrintedDate = msgDateStr;
+                }
+
+                // 4. 알림 로직 (EXE 및 윈도우 알림)
+                if (!isInitialLoad && data.sender !== myName) {
+                    // EXE 작업표시줄 깜빡임
+                    if (window.electronAPI) {
+                        window.electronAPI.triggerFlash();
                     }
-                    // --- [날짜 구분선 로직 끝] ---
 
-                    // 알림 로직 (기존과 동일)
-if (!isInitialLoad && data.sender !== myName) {
-
-    // ✅ [위치 이동] 무조건 신호를 보냄 (exe가 알아서 포커스 없으면 깜빡임)
-    if (window.electronAPI) {
-        window.electronAPI.triggerFlash();
-    }
-
-    // 탭 깜빡임과 윈도우 알림은 화면이 안 보일 때만
-    if (document.hidden) {
-        startTabNotification();
-
-                            if (isNotiEnabled && Notification.permission === "granted") {
-                                let bodyText = "비밀 메시지가 도착했습니다. 🔒";
-                                if (isPreviewEnabled) bodyText = data.type === 'image' ? '사진/그림이 도착했습니다.' : data.text;
-                                new Notification(`💌 ${data.sender}`, { body: bodyText, icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png' });
-                            }
+                    // 창이 가려져 있을 때만 알림
+                    if (document.hidden) {
+                        startTabNotification();
+                        if (localStorage.getItem('noti_enabled') !== 'false' && Notification.permission === "granted") {
+                            let bodyText = (localStorage.getItem('noti_preview') !== 'false') 
+                                ? (data.type === 'image' ? '사진을 보냈습니다.' : data.text) 
+                                : "비밀 메시지가 도착했습니다. 🔒";
+                            new Notification(`💌 ${data.sender}`, { body: bodyText, icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png' });
                         }
                     }
-
-                    // 메시지 추가 (기존과 동일)
-                    const msgHTML = createMessageHTML(data, docId);
-                    msgBox.insertAdjacentHTML('beforeend', msgHTML); 
-                    
-                    if(data.type === 'image') allImages.push(data.imageUrl);
-                    if(isInitialLoad) oldestMessageSnap = change.doc; 
-                    
-                    if(data.sender !== myName && data.timestamp) {
-                        const time = data.timestamp.toMillis();
-                        if(time > lastPartnerMsgTime) lastPartnerMsgTime = time;
-                    }
                 }
-            });
 
-            if (isInitialLoad) { 
-                scrollToBottom(); 
-                isInitialLoad = false; 
-            } else { 
-                scrollToBottom(); 
+                // 5. 메시지 화면에 추가
+                const msgHTML = createMessageHTML(data, docId);
+                msgBox.insertAdjacentHTML('beforeend', msgHTML); 
+                
+                // 데이터 보관 및 읽음 처리용 시간 업데이트
+                if(data.type === 'image') allImages.push(data.imageUrl);
+                if(data.sender !== myName && data.timestamp) {
+                    const time = data.timestamp.toMillis();
+                    if(time > lastPartnerMsgTime) lastPartnerMsgTime = time;
+                }
             }
-            
-            updateReadStatus();
-            updateGalleryPreview(); 
         });
 
-        const msgBox = document.getElementById('messages');
-        msgBox.addEventListener('scroll', () => {
-            if (msgBox.scrollTop === 0 && !isFetchingOlder && oldestMessageSnap) { loadMoreMessages(); }
-        });
-    }
+        // 6. 초기 로딩 완료 처리 및 스크롤
+        if (isInitialLoad) { 
+            isInitialLoad = false; 
+        }
+        
+        // 새 메시지가 오면 항상 아래로 스크롤
+        scrollToBottom();
+        updateReadStatus();
+        updateGalleryPreview(); 
+    });
+
+    // 스크롤 이벤트 리스너 (한 번만 등록되도록 외부 확인 필요 없으면 유지)
+    msgBox.onscroll = () => {
+        if (msgBox.scrollTop === 0 && !isFetchingOlder && oldestMessageSnap) { 
+            loadMoreMessages(); 
+        }
+    };
+}
 
     // [수정 완료] loadMoreMessages 함수
     async function loadMoreMessages() {
@@ -1183,6 +1235,43 @@ window.toggleSearch = () => {
         } 
         else { showScreen('name-screen'); }
     }
+// [추가] 입력창 자동 높이 조절 및 엔터키 전송 설정
+    const msgInputBox = document.getElementById('msg-input');
+
+    msgInputBox.addEventListener('input', function() {
+        this.style.height = '45px'; // 일단 기본 높이로 줄였다가
+        this.style.height = (this.scrollHeight) + 'px'; // 글자만큼 늘림
+    });
+
+    msgInputBox.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { // Shift 없이 엔터만 누르면 전송
+            e.preventDefault(); // 줄바꿈 방지
+            sendMessage();
+            this.style.height = '45px'; // 높이 초기화
+        }
+    });
+// ==========================================
+    // 📢 [추가] 업데이트 팝업 로직
+    // ==========================================
+    const CURRENT_VERSION = "1.1"; // 👈 [중요] 패치할 때마다 이 숫자를 바꾸세요!
+
+    window.checkUpdatePopup = function() {
+        const savedVersion = localStorage.getItem('seen_version');
+        
+        // 저장된 버전과 현재 버전이 다르면 팝업 띄움
+        if (savedVersion !== CURRENT_VERSION) {
+            document.getElementById('update-modal').style.display = 'flex';
+        }
+    };
+
+    window.closeUpdatePopup = function() {
+        // 닫기 버튼 누르면 현재 버전을 저장함 (다음에 안 뜨게)
+        localStorage.setItem('seen_version', CURRENT_VERSION);
+        document.getElementById('update-modal').style.display = 'none';
+    };
+
+    // 시작하자마자 체크 실행
+    checkUpdatePopup();
 </script>
 </body>
 </html>
