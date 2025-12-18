@@ -359,7 +359,7 @@
             </div>
 
             <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃</span></div>
-            <div class="version-info">Ver 1.81 - 2025/12/17 EXE Update</div>
+            <div class="version-info">Ver 1.82 - 2025/12/18 Update</div>
         </div>
     </div>
 
@@ -705,13 +705,19 @@ window.toggleSticker = () => {
 
     function markAsRead() { if(!myName) return; setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp(), lastRead: serverTimestamp() }, { merge: true }); }
     
-    document.addEventListener("visibilitychange", () => { 
-        if (document.visibilityState === 'visible') {
-            markAsRead(); stopTabNotification(); togglePresenceListener(true); 
-        } else {
-            togglePresenceListener(false); 
-        }
-    });
+  // [수정 후] 이렇게 바꾸세요! 👇
+document.addEventListener("visibilitychange", () => { 
+    if (document.visibilityState === 'visible') {
+        markAsRead(); 
+        stopTabNotification(); 
+        togglePresenceListener(true);
+        
+        // [추가됨] 화면에 돌아오면 강제로 스크롤을 싹 내려서 최신 글을 보여줌
+        setTimeout(scrollToBottom, 100); 
+    } else {
+        togglePresenceListener(false); 
+    }
+});
     window.onclick = markAsRead;
 
     function updateReadStatus() {
