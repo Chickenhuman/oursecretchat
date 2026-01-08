@@ -428,7 +428,7 @@
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-import { getAuth, signInAnonymously } 
+import { getAuth, signInAnonymously, onAuthStateChanged }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     // 🔴 [필수] 본인의 firebaseConfig로 수정해주세요!
@@ -1235,20 +1235,33 @@ window.toggleSearch = () => {
         }
     });
 
-    // ==========================================
+// ==========================================
     // 🚀 [실행 시작]
     // ==========================================
-    const savedPasswordFinal = localStorage.getItem('chat_auth_pw');
-    if (savedPasswordFinal === '0726') {
-        if (myName) { 
-            showScreen('chat-screen'); 
-            loadMessages(); 
-            startPresenceSystem(); 
-            monitorDeletionVotes();
-            window.requestNotiPermission(); 
-        } 
-        else { showScreen('name-screen'); }
-    }
+    
+    // ▼▼▼ [기존 코드를 이렇게 감싸주세요] ▼▼▼
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // 로그인 된 상태일 때만 실행!
+            console.log("✅ 인증 완료: 데이터를 불러옵니다.");
+
+            const savedPasswordFinal = localStorage.getItem('chat_auth_pw');
+            if (savedPasswordFinal === '0726') {
+                if (myName) { 
+                    showScreen('chat-screen'); 
+                    loadMessages(); // 이제 안전하게 실행됨
+                    startPresenceSystem(); 
+                    monitorDeletionVotes();
+                    window.requestNotiPermission(); 
+                } 
+                else { showScreen('name-screen'); }
+            }
+        } else {
+            // 로그인이 안 된 상태 (보통은 자동으로 signInAnonymously가 실행되므로 기다리면 됨)
+            console.log("⏳ 로그인 대기 중...");
+        }
+    });
+
 // [추가] 입력창 자동 높이 조절 및 엔터키 전송 설정
 const msgInputBox = document.getElementById('msg-input');
 
