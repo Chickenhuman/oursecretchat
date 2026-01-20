@@ -141,9 +141,11 @@
 </div>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot, query, where } 
-    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot, query, where } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// 👇 [추가] 인증 모듈 가져오기
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     // 🔴 [필수] 본인의 firebaseConfig로 교체하세요!
     const firebaseConfig = {
@@ -158,10 +160,25 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    
+    const auth = getAuth(app);
+
     let currentDate = new Date();
     let selectedDateStr = "";
     let eventsCache = {}; 
+
+
+	// 👇 [추가] 로그인 상태 확인 후 캘린더 로딩
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            console.log("캘린더 접속 성공!");
+            loadEvents(); // 로그인이 확인되면 그때 데이터를 불러옴
+        } else {
+            // 로그인이 안 되어 있다면 익명 로그인 시도
+            signInAnonymously(auth).catch((error) => {
+                console.error("접속 실패:", error);
+            });
+        }
+    });
 
     // [알림 기능] 권한 요청
     function requestNotiPermission() {
@@ -325,7 +342,6 @@
     };
 
     requestNotiPermission(); // 접속 시 권한 요청
-    loadEvents();
 
 </script>
 </body>
