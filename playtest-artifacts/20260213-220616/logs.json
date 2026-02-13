@@ -1,0 +1,407 @@
+{
+  "startedAt": "2026-02-13T13:06:16.569Z",
+  "mode": "smoke",
+  "url": "http://127.0.0.1:4173/index.html",
+  "targetRounds": 1,
+  "console": [
+    {
+      "type": "log",
+      "text": "%c %c %c %c %c Phaser v3.60.0 (WebGL | Web Audio) %c https://phaser.io background: #ff0000 background: #ffff00 background: #00ff00 background: #00ffff color: #ffffff; background: #000000 background: transparent",
+      "args": [
+        "%c %c %c %c %c Phaser v3.60.0 (WebGL | Web Audio) %c https://phaser.io",
+        "background: #ff0000",
+        "background: #ffff00",
+        "background: #00ff00",
+        "background: #00ffff",
+        "color: #ffffff; background: #000000",
+        "background: transparent"
+      ]
+    },
+    {
+      "type": "log",
+      "text": "[SVGManager V3.0] 텍스처 프리베이크 시작...",
+      "args": [
+        "[SVGManager V3.0] 텍스처 프리베이크 시작..."
+      ]
+    },
+    {
+      "type": "log",
+      "text": "[SVGManager] bake target: 25 textures",
+      "args": [
+        "[SVGManager] bake target: 25 textures"
+      ]
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x600c02604e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "args": []
+    },
+    {
+      "type": "log",
+      "text": "[SVGManager] all textures baked.",
+      "args": [
+        "[SVGManager] all textures baked."
+      ]
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x600c02604e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "args": []
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x600c02604e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "args": []
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x600c02604e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+      "args": []
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "args": []
+    },
+    {
+      "type": "log",
+      "text": "[SVGManager V3.0] 텍스처 프리베이크 시작...",
+      "args": [
+        "[SVGManager V3.0] 텍스처 프리베이크 시작..."
+      ]
+    },
+    {
+      "type": "log",
+      "text": "[SVGManager] bake target: 25 textures",
+      "args": [
+        "[SVGManager] bake target: 25 textures"
+      ]
+    },
+    {
+      "type": "log",
+      "text": "[SVGManager] all textures baked.",
+      "args": [
+        "[SVGManager] all textures baked."
+      ]
+    },
+    {
+      "type": "warning",
+      "text": "[MapLoader] 맵 ID 'Map1' 없음. DefaultMap으로 대체합니다.",
+      "args": [
+        "[MapLoader] 맵 ID 'Map1' 없음. DefaultMap으로 대체합니다."
+      ]
+    },
+    {
+      "type": "warning",
+      "text": "[Battle] 적 ID(undefined) 데이터 없음. 기본값 사용.",
+      "args": [
+        "[Battle] 적 ID(undefined) 데이터 없음. 기본값 사용."
+      ]
+    },
+    {
+      "type": "log",
+      "text": "🎴 전투 시작! 덱 장수: 10",
+      "args": [
+        "🎴 전투 시작! 덱 장수: 10"
+      ]
+    },
+    {
+      "type": "log",
+      "text": "[AI] 배치 완료: 3장 사용. (남은 패: 0장, 남은 코스트: 10)",
+      "args": [
+        "[AI] 배치 완료: 3장 사용. (남은 패: 0장, 남은 코스트: 10)"
+      ]
+    },
+    {
+      "type": "log",
+      "text": "[AI] 배치 완료: 3장 사용. (남은 패: 0장, 남은 코스트: 10)",
+      "args": [
+        "[AI] 배치 완료: 3장 사용. (남은 패: 0장, 남은 코스트: 10)"
+      ]
+    },
+    {
+      "type": "table",
+      "text": "[Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]",
+      "args": [
+        [
+          {
+            "t": 0,
+            "aliveDiff": 0,
+            "hpDiff": 0,
+            "baseHpDiff": 0,
+            "eAliveDiff": 0,
+            "eHpDiff": 0,
+            "eBaseHpDiff": 0
+          },
+          {
+            "t": 1,
+            "aliveDiff": 0,
+            "hpDiff": 0,
+            "baseHpDiff": 0,
+            "eAliveDiff": 0,
+            "eHpDiff": 0,
+            "eBaseHpDiff": 0
+          },
+          {
+            "t": 2,
+            "aliveDiff": 0,
+            "hpDiff": 0,
+            "baseHpDiff": 0,
+            "eAliveDiff": 0,
+            "eHpDiff": 0,
+            "eBaseHpDiff": 0
+          },
+          {
+            "t": 3,
+            "aliveDiff": 0,
+            "hpDiff": 0,
+            "baseHpDiff": 0,
+            "eAliveDiff": 0,
+            "eHpDiff": 0,
+            "eBaseHpDiff": 0
+          },
+          {
+            "t": 4,
+            "aliveDiff": 0,
+            "hpDiff": 0,
+            "baseHpDiff": 0,
+            "eAliveDiff": 0,
+            "eHpDiff": 0,
+            "eBaseHpDiff": 0
+          },
+          {
+            "t": 5,
+            "aliveDiff": 0,
+            "hpDiff": 0,
+            "baseHpDiff": 0,
+            "eAliveDiff": 0,
+            "eHpDiff": 0,
+            "eBaseHpDiff": 0
+          },
+          {
+            "t": 6,
+            "aliveDiff": 0,
+            "hpDiff": 0,
+            "baseHpDiff": 0,
+            "eAliveDiff": 0,
+            "eHpDiff": 0,
+            "eBaseHpDiff": 0
+          },
+          {
+            "t": 7,
+            "aliveDiff": 0,
+            "hpDiff": 0,
+            "baseHpDiff": 0,
+            "eAliveDiff": 0,
+            "eHpDiff": 0,
+            "eBaseHpDiff": 0
+          },
+          {
+            "t": 8,
+            "aliveDiff": 0,
+            "hpDiff": 0,
+            "baseHpDiff": 0,
+            "eAliveDiff": 0,
+            "eHpDiff": 0,
+            "eBaseHpDiff": 0
+          },
+          {
+            "t": 9,
+            "aliveDiff": 0,
+            "hpDiff": 0,
+            "baseHpDiff": 0,
+            "eAliveDiff": 0,
+            "eHpDiff": 0,
+            "eBaseHpDiff": 0
+          },
+          {
+            "t": 10,
+            "aliveDiff": 0,
+            "hpDiff": 0,
+            "baseHpDiff": 0,
+            "eAliveDiff": 0,
+            "eHpDiff": 0,
+            "eBaseHpDiff": 0
+          }
+        ]
+      ]
+    },
+    {
+      "type": "log",
+      "text": "[SimCompare][Summary] {samples: 11, avgAllyHpErr: 0, avgEnemyHpErr: 0, avgAllyBaseHpErr: 0, avgEnemyBaseHpErr: 0}",
+      "args": [
+        "[SimCompare][Summary]",
+        {
+          "samples": 11,
+          "avgAllyHpErr": 0,
+          "avgEnemyHpErr": 0,
+          "avgAllyBaseHpErr": 0,
+          "avgEnemyBaseHpErr": 0,
+          "avgAllyAliveErr": 0,
+          "avgEnemyAliveErr": 0,
+          "tag": "ROUND_END"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "text": "[Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]",
+      "args": [
+        [
+          {
+            "t": 0,
+            "type": "round_start",
+            "round": 1
+          },
+          {
+            "t": 0.02,
+            "type": "commander_skill",
+            "name": "포병대장",
+            "damage": 30,
+            "target": "Base_Enemy",
+            "targetTeam": "ENEMY"
+          },
+          {
+            "t": 0.02,
+            "type": "damage",
+            "sourceTeam": "ALLY",
+            "target": "Base_Enemy",
+            "targetTeam": "ENEMY",
+            "amount": 30,
+            "beforeHp": 1200,
+            "afterHp": 1170
+          },
+          {
+            "t": 1.52,
+            "type": "spawn_plan_enemy_unit",
+            "name": "적군",
+            "count": 1,
+            "at": 1.5
+          },
+          {
+            "t": 2.12,
+            "type": "spawn_plan_enemy_unit",
+            "name": "적군",
+            "count": 1,
+            "at": 2.1
+          },
+          {
+            "t": 2.62,
+            "type": "spawn_plan_enemy_unit",
+            "name": "적군",
+            "count": 1,
+            "at": 2.6
+          },
+          {
+            "t": 3.05,
+            "type": "commander_skill",
+            "name": "포병대장",
+            "damage": 30,
+            "target": "적군",
+            "targetTeam": "ENEMY"
+          },
+          {
+            "t": 3.05,
+            "type": "damage",
+            "sourceTeam": "ALLY",
+            "target": "적군",
+            "targetTeam": "ENEMY",
+            "amount": 30,
+            "beforeHp": 80,
+            "afterHp": 50
+          },
+          {
+            "t": 6.08,
+            "type": "commander_skill",
+            "name": "포병대장",
+            "damage": 30,
+            "target": "적군",
+            "targetTeam": "ENEMY"
+          },
+          {
+            "t": 6.08,
+            "type": "damage",
+            "sourceTeam": "ALLY",
+            "target": "적군",
+            "targetTeam": "ENEMY",
+            "amount": 30,
+            "beforeHp": 50,
+            "afterHp": 20
+          },
+          {
+            "t": 9.12,
+            "type": "commander_skill",
+            "name": "포병대장",
+            "damage": 30,
+            "target": "적군",
+            "targetTeam": "ENEMY"
+          },
+          {
+            "t": 9.12,
+            "type": "damage",
+            "sourceTeam": "ALLY",
+            "target": "적군",
+            "targetTeam": "ENEMY",
+            "amount": 30,
+            "beforeHp": 20,
+            "afterHp": 0
+          },
+          {
+            "t": 9.12,
+            "type": "unit_dead",
+            "name": "적군",
+            "team": "ENEMY",
+            "isBase": false
+          },
+          {
+            "t": 10,
+            "type": "round_end",
+            "round": 1
+          }
+        ]
+      ]
+    },
+    {
+      "type": "log",
+      "text": "[SimTrace][Summary] {tag: ROUND_END, count: 14}",
+      "args": [
+        "[SimTrace][Summary]",
+        {
+          "tag": "ROUND_END",
+          "count": 14
+        }
+      ]
+    }
+  ],
+  "simCompareSummaries": [
+    {
+      "samples": 11,
+      "avgAllyHpErr": 0,
+      "avgEnemyHpErr": 0,
+      "avgAllyBaseHpErr": 0,
+      "avgEnemyBaseHpErr": 0,
+      "avgAllyAliveErr": 0,
+      "avgEnemyAliveErr": 0,
+      "tag": "ROUND_END"
+    }
+  ],
+  "pageErrors": [],
+  "requestFailed": [],
+  "battleBoot": {
+    "ok": true,
+    "reason": "round-running",
+    "round": 1
+  },
+  "battleRun": {
+    "ok": true,
+    "reason": "completed",
+    "state": {
+      "ok": true,
+      "action": "wait",
+      "currentRound": 2,
+      "completedRounds": 1,
+      "isPlaying": false
+    }
+  },
+  "finishedAt": "2026-02-13T13:06:32.634Z"
+}
