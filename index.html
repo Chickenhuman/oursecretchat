@@ -2,123 +2,1315 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;">
-    <title>CHRONO TAPE</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LoveChat">
 
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-    <script src="js/easystar.min.js"></script>
+    <link id="favicon" rel="icon" href="https://cdn-icons-png.flaticon.com/512/2076/2076218.png">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2076/2076218.png">
+    <link rel="manifest" href="manifest.json">
+
+    <title>잰갱이톡</title>
+    <style>
+        /* [기본 설정] */
+        body { font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #f0f0f0; margin: 0; display: flex; justify-content: center; height: 100dvh; overflow: hidden; touch-action: manipulation; }
+        
+        #app { 
+            width: 100%; max-width: 450px; background: white; 
+            display: flex; flex-direction: column; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.1); 
+            height: 100%; position: relative; 
+        }
+        
+        .screen { display: none; flex-direction: column; height: 100%; box-sizing: border-box; background: white; }
+        .active { display: flex; }
+
+        .auth-container { padding: 40px; display: flex; flex-direction: column; justify-content: center; height: 100%; text-align: center; }
+        input { padding: 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; width: 100%; box-sizing: border-box; }
+        .btn-primary { padding: 15px; background-color: #ff6b6b; color: white; border: none; border-radius: 12px; font-size: 16px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
+        
+        #chat-header { 
+            padding-top: calc(15px + env(safe-area-inset-top)); padding-bottom: 15px; padding-left: 20px; padding-right: 20px;
+            background: #ff6b6b; color: white; display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; flex-shrink: 0; 
+        }
+        .header-left { display: flex; flex-direction: column; }
+        #chat-title { font-weight: bold; font-size: 16px; }
+        #status-area { font-size: 12px; margin-top: 3px; display: flex; align-items: center; gap: 5px; opacity: 0.9; }
+        .online-dot { width: 8px; height: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 5px #00ff00; }
+        .offline-dot { width: 8px; height: 8px; background-color: #ccc; border-radius: 50%; display: inline-block; }
+        .header-icons { display: flex; gap: 10px; }
+        .icon-btn { font-size: 20px; cursor: pointer; background: none; border: none; color: white; padding: 0; }
+        
+        #search-container { display: none; padding: 10px; background: #fff0f0; border-bottom: 1px solid #ffcccc; flex-shrink: 0; }
+        #search-input { width: 100%; padding: 10px; border: 1px solid #ff6b6b; border-radius: 8px; }
+        
+        #messages { flex: 1; overflow-y: auto; padding: 20px; background: #fafafa; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        .date-divider { text-align: center; margin: 15px 0; }
+        .date-divider span { background: rgba(0,0,0,0.1); color: white; padding: 4px 12px; border-radius: 10px; font-size: 11px; }
+        #top-loading { text-align: center; padding: 10px; font-size: 12px; color: #888; display: none; }
+
+        /* 답장 미리보기 바 */
+        #reply-preview-bar { 
+            display: none; background: #fff; border-top: 1px solid #eee; padding: 10px 15px; 
+            border-left: 4px solid #ff6b6b; justify-content: space-between; align-items: center; flex-shrink: 0; 
+        }
+        .reply-preview-content { display: flex; flex-direction: column; width: 90%; }
+        .reply-to-name { font-size: 12px; font-weight: bold; color: #ff6b6b; margin-bottom: 2px; }
+        .reply-to-text { font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .close-reply-btn { font-size: 20px; color: #999; cursor: pointer; background: none; border: none; padding: 5px; }
+
+        #input-area { 
+            padding: 10px; padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            background: white; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; 
+            position: relative; flex-shrink: 0; 
+        }
+       #msg-input { 
+    flex: 1; 
+    margin: 0; 
+    padding: 12px; 
+    border-radius: 20px; 
+    border: 1px solid #ddd; 
+    background: #f8f8f8; 
+    
+    /* ▼▼▼ [여기서부터 변경된 부분] ▼▼▼ */
+    resize: none;          /* 사용자 임의 조절 방지 */
+    font-family: inherit;  /* 폰트 상속 */
+    line-height: 1.4;      /* 줄 간격 */
+    height: 45px;          /* 기본 높이 고정 */
+    max-height: 90px;      /* 최대 높이 (약 3~4줄) */
+    overflow-y: auto;      /* 3줄 넘어가면 스크롤 생김 */
+    box-sizing: border-box;
+}
+        #send-btn { width: 50px; height: 40px; border: none; background: #333; color: white; border-radius: 12px; cursor: pointer; }
+        .tool-btn { cursor: pointer; font-size: 24px; padding: 0 5px; color: #888; background: none; border: none; }
+        #photo-input { position: absolute; top: -9999px; left: -9999px; opacity: 0; pointer-events: none; }
+
+        #emoji-picker { display: none; position: absolute; bottom: 90px; left: 10px; background: white; border: 1px solid #ddd; border-radius: 10px; padding: 10px; grid-template-columns: repeat(6, 1fr); gap: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 20; width: 90%; max-width: 300px; }
+        .emoji-item { font-size: 24px; cursor: pointer; text-align: center; padding: 5px; border-radius: 5px; }
+
+        /* 답장 스타일 */
+        .reply-btn { 
+            font-size: 12px; margin-left: 5px; cursor: pointer; opacity: 0.5; color: #888; 
+            transition: 0.2s; vertical-align: middle; 
+        }
+        .my-msg .reply-btn { color: rgba(255,255,255,0.7); }
+        .quote-block {
+            background: rgba(0,0,0,0.05); border-left: 3px solid #999; padding: 5px 8px;
+            margin-bottom: 5px; border-radius: 4px; cursor: pointer; font-size: 12px;
+            display: flex; flex-direction: column; text-align: left;
+        }
+        .my-msg .quote-block { background: rgba(0,0,0,0.1); border-left-color: rgba(255,255,255,0.5); color: #f0f0f0; }
+        .quote-sender { font-weight: bold; margin-bottom: 2px; opacity: 0.8; font-size: 11px; }
+        .quote-text { opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* 메시지 하이라이트 애니메이션 */
+        @keyframes highlightFade { 0% { background-color: rgba(255, 235, 59, 0.5); transform: scale(1.02); } 100% { background-color: !important; } }
+        .highlight-anim { animation: highlightFade 1.5s ease-out; }
+
+        .message { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.5; position: relative; word-wrap: break-word; }
+        .my-msg { align-self: flex-end; background-color: #ff6b6b; color: white; border-bottom-right-radius: 4px; }
+        .other-msg { align-self: flex-start; background-color: white; color: #333; border: 1px solid #eee; border-bottom-left-radius: 4px; }
+        .msg-info { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px; gap: 5px; min-width: 45px; }
+        .sender { font-size: 11px; font-weight: bold; opacity: 0.7; }
+        .time { font-size: 10px; opacity: 0.6; }
+        .unread-mark { font-size: 12px; margin-right: auto; display: none; }
+        .my-msg .msg-info .unread-mark { display: inline; } 
+        .chat-img { max-width: 100%; border-radius: 10px; margin-bottom: 5px; cursor: pointer; }
+        .message a { color: #007bff; text-decoration: underline; }
+        .my-msg a { color: white; }
+
+        #drawing-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+        .drawing-container { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
+        #canvas-area { border: 2px dashed #ddd; border-radius: 10px; cursor: crosshair; touch-action: none; background-color: white; }
+        .drawing-controls { margin-top: 15px; display: flex; gap: 10px; width: 100%; }
+        .draw-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        #clear-btn { background: #eee; color: #333; }
+        #send-draw-btn { background: #ff6b6b; color: white; }
+        .close-draw { align-self: flex-end; font-size: 24px; color: #999; cursor: pointer; margin-bottom: 10px; }
+
+        #settings-screen { background: #f9f9f9; overflow-y: auto; display: none; flex-direction: column; height: 100%; }
+        #settings-screen.active { display: flex; }
+        .settings-header { 
+            padding-top: calc(20px + env(safe-area-inset-top)); padding-bottom: 20px; padding-left: 20px; padding-right: 20px;
+            background: white; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; flex-shrink: 0; 
+        }
+        .back-btn { font-size: 24px; cursor: pointer; border: none; background: none; }
+        .gallery-section { background: white; padding: 15px; margin-top: 10px; }
+        .gallery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .view-all-btn { font-size: 13px; color: #ff6b6b; cursor: pointer; text-decoration: none; font-weight: bold; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+        .gallery-item { width: 100%; aspect-ratio: 1/1; object-fit: cover; cursor: pointer; border-radius: 8px; border: 1px solid #eee; }
+        .settings-menu { padding: 20px; background: white; margin-top: 10px; flex: 1; padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+        .menu-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
+        .color-options { display: flex; gap: 10px; }
+        .color-circle { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid white; box-shadow: 0 0 3px rgba(0,0,0,0.2); }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #ff6b6b; }
+        input:checked + .slider:before { transform: translateX(18px); }
+        
+        .version-info { text-align: center; color: #aaa; font-size: 11px; margin-top: 20px; padding-bottom: 20px; }
+
+        #full-gallery-screen { background: white; overflow-y: auto; }
+        #full-gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+        #full-gallery-grid .gallery-item { border-radius: 0; border: none; }
+        #gallery-loading { text-align: center; padding: 20px; color: #999; font-size: 12px; grid-column: span 3; display: none; }
+
+        #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; flex-direction: column; color: white; }
+        .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .danger-btn { font-size: 12px; color: #ff6b6b; border: 1px solid #ff6b6b; padding: 5px 10px; border-radius: 5px; background: white; cursor: pointer; }
+/* [3] 스티커 스타일 추가 */
+
+/* 채팅창에 표시될 스티커 (128px 크기로 축소 표시) */
+.sticker-msg {
+    width: 128px;
+    height: 128px;
+    background-repeat: no-repeat;
+    border-radius: 10px;
+    margin: 5px 0;
+}
+
+/* 스티커 선택창 스타일 */
+
+/* 선택창 안의 아이콘 */
+.sticker-item {
+    width: 64px;
+    height: 64px;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    background-color: transparent;
+    border-radius: 8px;
+    border: 1px solid transparent;
+}
+.sticker-item:hover {
+    background-color: #f5f5f5; 
+}
+/* [추가] 스티커 탭 스타일 */
+#sticker-picker {
+    /* 기존 스타일 덮어쓰기 */
+    display: none;
+    position: absolute;
+    bottom: 90px;
+    left: 10px;
+    width: 90%;
+    max-width: 350px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    z-index: 20;
+    overflow: hidden; /* 둥근 모서리 유지 */
+    padding: 0; /* 패딩 제거 (탭바 때문에) */
+    border: 1px solid #eee;
+    flex-direction: column; /* 세로 배치 */
+}
+
+#sticker-content {
+    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    max-height: 250px;
+    overflow-y: auto; /* 스티커 많으면 스크롤 */
+    background-color: #fff; /* 배경색 */
+}
+
+#sticker-tabs {
+    display: flex;
+    background: #f8f8f8;
+    border-top: 1px solid #eee;
+    height: 45px;
+}
+
+.tab-btn {
+    flex: 1;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 18px;
+    opacity: 0.5;
+    transition: 0.2s;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-btn:hover { background: #eee; }
+.tab-btn.active-tab {
+    opacity: 1;
+    border-bottom: 3px solid #ff6b6b; /* 활성화된 탭 색상 */
+    color: #ff6b6b;
+}
+/* [추가] 업데이트 팝업 스타일 */
+#update-modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); /* 반투명 검은 배경 */
+    z-index: 9999; /* 제일 위에 뜨도록 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.update-content {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    width: 85%;
+    max-width: 320px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    animation: popIn 0.3s ease-out;
+}
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+    </style>
 </head>
 <body>
-    <div id="game-container"></div>
 
-    <div id="artifact-container" class="artifact-container"></div>
+<div id="app">
+    <div id="loading"><div class="spinner"></div><span>처리 중...</span></div>
 
-    <div id="ui-top-bar" class="ui-overlay">
-        <div class="info-group">
-            <div id="cost-display">???: 10 / 50</div>
-        </div>
-
-        <div class="timeline-wrapper">
-            <span data-i18n="ui.time">??</span>
-            <input type="range" id="timeline-slider" min="0" max="1000" value="0">
-            <span id="time-display">0.0s</span>
-        </div>
-
-        <div class="control-group">
-            <button id="btn-reset" class="btn-warning" data-i18n="ui.reset">??</button>
-
-            <div class="speed-controls" style="display:none;" id="speed-panel">
-                <button id="btn-pause" class="speed-btn">Pause</button>
-                <button id="btn-1x" class="speed-btn active">1x</button>
-                <button id="btn-2x" class="speed-btn">2x</button>
-                <button id="btn-3x" class="speed-btn">3x</button>
-            </div>
-
-            <button id="btn-turn-end" class="btn-primary" data-i18n="ui.go">??</button>
-        </div>
-    </div>
-
-    <div id="ui-bottom-bar" class="ui-overlay">
-        <div id="deck-pile" class="pile-container pile-left">
-            <div class="card-back-visual"></div>
-            <div class="pile-label" data-i18n="ui.deck">?</div>
-            <div class="pile-number" id="deck-count">0</div>
-        </div>
-
-        <div id="hand-area"></div>
-
-        <div id="discard-pile" class="pile-container pile-right">
-            <div class="pile-icon-large">??</div>
-            <div class="pile-label" data-i18n="ui.discard">??</div>
-            <div class="pile-number" id="discard-count">0</div>
-        </div>
-
-        <div id="seal-pile" class="pile-badge-small" title="?? ?? ??" data-i18n-title="ui.sealedTitle">
-            <span class="pile-icon-small">??</span>
-            <span id="seal-count">0</span>
-        </div>
-    </div>
-
-    <div id="card-viewer-modal" class="ui-overlay" style="display: none;">
-        <div class="viewer-box">
-            <div class="viewer-header">
-                <h2 id="viewer-title" data-i18n="ui.cardList">?? ??</h2>
-                <button id="btn-viewer-close">X</button>
-            </div>
-            <div id="viewer-content" class="viewer-grid"></div>
-        </div>
-    </div>
-
-    <div id="game-popup" class="ui-overlay" style="display: none;">
-        <div class="popup-box">
-            <h2 id="popup-title" data-i18n="ui.popupTitle">??</h2>
-            <div id="popup-message" data-i18n="ui.popupMessage">??? ??</div>
-            <div class="popup-buttons">
-                <button id="btn-popup-cancel" class="btn-warning" data-i18n="ui.cancel">??</button>
-                <button id="btn-popup-confirm" class="btn-primary" data-i18n="ui.confirm">??</button>
+    <div id="drawing-modal">
+        <div class="drawing-container">
+            <span class="close-draw" onclick="toggleDrawingPad()">×</span>
+            <canvas id="canvas-area" width="300" height="300"></canvas>
+            <div class="drawing-controls">
+                <button id="clear-btn" class="draw-btn" onclick="clearCanvas()">지우기</button>
+                <button id="send-draw-btn" class="draw-btn" onclick="sendDrawing()">보내기</button>
             </div>
         </div>
     </div>
+<div id="update-modal" style="display: none;">
+    <div class="update-content">
+        <h3 style="margin-top:0; color:#ff6b6b;">🚀 업데이트 알림 (Ver 1.9)</h3>
+        <ul style="text-align:left; padding-left:20px; color:#555; font-size:14px; line-height:1.6;">
+            <li>📝 암호가 없으면 접속할 수 없어요!</li>
+            <li></li>
+        </ul>
+        <button class="btn-primary" onclick="closeUpdatePopup()">확인했어요</button>
+    </div>
+</div>
+    <div id="login-screen" class="screen active">
+        <div class="auth-container">
+            <h2 style="color:#ff6b6b;">🔒 Secret Access</h2>
+            <p style="color:#666; margin-bottom:30px;">우리만의 비밀 공간</p>
+            <input type="password" id="password-input" placeholder="비밀번호 입력">
+            <button class="btn-primary" onclick="checkPassword()">입장하기</button>
+            <p style="font-size:12px; color:#aaa; margin-top:20px;">힌트: 0726</p>
+        </div>
+    </div>
 
-    <div id="artifact-editor" class="editor-panel" style="display: none;"></div>
+    <div id="name-screen" class="screen">
+        <div class="auth-container">
+            <h2>반가워요! 👋</h2>
+            <p>채팅방에서 쓸 이름을 정해주세요.</p>
+            <input type="text" id="name-input" placeholder="예: 재똥장군, 잰">
+            <button class="btn-primary" onclick="setName()">시작하기</button>
+        </div>
+    </div>
 
-    <button id="btn-toggle-editor" style="position:fixed; top:10px; right:10px; z-index:3000;" data-i18n="ui.mapEditor">? ???</button>
+    <div id="chat-screen" class="screen" style="padding:0;">
+<div id="chat-header">
+            <div class="header-left">
+                <div id="chat-title">❤️ 우리만의 채팅방</div>
+                <div id="status-area">접속 확인 중...</div>
+            </div>
+            <div class="header-icons">
+                <button class="icon-btn" onclick="location.href='calendar.html'" style="margin-right:5px;">📅</button>
+                <button class="icon-btn" onclick="location.href='gamelist.html'" style="margin-right:5px;">🎮</button>
+                <button class="icon-btn" onclick="toggleSearch()">🔍</button>
+                <button class="icon-btn" onclick="openSettings()">⚙️</button>
+            </div>
+        </div>
+        
+<div id="search-container">
+            <input type="hidden" id="search-input" placeholder="대화 내용 검색..." onkeyup="filterMessages()" disabled>
+        </div>
+        
+        <div id="messages">
+            <div id="top-loading">불러오는 중... ⏳</div>
+        </div>
+        
+<div id="emoji-picker"></div>
+<div id="sticker-picker">
+    <div id="sticker-content"></div>
+    
+    <div id="sticker-tabs">
+        </div>
+</div>
+        <div id="reply-preview-bar">
 
-    <div id="unit-tooltip"></div>
+            <div class="reply-preview-content">
+                <span class="reply-to-name" id="reply-target-name"></span>
+                <span class="reply-to-text" id="reply-target-text"></span>
+            </div>
+            <button class="close-reply-btn" onclick="cancelReply()">×</button>
+        </div>
 
-    <script>
-        document.getElementById('btn-toggle-editor').onclick = () => {
-            const panel = document.getElementById('artifact-editor');
-            panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+<div id="input-area">
+    <button class="tool-btn" onclick="toggleEmoji()">😊</button>
+    <button class="tool-btn" onclick="toggleSticker()">🐻</button> <button class="tool-btn" onclick="toggleDrawingPad()">🖌️</button>
+    <button class="tool-btn" onclick="triggerFileUpload()">📷</button>
+    
+  <textarea id="msg-input" placeholder="메시지..." rows="1"></textarea>
+    <button id="send-btn" onclick="sendMessage()">➤</button>
+</div>
+        <input type="file" id="photo-input" accept="image/*" onchange="uploadImage(this.files[0])" disabled>
+    </div>
+
+    <div id="settings-screen" class="screen">
+        <div class="settings-header"><button class="back-btn" onclick="closeSettings()">←</button><h2 style="margin:0;">설정 & 추억함</h2></div>
+        
+        <div class="gallery-section">
+            <div class="gallery-header">
+                <h3 style="margin:0; font-size:16px;">📂 최근 사진 (3장)</h3>
+                <span class="view-all-btn" onclick="openFullGallery()">전체 모아보기 ></span>
+            </div>
+            <div id="gallery-preview" class="gallery-grid"></div>
+        </div>
+        
+        <div class="settings-menu">
+            <div class="menu-item">
+                <span class="menu-label">🔔 알림 받기</span>
+                <label class="switch"><input type="checkbox" id="noti-enable" onchange="saveSettings()"><span class="slider"></span></label>
+            </div>
+            <div class="menu-item">
+                <span class="menu-label">👁️ 알림 내용 미리보기</span>
+                <label class="switch"><input type="checkbox" id="noti-preview" onchange="saveSettings()"><span class="slider"></span></label>
+            </div>
+            <div class="menu-item"><span class="menu-label">🎨 배경색 변경</span>
+                <div class="color-options">
+                    <div class="color-circle" style="background:#fafafa;" onclick="changeBg('#fafafa')"></div>
+                    <div class="color-circle" style="background:#fff0f0;" onclick="changeBg('#fff0f0')"></div>
+                    <div class="color-circle" style="background:#e3f2fd;" onclick="changeBg('#e3f2fd')"></div>
+                    <div class="color-circle" style="background:#f3e5f5;" onclick="changeBg('#f3e5f5')"></div>
+                </div>
+            </div>
+            
+            <div class="menu-item">
+                <span class="menu-label">🧹 캐시 삭제</span>
+                <button class="danger-btn" onclick="clearCache()">실행</button>
+            </div>
+            
+            <div class="menu-item" style="flex-direction:column; align-items:flex-start; gap:8px;">
+                <span class="menu-label" style="color:red;">🔥 대화 내역 전체 삭제</span>
+                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                    <span style="font-size:11px; color:#888;">두 명 모두 동의해야 삭제됩니다.</span>
+                    <button id="delete-chat-btn" class="danger-btn" style="background:#fff5f5; border-color:red;" onclick="requestDeleteHistory()">삭제 요청</button>
+                </div>
+            </div>
+
+            <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃</span></div>
+            <div class="version-info">Ver 1.9 - 2025/12/31 Update</div>
+        </div>
+    </div>
+
+    <div id="full-gallery-screen" class="screen">
+        <div class="settings-header">
+            <button class="back-btn" onclick="closeFullGallery()">←</button>
+            <h2 style="margin:0;">모든 추억들</h2>
+        </div>
+        <div id="full-gallery-grid"></div>
+        <div id="gallery-loading">더 불러오는 중...</div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, doc, setDoc, query, orderBy, onSnapshot, serverTimestamp, limitToLast, getDocs, startAfter, limit, where, deleteDoc, writeBatch, updateDoc, arrayUnion, getDoc } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { getAuth, signInAnonymously, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    // 🔴 [필수] 본인의 firebaseConfig로 수정해주세요!
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
+      authDomain: "lovechatproject-2db11.firebaseapp.com",
+      projectId: "lovechatproject-2db11",
+      storageBucket: "lovechatproject-2db11.firebasestorage.app",
+      messagingSenderId: "1069136590072",
+      appId: "1:1069136590072:web:7712e718db03c70bff370d",
+      measurementId: "G-ERG2LL283F"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+// 2. 인증 기능 초기화 및 로그인 실행 (여기 추가!)
+const auth = getAuth(app);
+
+
+signInAnonymously(auth)
+  .then(() => {
+    console.log("Firebase 로그인 성공! 이제 데이터베이스를 쓸 수 있습니다.");
+  })
+  .catch((error) => {
+    console.error("로그인 실패:", error);
+  });
+// [4] 스티커 설정 (1024x512 이미지 기준)
+
+// ==========================================
+// 🆕 [업그레이드] 멀티 탭 스티커 시스템
+// ==========================================
+
+// 1. 스티커 팩 목록 (여기에 계속 추가하면 됩니다!)
+const STICKER_PACKS = [
+    {
+        name: "토끼와 곰돌이", // 탭 이름(또는 아이콘)
+        icon: "🐰🐻",         // 탭에 보일 아이콘
+        url: "https://github.com/Chickenhuman/oursecretchat/blob/main/emoticon1.png?raw=true", // 이미지 주소
+        totalWidth: 1024,
+        totalHeight: 559, // 이미지 크기에 맞춰 수정
+        cols: 4,
+        count: 8          // 이모티콘 개수
+    },
+    {
+        name: "러블리 곰", // 두 번째 탭 예시
+        icon: "🐻",
+        url: "https://raw.githubusercontent.com/ChickenHuman/oursecretchat/main/stickers_bear.png",
+        totalWidth: 1024,
+        totalHeight: 512,
+        cols: 4,
+        count: 8
+    }
+];
+
+let currentPackIndex = 0; // 현재 보고 있는 탭 번호
+
+// 2. 초기화: 탭 버튼 생성 및 첫 화면 로딩
+function initStickerSystem() {
+    const tabContainer = document.getElementById('sticker-tabs');
+    const contentContainer = document.getElementById('sticker-content');
+    
+    // 탭 버튼 만들기
+    tabContainer.innerHTML = "";
+    STICKER_PACKS.forEach((pack, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'tab-btn';
+        btn.innerText = pack.icon; // 아이콘 표시
+        btn.onclick = () => switchTab(index);
+        tabContainer.appendChild(btn);
+    });
+
+    switchTab(0); // 첫 번째 탭 열기
+}
+
+// 3. 탭 변경 함수
+function switchTab(index) {
+    currentPackIndex = index;
+    const pack = STICKER_PACKS[index];
+    const content = document.getElementById('sticker-content');
+    
+    // 탭 스타일 활성화
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        if(i === index) b.classList.add('active-tab');
+        else b.classList.remove('active-tab');
+    });
+
+    // 스티커 그리드 생성
+    content.innerHTML = "";
+    for(let i=0; i<pack.count; i++) {
+        const div = document.createElement('div');
+        div.className = 'sticker-item';
+        
+        // 좌표 계산
+        const col = i % pack.cols;
+        const row = Math.floor(i / pack.cols);
+        const unitSize = pack.totalWidth / pack.cols; // 1칸 크기 자동 계산
+        
+        // 선택창용 축소 비율 (64px 기준)
+        const scale = 64 / unitSize; 
+
+        div.style.backgroundImage = `url('${pack.url}')`;
+        div.style.backgroundSize = `${pack.totalWidth * scale}px ${pack.totalHeight * scale}px`;
+        div.style.backgroundPosition = `-${col * 64}px -${row * 64}px`;
+        div.style.backgroundColor = 'transparent'; // ✨ 투명 배경 핵심
+        
+        div.onclick = () => sendSticker(i, currentPackIndex); // 팩 번호도 같이 전송
+        content.appendChild(div);
+    }
+}
+
+// 4. 스티커 전송 함수 (수정됨)
+window.sendSticker = async function(stickerIdx, packIdx) {
+    try {
+        const payload = { 
+            text: "(이모티콘)", 
+            stickerIndex: stickerIdx, 
+            packIndex: packIdx, // 🔴 어떤 팩인지 정보 추가
+            sender: myName, 
+            timestamp: serverTimestamp(), 
+            type: 'sticker' 
         };
-    </script>
+        if(currentReplyTarget) { payload.replyTo = currentReplyTarget; }
+        
+        await addDoc(collection(db, "chats"), payload);
+        
+        document.getElementById('sticker-picker').style.display = 'none';
+        cancelReply();
+        markAsRead();
+        scrollToBottom();
+    } catch (e) { console.error(e); alert("전송 실패"); }
+};
 
-    <script src="js/scenes/LoadingScene.js"></script>
-    <script src="js/i18n.js"></script>
-    <script src="js/data.js"></script>
-    <script src="js/data/SVGdata.js"></script>
-    <script src="js/managers/SVGManager.js"></script>
-    <script src="js/objects/Unit.js"></script>
-    <script src="js/objects/Projectile.js"></script>
-    <script src="js/managers/DataManager.js"></script>
-    <script src="js/managers/GameLogic.js"></script>
-    <script src="js/managers/EnemyAI.js"></script>
-    <script src="js/managers/CardDeckManager.js"></script>
-    <script src="js/managers/InteractionManager.js"></script>
-    <script src="js/managers/CombatManager.js"></script>
-    <script src="js/managers/UIManager.js"></script>
-    <script src="js/managers/GhostSimulator.js"></script>
-    <script src="js/managers/ArtifactManager.js"></script>
-    <script src="js/maps/MapData.js"></script>
-    <script src="js/scenes/TitleScene.js"></script>
-    <script src="js/scenes/CommanderSelectScene.js"></script>
-    <script src="js/scenes/MapScene.js"></script>
-    <script src="js/scenes/BattleScene.js"></script>
-    <script src="js/scenes/ShopScene.js"></script>
-    <script src="js/data/EventData.js"></script>
-    <script src="js/managers/EventManager.js"></script>
-    <script src="js/game.js"></script>
+// 5. 창 열기/닫기 (수정됨)
+window.toggleSticker = () => {
+    const picker = document.getElementById('sticker-picker');
+    const emo = document.getElementById('emoji-picker');
+    emo.style.display = 'none';
+    
+    if (picker.style.display === 'flex') {
+        picker.style.display = 'none';
+    } else {
+        picker.style.display = 'flex';
+        initStickerSystem(); // 열 때마다 초기화 (혹은 최초 1회만 해도 됨)
+    }
+};    // ==========================================
+    // ⭐️ [중요] 모든 변수 선언을 최상단으로 이동
+    // ==========================================
+    
+    // 1. 사용자 정보
+    let myName = localStorage.getItem('chat_nickname');
+    let myId = localStorage.getItem('chat_uid');
+    if (!myId) { myId = 'user_' + Date.now() + Math.floor(Math.random() * 1000); localStorage.setItem('chat_uid', myId); }
+    let savedBg = localStorage.getItem('chat_bg') || '#fafafa';
+
+    // 2. 이모티콘 및 기능 관련
+    const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
+    const deleteReqRef = doc(db, "settings", "delete_request");
+    
+    // 3. 접속 상태 및 탭 알림 관련 변수
+    let presenceUnsub = null;
+    let otherUserReadTime = 0;
+    let lastPartnerMsgTime = 0; 
+    let flashInterval = null; 
+    const originalTitle = document.title; 
+    const originalFavicon = document.getElementById('favicon').href;
+    const alertFavicon = "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"; 
+
+    // 4. 로딩 상태 관련
+    let isInitialLoad = true;
+    let allImages = [];
+    let oldestMessageSnap = null; 
+    let isFetchingOlder = false; 
+    let galleryLastSnap = null;
+    let isGalleryLoading = false;
+    let isGalleryEnd = false;
+    
+    // [날짜 구분선용 변수]
+    let lastPrintedDate = null;
+    function getDateString(timestamp) {
+        if (!timestamp) return null;
+        const date = timestamp.toDate();
+        return new Intl.DateTimeFormat('ko-KR', { 
+            year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' 
+        }).format(date);
+    }
+
+    // 5. [NEW] 답장 기능 관련 변수
+    let currentReplyTarget = null; // { id: "msgId", text: "내용", sender: "보낸이" }
+
+    // ==========================================
+    // ⚙️ 기능 함수 정의
+    // ==========================================
+
+    applyBg(savedBg);
+
+    // 답장 설정 함수
+    window.setReply = (id, text, sender) => {
+        currentReplyTarget = { id, text, sender };
+        document.getElementById('reply-preview-bar').style.display = 'flex';
+        document.getElementById('reply-target-name').innerText = `To. ${sender}`;
+        document.getElementById('reply-target-text').innerText = text;
+        document.getElementById('msg-input').focus();
+    };
+
+    // 답장 취소 함수
+    window.cancelReply = () => {
+        currentReplyTarget = null;
+        document.getElementById('reply-preview-bar').style.display = 'none';
+    };
+
+    // 원본 메시지로 이동 함수
+    window.scrollToMessage = (msgId) => {
+        const target = document.getElementById('msg-' + msgId);
+        if(target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.classList.add('highlight-anim');
+            setTimeout(() => target.classList.remove('highlight-anim'), 1500);
+        } else {
+            alert("원본 메시지를 찾을 수 없습니다. (너무 오래된 메시지일 수 있습니다)");
+        }
+    };
+
+    const emojiPicker = document.getElementById('emoji-picker');
+    emojiList.forEach(emo => {
+        const span = document.createElement('span'); span.className = 'emoji-item'; span.innerText = emo;
+        span.onclick = () => { document.getElementById('msg-input').value += emo; emojiPicker.style.display = 'none'; };
+        emojiPicker.appendChild(span);
+    });
+    
+    window.toggleEmoji = () => { 
+        const picker = document.getElementById('emoji-picker'); 
+        picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid'; 
+    };
+
+    function startTabNotification() {
+        if(flashInterval) return; 
+        let toggle = false;
+        flashInterval = setInterval(() => {
+            document.title = toggle ? "🔴 메세지가 도착했습니다!" : originalTitle;
+            toggle = !toggle;
+        }, 1000); 
+    }
+
+    function stopTabNotification() {
+        if(flashInterval) { clearInterval(flashInterval); flashInterval = null; }
+        document.title = originalTitle; 
+    }
+
+    function showScreen(id) { 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById(id).classList.add('active'); 
+        if(id === 'chat-screen') {
+            setTimeout(scrollToBottom, 100);
+            stopTabNotification(); 
+        }
+    }
+
+    function monitorDeletionVotes() {
+        onSnapshot(deleteReqRef, async (snap) => {
+            if(snap.exists()) {
+                const data = snap.data();
+                const requests = data.requestedBy || [];
+                const btn = document.getElementById('delete-chat-btn');
+                if(!btn) return;
+
+                if (requests.includes(myId)) {
+                    btn.innerText = `상대방 동의 대기중 (${requests.length}/2)`;
+                    btn.disabled = true;
+                    btn.style.opacity = "0.5";
+                } else if (requests.length > 0) {
+                    btn.innerText = `상대방이 삭제 요청함 (1/2) - 눌러서 동의`;
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                } else {
+                    btn.innerText = "삭제 요청";
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                }
+
+                if (requests.length >= 2) {
+                    document.getElementById('loading').style.display = 'flex';
+                    if (requests[0] === myId) { await performFullDeletion(); }
+                }
+            }
+        });
+    }
+
+    window.requestNotiPermission = () => {
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+    };
+
+    function startPresenceSystem() {
+        if(!myName) return;
+        markAsRead();
+        setInterval(async () => { 
+            if(document.hidden) return; 
+            try { await setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp() }, { merge: true }); } catch(e) {} 
+        }, 30000); 
+        if(!document.hidden) { togglePresenceListener(true); }
+    }
+
+    function togglePresenceListener(shouldListen) {
+        if (shouldListen) {
+            if (!presenceUnsub) {
+                const q = query(collection(db, "presence"));
+                presenceUnsub = onSnapshot(q, (snapshot) => {
+                    let onlineUsers = [];
+                    let maxReadTime = 0; 
+                    snapshot.forEach((docSnap) => {
+                        const data = docSnap.data();
+                        if(docSnap.id !== myId && data.name !== myName) {
+                            if (data.lastRead) {
+                                const time = data.lastRead.toMillis();
+                                if (time > maxReadTime) maxReadTime = time;
+                            }
+                            if(data.lastSeen && (new Date() - data.lastSeen.toDate()) / 1000 < 60) {
+                                onlineUsers.push(data.name);
+                            }
+                        }
+                    });
+                    otherUserReadTime = maxReadTime;
+                    const statusArea = document.getElementById('status-area');
+                    if(statusArea) {
+                        statusArea.innerHTML = onlineUsers.length > 0 ? `<span class="online-dot"></span> ${onlineUsers.join(', ')} 접속 중` : `<span class="offline-dot"></span> 상대방 기다리는 중...`;
+                    }
+                    updateReadStatus();
+                });
+            }
+        } else {
+            if (presenceUnsub) { presenceUnsub(); presenceUnsub = null; }
+        }
+    }
+
+    function markAsRead() { if(!myName) return; setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp(), lastRead: serverTimestamp() }, { merge: true }); }
+    
+  // [수정 후] 이렇게 바꾸세요! 👇
+document.addEventListener("visibilitychange", () => { 
+    if (document.visibilityState === 'visible') {
+        markAsRead(); 
+        stopTabNotification(); 
+        togglePresenceListener(true);
+        
+        // [추가됨] 화면에 돌아오면 강제로 스크롤을 싹 내려서 최신 글을 보여줌
+        setTimeout(scrollToBottom, 100); 
+    } else {
+        togglePresenceListener(false); 
+    }
+});
+    window.onclick = markAsRead;
+
+    function updateReadStatus() {
+        const effectiveReadTime = Math.max(otherUserReadTime, lastPartnerMsgTime);
+        document.querySelectorAll('.my-msg').forEach(msgDiv => {
+            const timestamp = msgDiv.getAttribute('data-timestamp');
+            const unreadMark = msgDiv.querySelector('.unread-mark');
+            if (timestamp && unreadMark) {
+                if (Number(timestamp) <= effectiveReadTime) { unreadMark.style.display = 'none'; } 
+                else { unreadMark.style.display = 'inline'; }
+            }
+        });
+    }
+
+    function linkify(text) {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return text.replace(urlRegex, function(url) {
+            return `<a href="${url}" target="_blank">${url}</a>`;
+        });
+    }
+
+    window.checkPassword = function() { 
+        if (document.getElementById('password-input').value === '0726') { 
+            localStorage.setItem('chat_auth_pw', '0726'); 
+            if (myName) { showScreen('chat-screen'); loadMessages(); startPresenceSystem(); monitorDeletionVotes(); window.requestNotiPermission(); } 
+            else { showScreen('name-screen'); } 
+        } else { alert('비밀번호가 틀립니다!'); } 
+    };
+    
+    window.setName = function() { 
+        const name = document.getElementById('name-input').value; 
+        if (!name) return alert("이름 입력"); 
+        myName = name; 
+        localStorage.setItem('chat_nickname', name); 
+        showScreen('chat-screen'); loadMessages(); startPresenceSystem(); monitorDeletionVotes(); window.requestNotiPermission(); 
+    };
+
+    window.sendMessage = async function() { 
+        const input = document.getElementById('msg-input'); 
+        const text = input.value; 
+        if (text.trim() === "") return; 
+        try { 
+            const payload = { text: text, sender: myName, timestamp: serverTimestamp(), type: 'text' };
+            // 답장 중이면 답장 데이터 포함
+            if(currentReplyTarget) {
+                payload.replyTo = currentReplyTarget;
+            }
+            await addDoc(collection(db, "chats"), payload); 
+input.value = ""; 
+        input.style.height = '45px'; // 전송 후 높이 초기화 (이 위치가 가장 안전합니다)
+        cancelReply();
+        markAsRead(); 
+        scrollToBottom(); 
+    } catch (e) { alert("전송 실패"); } 
+};
+    window.uploadImage = async function(fileOrBlob, isDrawing = false) { 
+        if (!fileOrBlob) return; 
+        document.getElementById('loading').style.display = 'flex'; 
+        try { 
+            const fileName = Date.now() + (isDrawing ? '_draw.png' : '_' + fileOrBlob.name); 
+            const storageRef = ref(storage, 'images/' + fileName); 
+            await uploadBytes(storageRef, fileOrBlob); 
+            const url = await getDownloadURL(storageRef); 
+            
+            const payload = { text: isDrawing ? "그림을 보냈습니다." : "사진을 보냈습니다.", imageUrl: url, sender: myName, timestamp: serverTimestamp(), type: 'image' };
+            if(currentReplyTarget) { payload.replyTo = currentReplyTarget; }
+
+            await addDoc(collection(db, "chats"), payload); 
+            cancelReply();
+            markAsRead(); scrollToBottom(); 
+        } catch (e) { alert("전송 실패"); } finally { document.getElementById('loading').style.display = 'none'; document.getElementById('photo-input').value = ''; } 
+    };
+
+    // [수정 완료] 새로운 loadMessages 함수
+ function loadMessages() {
+    // 실시간 감시 시작 (최근 30개)
+    const q = query(collection(db, "chats"), orderBy("timestamp", "asc"), limitToLast(30));
+    
+    onSnapshot(q, (snapshot) => {
+        const msgBox = document.getElementById('messages');
+        
+        // 1. 초기 로딩 시 레이아웃 초기화
+        if (isInitialLoad) { 
+            msgBox.innerHTML = '<div id="top-loading" style="display:none;">불러오는 중... ⏳</div>'; 
+            allImages = []; 
+            lastPartnerMsgTime = 0; 
+            lastPrintedDate = null; 
+            if (snapshot.docs.length > 0) oldestMessageSnap = snapshot.docs[0];
+        }
+
+        // 2. 변경된 부분만 처리
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                const data = change.doc.data();
+                const docId = change.doc.id;
+
+                // [중복 방지] 이미 화면에 존재하는 메시지라면 스킵 (실시간 갱신 오류 방지)
+                if (document.getElementById(`msg-${docId}`)) return;
+
+                // 3. 날짜 구분선 처리
+                const msgDateStr = getDateString(data.timestamp);
+                if (msgDateStr && lastPrintedDate !== msgDateStr) {
+                    const dateDividerHTML = `
+                        <div class="date-divider">
+                            <span>${msgDateStr}</span>
+                        </div>`;
+                    msgBox.insertAdjacentHTML('beforeend', dateDividerHTML);
+                    lastPrintedDate = msgDateStr;
+                }
+
+                // 4. 알림 로직 (EXE 및 윈도우 알림)
+                if (!isInitialLoad && data.sender !== myName) {
+                    // EXE 작업표시줄 깜빡임
+                    if (window.electronAPI) {
+                        window.electronAPI.triggerFlash();
+                    }
+
+                    // 창이 가려져 있을 때만 알림
+                    if (document.hidden) {
+                        startTabNotification();
+                        if (localStorage.getItem('noti_enabled') !== 'false' && Notification.permission === "granted") {
+                            let bodyText = (localStorage.getItem('noti_preview') !== 'false') 
+                                ? (data.type === 'image' ? '사진을 보냈습니다.' : data.text) 
+                                : "비밀 메시지가 도착했습니다. 🔒";
+                            new Notification(`💌 ${data.sender}`, { body: bodyText, icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png' });
+                        }
+                    }
+                }
+
+                // 5. 메시지 화면에 추가
+                const msgHTML = createMessageHTML(data, docId);
+                msgBox.insertAdjacentHTML('beforeend', msgHTML); 
+                
+                // 데이터 보관 및 읽음 처리용 시간 업데이트
+                if(data.type === 'image') allImages.push(data.imageUrl);
+                if(data.sender !== myName && data.timestamp) {
+                    const time = data.timestamp.toMillis();
+                    if(time > lastPartnerMsgTime) lastPartnerMsgTime = time;
+                }
+            }
+        });
+
+        // 6. 초기 로딩 완료 처리 및 스크롤
+        if (isInitialLoad) { 
+            isInitialLoad = false; 
+        }
+        
+        // 새 메시지가 오면 항상 아래로 스크롤
+        scrollToBottom();
+        updateReadStatus();
+        updateGalleryPreview(); 
+    });
+
+    // 스크롤 이벤트 리스너 (한 번만 등록되도록 외부 확인 필요 없으면 유지)
+const msgBox = document.getElementById('messages'); 
+    msgBox.onscroll = () => {
+        if (msgBox.scrollTop === 0 && !isFetchingOlder && oldestMessageSnap) { 
+            loadMoreMessages(); 
+        }
+    };
+} // loadMessages 함수 끝
+
+    // [수정 완료] loadMoreMessages 함수
+    async function loadMoreMessages() {
+        if (isFetchingOlder) return;
+        isFetchingOlder = true;
+        const topLoading = document.getElementById('top-loading');
+        topLoading.style.display = 'block';
+        
+        const q = query(collection(db, "chats"), orderBy("timestamp", "desc"), startAfter(oldestMessageSnap), limit(30));
+        const snapshot = await getDocs(q);
+        
+        if (!snapshot.empty) {
+            const msgBox = document.getElementById('messages');
+            const oldHeight = msgBox.scrollHeight;
+            
+            // 불러온 데이터를 시간순(과거->미래)으로 정렬
+            const docs = snapshot.docs.reverse(); 
+            oldestMessageSnap = docs[0]; 
+            
+            let html = "";
+            let tempLastDate = null; // 이번 배치 안에서 날짜 체크용
+
+            // 현재 화면의 맨 위에 있는 날짜 구분선이 있다면 날짜를 가져옴 (중복 방지용)
+            const existingTopDivider = msgBox.querySelector('.date-divider');
+            const existingTopDate = existingTopDivider ? existingTopDivider.innerText.trim() : null;
+
+            docs.forEach(doc => { 
+                const data = doc.data();
+                const msgDateStr = getDateString(data.timestamp);
+
+                // 이번 배치 내에서 날짜가 바뀌었으면 구분선 추가
+                if (msgDateStr && tempLastDate !== msgDateStr) {
+                    html += `<div class="date-divider"><span>${msgDateStr}</span></div>`;
+                    tempLastDate = msgDateStr;
+                }
+
+                html += createMessageHTML(data, doc.id); 
+                
+                if(data.type === 'image') allImages.unshift(data.imageUrl); 
+                if(data.sender !== myName && data.timestamp) {
+                    const time = data.timestamp.toMillis();
+                    if(time > lastPartnerMsgTime) lastPartnerMsgTime = time;
+                }
+            });
+
+            // [중요] 새로 로딩한 마지막 날짜와 기존 화면의 첫 날짜가 같으면
+            // 기존 화면 맨 위에 있던 구분선은 중복이므로 삭제
+            if (tempLastDate === existingTopDate && existingTopDivider) {
+                existingTopDivider.remove();
+            }
+
+            topLoading.insertAdjacentHTML('afterend', html);
+            
+            const newHeight = msgBox.scrollHeight;
+            msgBox.scrollTop = newHeight - oldHeight;
+            updateReadStatus(); 
+        } else { 
+            topLoading.innerText = "대화의 시작입니다."; 
+        }
+        
+        topLoading.style.display = 'none';
+        isFetchingOlder = false;
+    }
+
+    // 🛠️ [수정됨] 답장 기능 및 HTML 생성
+    // [5] 메시지 HTML 생성 함수 (수정됨)
+function createMessageHTML(data, docId) {
+    const isMe = data.sender === myName;
+    const msgTime = data.timestamp ? data.timestamp.toMillis() : Date.now();
+    const date = data.timestamp ? data.timestamp.toDate() : new Date();
+    const timeStr = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+    
+    let contentHtml = "";
+
+    // A. 텍스트일 때
+    if (!data.type || data.type === 'text') {
+        contentHtml = linkify(data.text);
+    } 
+    // B. 사진일 때
+    else if (data.type === 'image') {
+        contentHtml = `<img src="${data.imageUrl}" class="chat-img" onclick="window.open(this.src)">`;
+    }
+    // C. 스티커일 때 (여기가 핵심!)
+  else if (data.type === 'sticker') {
+        const idx = data.stickerIndex || 0;
+        const pIdx = data.packIndex || 0; // 팩 정보가 없으면 0번(기본)으로 처리
+        
+        // 해당 팩의 정보 가져오기
+        const pack = STICKER_PACKS[pIdx] || STICKER_PACKS[0]; 
+        
+        const col = idx % pack.cols;
+        const row = Math.floor(idx / pack.cols);
+        const unitSize = pack.totalWidth / pack.cols;
+        
+        // 채팅방 표시 크기 (128px)
+        const displaySize = 128; 
+        const scale = displaySize / unitSize;
+        
+        const bgW = pack.totalWidth * scale;
+        const bgH = pack.totalHeight * scale;
+        const bgX = -(col * displaySize);
+        const bgY = -(row * displaySize);
+
+        contentHtml = `
+            <div class="sticker-msg" style="
+                background-image: url('${pack.url}');
+                background-size: ${bgW}px ${bgH}px;
+                background-position: ${bgX}px ${bgY}px;
+                width: 128px; height: 128px;
+                background-color: transparent; /* ✨ 여기서도 투명 배경! */
+            "></div>`;
+    }
+
+    // 답장 표시 (기존 코드 유지)
+    const replyBlock = data.replyTo ? `
+        <div class="quote-block" onclick="scrollToMessage('${data.replyTo.id}')">
+            <span class="quote-sender">To. ${data.replyTo.sender}</span>
+            <span class="quote-text">${data.replyTo.text}</span>
+        </div>` : '';
+
+    const unreadHtml = isMe ? `<span class="unread-mark">1</span>` : '';
+    const rawText = (data.type === 'sticker' ? '(이모티콘)' : data.text).replace(/"/g, '&quot;');
+
+    return `
+        <div id="msg-${docId}" class="message ${isMe?'my-msg':'other-msg'}" data-text="${rawText}" data-timestamp="${msgTime}">
+            ${replyBlock}
+            ${contentHtml}
+            <div class="msg-info">
+                ${unreadHtml}
+                ${!isMe?`<span class="sender">${data.sender}</span>`:''}
+                <span class="time">${timeStr}</span>
+                <span class="reply-btn" onclick="setReply('${docId}', '${rawText}', '${data.sender}')">↩️</span>
+            </div>
+        </div>`;
+}
+
+    function scrollToBottom() { const msgBox = document.getElementById('messages'); msgBox.scrollTop = msgBox.scrollHeight; }
+
+    function updateGalleryPreview() {
+        const previewGrid = document.getElementById('gallery-preview');
+        const recentImages = allImages.slice(-3).reverse();
+        previewGrid.innerHTML = recentImages.map(src => `<img src="${src}" class="gallery-item" onclick="window.open(this.src)">`).join('');
+        if(recentImages.length === 0) previewGrid.innerHTML = '<span style="grid-column:span 3; text-align:center; color:#ccc; font-size:12px;">사진 없음</span>';
+    }
+
+    window.openFullGallery = () => {
+        showScreen('full-gallery-screen');
+        if(document.getElementById('full-gallery-grid').children.length === 0) {
+            loadGalleryImages();
+        }
+    };
+    window.closeFullGallery = () => showScreen('settings-screen');
+
+    async function loadGalleryImages() {
+        if(isGalleryLoading || isGalleryEnd) return;
+        isGalleryLoading = true;
+        document.getElementById('gallery-loading').style.display = 'block';
+
+        let q;
+        if (galleryLastSnap) {
+            q = query(collection(db, "chats"), where("type", "==", "image"), orderBy("timestamp", "desc"), startAfter(galleryLastSnap), limit(15));
+        } else {
+            q = query(collection(db, "chats"), where("type", "==", "image"), orderBy("timestamp", "desc"), limit(15));
+        }
+
+        const snapshot = await getDocs(q);
+        const grid = document.getElementById('full-gallery-grid');
+
+        if(snapshot.empty) {
+            isGalleryEnd = true;
+            document.getElementById('gallery-loading').innerText = "모든 사진을 불러왔습니다.";
+        } else {
+            galleryLastSnap = snapshot.docs[snapshot.docs.length - 1];
+            snapshot.forEach(doc => {
+                const url = doc.data().imageUrl;
+                grid.insertAdjacentHTML('beforeend', `<img src="${url}" class="gallery-item" onclick="window.open(this.src)">`);
+            });
+            document.getElementById('gallery-loading').style.display = 'none';
+        }
+        isGalleryLoading = false;
+    }
+
+    document.getElementById('full-gallery-screen').addEventListener('scroll', (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        if (scrollTop + clientHeight >= scrollHeight - 50) {
+            loadGalleryImages();
+        }
+    });
+
+    window.clearCache = () => {
+        if(confirm("캐시를 삭제하면 자동 로그인 정보가 지워집니다. 진행할까요?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    };
+
+    window.requestDeleteHistory = async () => {
+        if(!confirm("⚠️ 모든 대화와 사진이 삭제됩니다. 복구 불가!\n\n동의하시겠습니까? (상대방도 동의해야 최종 삭제됩니다)")) return;
+
+        try {
+            await setDoc(deleteReqRef, { requestedBy: arrayUnion(myId) }, { merge: true });
+            alert("삭제 요청을 보냈습니다. 상대방도 동의하면 즉시 삭제됩니다.");
+        } catch(e) { console.error(e); alert("요청 중 오류 발생"); }
+    };
+
+    async function performFullDeletion() {
+        try {
+            const q = query(collection(db, "chats"));
+            const snapshot = await getDocs(q);
+            const batchSize = 500;
+            let batch = writeBatch(db);
+            let count = 0;
+
+            for (const doc of snapshot.docs) {
+                batch.delete(doc.ref);
+                count++;
+                if (count >= batchSize) { await batch.commit(); batch = writeBatch(db); count = 0; }
+            }
+            if (count > 0) await batch.commit();
+
+            await setDoc(deleteReqRef, { requestedBy: [] });
+            alert("모든 데이터가 안전하게 삭제되었습니다.");
+            location.reload();
+        } catch(e) { console.error(e); alert("삭제 실패"); location.reload(); }
+    }
+
+window.toggleSearch = () => { 
+        const sb = document.getElementById('search-container'); 
+        const input = document.getElementById('search-input');
+        
+        if (sb.style.display === 'block') { 
+            // [닫기] 다시 hidden으로 변경하여 키보드 탐색에서 제외
+            input.setAttribute('type', 'hidden'); 
+            sb.style.display = 'none'; 
+            input.value = ''; 
+            input.disabled = true; 
+            filterMessages(); 
+        } else { 
+            // [열기] text로 변경하여 입력 가능하게 만듦
+            input.setAttribute('type', 'text'); 
+            sb.style.display = 'block'; 
+            input.disabled = false; 
+            input.focus(); 
+        }
+    };
+    
+    window.filterMessages = () => { const q = document.getElementById('search-input').value.toLowerCase(); document.querySelectorAll('.message').forEach(msg => msg.style.display = (msg.getAttribute('data-text')||"").toLowerCase().includes(q)?'block':'none'); };
+    window.openSettings = () => showScreen('settings-screen'); window.closeSettings = () => showScreen('chat-screen');
+    window.changeBg = (c) => { localStorage.setItem('chat_bg', c); applyBg(c); }; function applyBg(c) { document.getElementById('messages').style.backgroundColor = c; }
+    
+    window.logout = () => { localStorage.removeItem('chat_nickname'); localStorage.removeItem('chat_auth_pw'); location.reload(); }
+
+    if(localStorage.getItem('noti_enabled') === null) localStorage.setItem('noti_enabled', 'true');
+    if(localStorage.getItem('noti_preview') === null) localStorage.setItem('noti_preview', 'true');
+    document.getElementById('noti-enable').checked = localStorage.getItem('noti_enabled') !== 'false';
+    document.getElementById('noti-preview').checked = localStorage.getItem('noti_preview') !== 'false';
+    
+    window.saveSettings = () => {
+        localStorage.setItem('noti_enabled', document.getElementById('noti-enable').checked);
+        localStorage.setItem('noti_preview', document.getElementById('noti-preview').checked);
+    };
+
+    window.triggerFileUpload = () => {
+        const fileInput = document.getElementById('photo-input');
+        fileInput.disabled = false; fileInput.click(); setTimeout(() => { fileInput.disabled = true; }, 1000); 
+    };
+
+    const canvas = document.getElementById('canvas-area');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false; let lastX = 0; let lastY = 0;
+    
+    function initCanvas() { ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = '#333'; }
+    initCanvas();
+
+    function draw(e) { if (!isDrawing) return; e.preventDefault(); let clientX = e.clientX || e.touches[0].clientX; let clientY = e.clientY || e.touches[0].clientY; const rect = canvas.getBoundingClientRect(); const x = clientX - rect.left; const y = clientY - rect.top; ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke(); lastX = x; lastY = y; }
+    canvas.addEventListener('mousedown', (e) => { isDrawing = true; lastX = e.offsetX; lastY = e.offsetY; }); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', () => isDrawing = false); canvas.addEventListener('mouseout', () => isDrawing = false);
+    canvas.addEventListener('touchstart', (e) => { isDrawing = true; const rect = canvas.getBoundingClientRect(); lastX = e.touches[0].clientX - rect.left; lastY = e.touches[0].clientY - rect.top; }); canvas.addEventListener('touchmove', draw); canvas.addEventListener('touchend', () => isDrawing = false);
+    
+    window.toggleDrawingPad = () => { const m = document.getElementById('drawing-modal'); if(m.style.display !== 'flex') { m.style.display = 'flex'; } else { m.style.display = 'none'; } };
+    window.clearCanvas = () => initCanvas();
+    window.sendDrawing = () => { canvas.toBlob((blob) => { if(blob) { uploadImage(blob, true); toggleDrawingPad(); initCanvas(); } }, 'image/png'); };
+
+    // 📋 [기존] 이미지 붙여넣기 기능 유지
+    window.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file' && items[i].type.includes('image/')) {
+                const file = items[i].getAsFile();
+                if(confirm("📋 클립보드에 있는 이미지를 전송하시겠습니까?")) { uploadImage(file); }
+            }
+        }
+    });
+
+// ==========================================
+    // 🚀 [실행 시작]
+    // ==========================================
+    
+    // ▼▼▼ [기존 코드를 이렇게 감싸주세요] ▼▼▼
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // 로그인 된 상태일 때만 실행!
+            console.log("✅ 인증 완료: 데이터를 불러옵니다.");
+
+            const savedPasswordFinal = localStorage.getItem('chat_auth_pw');
+            if (savedPasswordFinal === '0726') {
+                if (myName) { 
+                    showScreen('chat-screen'); 
+                    loadMessages(); // 이제 안전하게 실행됨
+                    startPresenceSystem(); 
+                    monitorDeletionVotes();
+                    window.requestNotiPermission(); 
+                } 
+                else { showScreen('name-screen'); }
+            }
+        } else {
+            // 로그인이 안 된 상태 (보통은 자동으로 signInAnonymously가 실행되므로 기다리면 됨)
+            console.log("⏳ 로그인 대기 중...");
+        }
+    });
+
+// [추가] 입력창 자동 높이 조절 및 엔터키 전송 설정
+const msgInputBox = document.getElementById('msg-input');
+
+// 1. 자동 높이 조절 (input 이벤트)
+msgInputBox.addEventListener('input', function() {
+    this.style.height = '45px'; // 초기화
+    let newHeight = this.scrollHeight;
+    if (newHeight > 90) newHeight = 90; // 최대 3줄 제한
+    this.style.height = newHeight + 'px';
+});
+
+// 2. 엔터키 전송 설정 (keydown 이벤트)
+msgInputBox.addEventListener('keydown', function(e) {
+    // 한글 입력 시 마지막 글자 중복 전송 방지
+    if (e.isComposing) return;
+
+    if (e.key === 'Enter') {
+        if (!e.shiftKey) { 
+            // Shift 없이 Enter만 누른 경우
+            e.preventDefault(); // 중요: 기본 줄바꿈 동작을 막음
+            window.sendMessage(); // 전송 함수 호출
+            
+            // 전송 후 높이와 내용 초기화는 sendMessage 안에서 처리되지만, 여기서도 한 번 더 보정
+            this.style.height = '45px';
+        } 
+        // Shift + Enter인 경우에는 여기서 아무것도 안 함 (기본 줄바꿈 허용)
+    }
+});// ==========================================
+    // 📢 [추가] 업데이트 팝업 로직
+    // ==========================================
+    const CURRENT_VERSION = "1.8"; // 👈 [중요] 패치할 때마다 이 숫자를 바꾸세요!
+
+    window.checkUpdatePopup = function() {
+        const savedVersion = localStorage.getItem('seen_version');
+        
+        // 저장된 버전과 현재 버전이 다르면 팝업 띄움
+        if (savedVersion !== CURRENT_VERSION) {
+            document.getElementById('update-modal').style.display = 'flex';
+        }
+    };
+
+    window.closeUpdatePopup = function() {
+        // 닫기 버튼 누르면 현재 버전을 저장함 (다음에 안 뜨게)
+        localStorage.setItem('seen_version', CURRENT_VERSION);
+        document.getElementById('update-modal').style.display = 'none';
+    };
+
+    // 시작하자마자 체크 실행
+    checkUpdatePopup();
+</script>
 </body>
 </html>
