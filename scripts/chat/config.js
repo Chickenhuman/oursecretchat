@@ -31,4 +31,10 @@ export const STICKER_PACKS = [
 
 export const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
 
-export const CURRENT_VERSION = "1.8";
+export const CURRENT_VERSION = "1.10";
+export const RELEASE_DATE = "2026/03/18";
+export const PATCH_NOTES = [
+    "채팅 특수문자와 링크 처리 안정성을 더 다듬었어요.",
+    "대화 전체 삭제 시 첨부 이미지 정리도 함께 보강했어요.",
+    "게임 화면과 보조 파일 구조를 정리했어요."
+];

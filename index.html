@@ -287,16 +287,13 @@
             </div>
         </div>
     </div>
-<div id="update-modal" style="display: none;">
-    <div class="update-content">
-        <h3 style="margin-top:0; color:#ff6b6b;">🚀 업데이트 알림 (Ver 1.9)</h3>
-        <ul style="text-align:left; padding-left:20px; color:#555; font-size:14px; line-height:1.6;">
-            <li>📝 암호가 없으면 접속할 수 없어요!</li>
-            <li></li>
-        </ul>
-        <button class="btn-primary" onclick="closeUpdatePopup()">확인했어요</button>
-    </div>
-</div>
+	<div id="update-modal" style="display: none;">
+	    <div class="update-content">
+	        <h3 id="update-title" style="margin-top:0; color:#ff6b6b;">🚀 업데이트 알림</h3>
+	        <ul id="update-note-list" style="text-align:left; padding-left:20px; color:#555; font-size:14px; line-height:1.6;"></ul>
+	        <button class="btn-primary" onclick="closeUpdatePopup()">확인했어요</button>
+	    </div>
+	</div>
     <div id="login-screen" class="screen active">
         <div class="auth-container">
             <h2 style="color:#ff6b6b;">🔒 Secret Access</h2>
@@ -408,9 +405,9 @@
             </div>
 
             <div class="menu-item"><span class="menu-label" style="color:red;" onclick="logout()">로그아웃</span></div>
-            <div class="version-info">Ver 1.9 - 2025/12/31 Update</div>
-        </div>
-    </div>
+	            <div id="version-info" class="version-info"></div>
+	        </div>
+	    </div>
 
     <div id="full-gallery-screen" class="screen">
         <div class="settings-header">
@@ -426,11 +423,11 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, addDoc, doc, setDoc, query, orderBy, onSnapshot, serverTimestamp, limitToLast, getDocs, startAfter, limit, where, deleteDoc, writeBatch, updateDoc, arrayUnion, getDoc } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } 
+    import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
     import { getAuth, signInAnonymously, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { firebaseConfig, STICKER_PACKS, emojiList, CURRENT_VERSION } from "./scripts/chat/config.js";
+    import { firebaseConfig, STICKER_PACKS, emojiList, CURRENT_VERSION, RELEASE_DATE, PATCH_NOTES } from "./scripts/chat/config.js";
     import { escapeHtml, escapeAttribute, encodeInlineParam, decodeInlineParam, getMessagePreviewText, linkify } from "./scripts/chat/utils.js";
 
     const app = initializeApp(firebaseConfig);
@@ -648,13 +645,31 @@ window.toggleSticker = () => {
         }, 1000); 
     }
 
-    function stopTabNotification() {
-        if(flashInterval) { clearInterval(flashInterval); flashInterval = null; }
-        document.title = originalTitle; 
-    }
+	    function stopTabNotification() {
+	        if(flashInterval) { clearInterval(flashInterval); flashInterval = null; }
+	        document.title = originalTitle; 
+	    }
 
-    function showScreen(id) { 
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+	    function renderReleaseInfo() {
+	        const updateTitle = document.getElementById('update-title');
+	        const updateNoteList = document.getElementById('update-note-list');
+	        const versionInfo = document.getElementById('version-info');
+
+	        if (updateTitle) {
+	            updateTitle.innerText = `🚀 업데이트 알림 (Ver ${CURRENT_VERSION})`;
+	        }
+
+	        if (updateNoteList) {
+	            updateNoteList.innerHTML = PATCH_NOTES.map((note) => `<li>${escapeHtml(note)}</li>`).join('');
+	        }
+
+	        if (versionInfo) {
+	            versionInfo.innerText = `Ver ${CURRENT_VERSION} - ${RELEASE_DATE} Update`;
+	        }
+	    }
+
+	    function showScreen(id) { 
+	        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
         document.getElementById(id).classList.add('active'); 
         if(id === 'chat-screen') {
             setTimeout(scrollToBottom, 100);
@@ -1133,26 +1148,40 @@ const msgBox = document.getElementById('messages');
         } catch(e) { console.error(e); alert("요청 중 오류 발생"); }
     };
 
-    async function performFullDeletion() {
-        try {
-            const q = query(collection(db, "chats"));
-            const snapshot = await getDocs(q);
-            const batchSize = 500;
-            let batch = writeBatch(db);
-            let count = 0;
+	    async function performFullDeletion() {
+	        try {
+	            const q = query(collection(db, "chats"));
+	            const snapshot = await getDocs(q);
+	            const imageUrls = [];
+	            const batchSize = 500;
+	            let batch = writeBatch(db);
+	            let count = 0;
 
-            for (const doc of snapshot.docs) {
-                batch.delete(doc.ref);
-                count++;
-                if (count >= batchSize) { await batch.commit(); batch = writeBatch(db); count = 0; }
-            }
-            if (count > 0) await batch.commit();
+	            for (const doc of snapshot.docs) {
+	                const data = doc.data();
+	                if (data.imageUrl) {
+	                    imageUrls.push(data.imageUrl);
+	                }
+	                batch.delete(doc.ref);
+	                count++;
+	                if (count >= batchSize) { await batch.commit(); batch = writeBatch(db); count = 0; }
+	            }
+	            if (count > 0) await batch.commit();
 
-            await setDoc(deleteReqRef, { requestedBy: [] });
-            alert("모든 데이터가 안전하게 삭제되었습니다.");
-            location.reload();
-        } catch(e) { console.error(e); alert("삭제 실패"); location.reload(); }
-    }
+	            const uniqueImageUrls = [...new Set(imageUrls)];
+	            await Promise.allSettled(uniqueImageUrls.map(async (url) => {
+	                try {
+	                    await deleteObject(ref(storage, url));
+	                } catch (e) {
+	                    console.warn("이미지 삭제 스킵:", url, e);
+	                }
+	            }));
+
+	            await setDoc(deleteReqRef, { requestedBy: [] });
+	            alert("모든 데이터가 안전하게 삭제되었습니다.");
+	            location.reload();
+	        } catch(e) { console.error(e); isPerformingDeletion = false; alert("삭제 실패"); location.reload(); }
+	    }
 
 window.toggleSearch = () => { 
         const sb = document.getElementById('search-container'); 
@@ -1287,14 +1316,16 @@ msgInputBox.addEventListener('keydown', function(e) {
         }
     };
 
-    window.closeUpdatePopup = function() {
-        // 닫기 버튼 누르면 현재 버전을 저장함 (다음에 안 뜨게)
-        localStorage.setItem('seen_version', CURRENT_VERSION);
-        document.getElementById('update-modal').style.display = 'none';
-    };
+	    window.closeUpdatePopup = function() {
+	        // 닫기 버튼 누르면 현재 버전을 저장함 (다음에 안 뜨게)
+	        localStorage.setItem('seen_version', CURRENT_VERSION);
+	        document.getElementById('update-modal').style.display = 'none';
+	    };
 
-    // 시작하자마자 체크 실행
-    checkUpdatePopup();
+	    renderReleaseInfo();
+
+	    // 시작하자마자 체크 실행
+	    checkUpdatePopup();
 </script>
 </body>
 </html>
