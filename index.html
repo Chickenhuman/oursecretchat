@@ -324,7 +324,7 @@
             </div>
             <div class="header-icons">
                 <button class="icon-btn" onclick="location.href='calendar.html'" style="margin-right:5px;">📅</button>
-                <button class="icon-btn" onclick="location.href='gamelist.html'" style="margin-right:5px;">🎮</button>
+                <button class="icon-btn" onclick="location.href='games/index.html'" style="margin-right:5px;">🎮</button>
                 <button class="icon-btn" onclick="toggleSearch()">🔍</button>
                 <button class="icon-btn" onclick="openSettings()">⚙️</button>
             </div>
@@ -428,19 +428,10 @@
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-import { getAuth, signInAnonymously, onAuthStateChanged }
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-    // 🔴 [필수] 본인의 firebaseConfig로 수정해주세요!
-    const firebaseConfig = {
-      apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
-      authDomain: "lovechatproject-2db11.firebaseapp.com",
-      projectId: "lovechatproject-2db11",
-      storageBucket: "lovechatproject-2db11.firebasestorage.app",
-      messagingSenderId: "1069136590072",
-      appId: "1:1069136590072:web:7712e718db03c70bff370d",
-      measurementId: "G-ERG2LL283F"
-    };
+    import { getAuth, signInAnonymously, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { firebaseConfig, STICKER_PACKS, emojiList, CURRENT_VERSION } from "./scripts/chat/config.js";
+    import { escapeHtml, escapeAttribute, encodeInlineParam, decodeInlineParam, getMessagePreviewText, linkify } from "./scripts/chat/utils.js";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -462,28 +453,6 @@ signInAnonymously(auth)
 // ==========================================
 // 🆕 [업그레이드] 멀티 탭 스티커 시스템
 // ==========================================
-
-// 1. 스티커 팩 목록 (여기에 계속 추가하면 됩니다!)
-const STICKER_PACKS = [
-    {
-        name: "토끼와 곰돌이", // 탭 이름(또는 아이콘)
-        icon: "🐰🐻",         // 탭에 보일 아이콘
-        url: "https://github.com/Chickenhuman/oursecretchat/blob/main/emoticon1.png?raw=true", // 이미지 주소
-        totalWidth: 1024,
-        totalHeight: 559, // 이미지 크기에 맞춰 수정
-        cols: 4,
-        count: 8          // 이모티콘 개수
-    },
-    {
-        name: "러블리 곰", // 두 번째 탭 예시
-        icon: "🐻",
-        url: "https://raw.githubusercontent.com/ChickenHuman/oursecretchat/main/stickers_bear.png",
-        totalWidth: 1024,
-        totalHeight: 512,
-        cols: 4,
-        count: 8
-    }
-];
 
 let currentPackIndex = 0; // 현재 보고 있는 탭 번호
 
@@ -586,7 +555,6 @@ window.toggleSticker = () => {
     let savedBg = localStorage.getItem('chat_bg') || '#fafafa';
 
     // 2. 이모티콘 및 기능 관련
-    const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
     const deleteReqRef = doc(db, "settings", "delete_request");
     
     // 3. 접속 상태 및 탭 알림 관련 변수
@@ -602,10 +570,14 @@ window.toggleSticker = () => {
     let isInitialLoad = true;
     let allImages = [];
     let oldestMessageSnap = null; 
-    let isFetchingOlder = false; 
-    let galleryLastSnap = null;
-    let isGalleryLoading = false;
-    let isGalleryEnd = false;
+	    let isFetchingOlder = false; 
+	    let galleryLastSnap = null;
+	    let isGalleryLoading = false;
+	    let isGalleryEnd = false;
+	    let messageUnsub = null;
+	    let deleteVotesUnsub = null;
+	    let presenceHeartbeatTimer = null;
+	    let isPerformingDeletion = false;
     
     // [날짜 구분선용 변수]
     let lastPrintedDate = null;
@@ -617,23 +589,25 @@ window.toggleSticker = () => {
         }).format(date);
     }
 
-    // 5. [NEW] 답장 기능 관련 변수
-    let currentReplyTarget = null; // { id: "msgId", text: "내용", sender: "보낸이" }
+	    // 5. [NEW] 답장 기능 관련 변수
+	    let currentReplyTarget = null; // { id: "msgId", text: "내용", sender: "보낸이" }
 
-    // ==========================================
-    // ⚙️ 기능 함수 정의
-    // ==========================================
+	    // ==========================================
+	    // ⚙️ 기능 함수 정의
+	    // ==========================================
 
-    applyBg(savedBg);
+	    applyBg(savedBg);
 
-    // 답장 설정 함수
-    window.setReply = (id, text, sender) => {
-        currentReplyTarget = { id, text, sender };
-        document.getElementById('reply-preview-bar').style.display = 'flex';
-        document.getElementById('reply-target-name').innerText = `To. ${sender}`;
-        document.getElementById('reply-target-text').innerText = text;
-        document.getElementById('msg-input').focus();
-    };
+	    // 답장 설정 함수
+	    window.setReply = (id, text, sender) => {
+	        const decodedText = decodeInlineParam(text);
+	        const decodedSender = decodeInlineParam(sender);
+	        currentReplyTarget = { id, text: decodedText, sender: decodedSender };
+	        document.getElementById('reply-preview-bar').style.display = 'flex';
+	        document.getElementById('reply-target-name').innerText = `To. ${decodedSender}`;
+	        document.getElementById('reply-target-text').innerText = decodedText;
+	        document.getElementById('msg-input').focus();
+	    };
 
     // 답장 취소 함수
     window.cancelReply = () => {
@@ -686,13 +660,14 @@ window.toggleSticker = () => {
             setTimeout(scrollToBottom, 100);
             stopTabNotification(); 
         }
-    }
+	    }
 
-    function monitorDeletionVotes() {
-        onSnapshot(deleteReqRef, async (snap) => {
-            if(snap.exists()) {
-                const data = snap.data();
-                const requests = data.requestedBy || [];
+	    function monitorDeletionVotes() {
+	        if (deleteVotesUnsub) return;
+	        deleteVotesUnsub = onSnapshot(deleteReqRef, async (snap) => {
+	            if(snap.exists()) {
+	                const data = snap.data();
+	                const requests = data.requestedBy || [];
                 const btn = document.getElementById('delete-chat-btn');
                 if(!btn) return;
 
@@ -710,12 +685,15 @@ window.toggleSticker = () => {
                     btn.style.opacity = "1";
                 }
 
-                if (requests.length >= 2) {
-                    document.getElementById('loading').style.display = 'flex';
-                    if (requests[0] === myId) { await performFullDeletion(); }
-                }
-            }
-        });
+	                if (requests.length >= 2) {
+	                    document.getElementById('loading').style.display = 'flex';
+	                    if (!isPerformingDeletion && requests[0] === myId) {
+	                        isPerformingDeletion = true;
+	                        await performFullDeletion();
+	                    }
+	                }
+	            }
+	        });
     }
 
     window.requestNotiPermission = () => {
@@ -724,15 +702,17 @@ window.toggleSticker = () => {
         }
     };
 
-    function startPresenceSystem() {
-        if(!myName) return;
-        markAsRead();
-        setInterval(async () => { 
-            if(document.hidden) return; 
-            try { await setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp() }, { merge: true }); } catch(e) {} 
-        }, 30000); 
-        if(!document.hidden) { togglePresenceListener(true); }
-    }
+	    function startPresenceSystem() {
+	        if(!myName) return;
+	        markAsRead();
+	        if (!presenceHeartbeatTimer) {
+	            presenceHeartbeatTimer = setInterval(async () => { 
+	                if(document.hidden) return; 
+	                try { await setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp() }, { merge: true }); } catch(e) {} 
+	            }, 30000);
+	        }
+	        if(!document.hidden) { togglePresenceListener(true); }
+	    }
 
     function togglePresenceListener(shouldListen) {
         if (shouldListen) {
@@ -752,21 +732,22 @@ window.toggleSticker = () => {
                                 onlineUsers.push(data.name);
                             }
                         }
-                    });
-                    otherUserReadTime = maxReadTime;
-                    const statusArea = document.getElementById('status-area');
-                    if(statusArea) {
-                        statusArea.innerHTML = onlineUsers.length > 0 ? `<span class="online-dot"></span> ${onlineUsers.join(', ')} 접속 중` : `<span class="offline-dot"></span> 상대방 기다리는 중...`;
-                    }
-                    updateReadStatus();
-                });
+	                    });
+	                    otherUserReadTime = maxReadTime;
+	                    const statusArea = document.getElementById('status-area');
+	                    if(statusArea) {
+	                        const safeNames = onlineUsers.map((name) => escapeHtml(name)).join(', ');
+	                        statusArea.innerHTML = onlineUsers.length > 0 ? `<span class="online-dot"></span> ${safeNames} 접속 중` : `<span class="offline-dot"></span> 상대방 기다리는 중...`;
+	                    }
+	                    updateReadStatus();
+	                });
             }
         } else {
             if (presenceUnsub) { presenceUnsub(); presenceUnsub = null; }
-        }
-    }
+	        }
+	    }
 
-    function markAsRead() { if(!myName) return; setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp(), lastRead: serverTimestamp() }, { merge: true }); }
+	    function markAsRead() { if(!myName) return; setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp(), lastRead: serverTimestamp() }, { merge: true }).catch(() => {}); }
     
   // [수정 후] 이렇게 바꾸세요! 👇
 document.addEventListener("visibilitychange", () => { 
@@ -795,14 +776,7 @@ document.addEventListener("visibilitychange", () => {
         });
     }
 
-    function linkify(text) {
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
-        return text.replace(urlRegex, function(url) {
-            return `<a href="${url}" target="_blank">${url}</a>`;
-        });
-    }
-
-    window.checkPassword = function() { 
+	    window.checkPassword = function() { 
         if (document.getElementById('password-input').value === '0726') { 
             localStorage.setItem('chat_auth_pw', '0726'); 
             if (myName) { showScreen('chat-screen'); loadMessages(); startPresenceSystem(); monitorDeletionVotes(); window.requestNotiPermission(); } 
@@ -854,22 +828,30 @@ input.value = "";
         } catch (e) { alert("전송 실패"); } finally { document.getElementById('loading').style.display = 'none'; document.getElementById('photo-input').value = ''; } 
     };
 
-    // [수정 완료] 새로운 loadMessages 함수
- function loadMessages() {
-    // 실시간 감시 시작 (최근 30개)
-    const q = query(collection(db, "chats"), orderBy("timestamp", "asc"), limitToLast(30));
-    
-    onSnapshot(q, (snapshot) => {
-        const msgBox = document.getElementById('messages');
-        
-        // 1. 초기 로딩 시 레이아웃 초기화
-        if (isInitialLoad) { 
-            msgBox.innerHTML = '<div id="top-loading" style="display:none;">불러오는 중... ⏳</div>'; 
-            allImages = []; 
-            lastPartnerMsgTime = 0; 
-            lastPrintedDate = null; 
-            if (snapshot.docs.length > 0) oldestMessageSnap = snapshot.docs[0];
-        }
+	    // [수정 완료] 새로운 loadMessages 함수
+	 function loadMessages() {
+	    if (messageUnsub) {
+	        messageUnsub();
+	        messageUnsub = null;
+	    }
+	    isInitialLoad = true;
+	    allImages = [];
+	    oldestMessageSnap = null;
+	    isFetchingOlder = false;
+	    lastPartnerMsgTime = 0;
+	    lastPrintedDate = null;
+
+	    // 실시간 감시 시작 (최근 30개)
+	    const q = query(collection(db, "chats"), orderBy("timestamp", "asc"), limitToLast(30));
+	    
+	    messageUnsub = onSnapshot(q, (snapshot) => {
+	        const msgBox = document.getElementById('messages');
+	        
+	        // 1. 초기 로딩 시 레이아웃 초기화
+	        if (isInitialLoad) { 
+	            msgBox.innerHTML = '<div id="top-loading" style="display:none;">불러오는 중... ⏳</div>'; 
+	            if (snapshot.docs.length > 0) oldestMessageSnap = snapshot.docs[0];
+	        }
 
         // 2. 변경된 부분만 처리
         snapshot.docChanges().forEach((change) => {
@@ -1008,24 +990,28 @@ const msgBox = document.getElementById('messages');
 
     // 🛠️ [수정됨] 답장 기능 및 HTML 생성
     // [5] 메시지 HTML 생성 함수 (수정됨)
-function createMessageHTML(data, docId) {
-    const isMe = data.sender === myName;
-    const msgTime = data.timestamp ? data.timestamp.toMillis() : Date.now();
-    const date = data.timestamp ? data.timestamp.toDate() : new Date();
-    const timeStr = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
-    
-    let contentHtml = "";
+	function createMessageHTML(data, docId) {
+	    const isMe = data.sender === myName;
+	    const msgTime = data.timestamp ? data.timestamp.toMillis() : Date.now();
+	    const date = data.timestamp ? data.timestamp.toDate() : new Date();
+	    const timeStr = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+	    const safeSender = escapeHtml(data.sender || "");
+	    const previewText = getMessagePreviewText(data);
+	    const encodedPreviewText = encodeInlineParam(previewText);
+	    const encodedSender = encodeInlineParam(data.sender || "");
+	    
+	    let contentHtml = "";
 
-    // A. 텍스트일 때
-    if (!data.type || data.type === 'text') {
-        contentHtml = linkify(data.text);
-    } 
-    // B. 사진일 때
-    else if (data.type === 'image') {
-        contentHtml = `<img src="${data.imageUrl}" class="chat-img" onclick="window.open(this.src)">`;
-    }
-    // C. 스티커일 때 (여기가 핵심!)
-  else if (data.type === 'sticker') {
+	    // A. 텍스트일 때
+	    if (!data.type || data.type === 'text') {
+	        contentHtml = linkify(data.text);
+	    } 
+	    // B. 사진일 때
+	    else if (data.type === 'image') {
+	        contentHtml = `<img src="${escapeAttribute(data.imageUrl || "")}" class="chat-img" onclick="window.open(this.src)">`;
+	    }
+	    // C. 스티커일 때 (여기가 핵심!)
+	  else if (data.type === 'sticker') {
         const idx = data.stickerIndex || 0;
         const pIdx = data.packIndex || 0; // 팩 정보가 없으면 0번(기본)으로 처리
         
@@ -1045,47 +1031,47 @@ function createMessageHTML(data, docId) {
         const bgX = -(col * displaySize);
         const bgY = -(row * displaySize);
 
-        contentHtml = `
-            <div class="sticker-msg" style="
-                background-image: url('${pack.url}');
-                background-size: ${bgW}px ${bgH}px;
-                background-position: ${bgX}px ${bgY}px;
-                width: 128px; height: 128px;
+	        contentHtml = `
+	            <div class="sticker-msg" style="
+	                background-image: url('${escapeAttribute(pack.url)}');
+	                background-size: ${bgW}px ${bgH}px;
+	                background-position: ${bgX}px ${bgY}px;
+	                width: 128px; height: 128px;
                 background-color: transparent; /* ✨ 여기서도 투명 배경! */
             "></div>`;
     }
 
-    // 답장 표시 (기존 코드 유지)
-    const replyBlock = data.replyTo ? `
-        <div class="quote-block" onclick="scrollToMessage('${data.replyTo.id}')">
-            <span class="quote-sender">To. ${data.replyTo.sender}</span>
-            <span class="quote-text">${data.replyTo.text}</span>
-        </div>` : '';
+	    // 답장 표시 (기존 코드 유지)
+	    const replyBlock = data.replyTo ? `
+	        <div class="quote-block" onclick="scrollToMessage('${data.replyTo.id}')">
+	            <span class="quote-sender">To. ${escapeHtml(data.replyTo.sender || "")}</span>
+	            <span class="quote-text">${escapeHtml(data.replyTo.text || "")}</span>
+	        </div>` : '';
 
-    const unreadHtml = isMe ? `<span class="unread-mark">1</span>` : '';
-    const rawText = (data.type === 'sticker' ? '(이모티콘)' : data.text).replace(/"/g, '&quot;');
+	    const unreadHtml = isMe ? `<span class="unread-mark">1</span>` : '';
+	    const rawText = escapeAttribute(previewText);
 
-    return `
-        <div id="msg-${docId}" class="message ${isMe?'my-msg':'other-msg'}" data-text="${rawText}" data-timestamp="${msgTime}">
-            ${replyBlock}
-            ${contentHtml}
-            <div class="msg-info">
-                ${unreadHtml}
-                ${!isMe?`<span class="sender">${data.sender}</span>`:''}
-                <span class="time">${timeStr}</span>
-                <span class="reply-btn" onclick="setReply('${docId}', '${rawText}', '${data.sender}')">↩️</span>
-            </div>
-        </div>`;
-}
+	    return `
+	        <div id="msg-${docId}" class="message ${isMe?'my-msg':'other-msg'}" data-text="${rawText}" data-timestamp="${msgTime}">
+	            ${replyBlock}
+	            ${contentHtml}
+	            <div class="msg-info">
+	                ${unreadHtml}
+	                ${!isMe?`<span class="sender">${safeSender}</span>`:''}
+	                <span class="time">${timeStr}</span>
+	                <span class="reply-btn" onclick="setReply('${docId}', '${encodedPreviewText}', '${encodedSender}')">↩️</span>
+	            </div>
+	        </div>`;
+	}
 
     function scrollToBottom() { const msgBox = document.getElementById('messages'); msgBox.scrollTop = msgBox.scrollHeight; }
 
-    function updateGalleryPreview() {
-        const previewGrid = document.getElementById('gallery-preview');
-        const recentImages = allImages.slice(-3).reverse();
-        previewGrid.innerHTML = recentImages.map(src => `<img src="${src}" class="gallery-item" onclick="window.open(this.src)">`).join('');
-        if(recentImages.length === 0) previewGrid.innerHTML = '<span style="grid-column:span 3; text-align:center; color:#ccc; font-size:12px;">사진 없음</span>';
-    }
+	    function updateGalleryPreview() {
+	        const previewGrid = document.getElementById('gallery-preview');
+	        const recentImages = allImages.slice(-3).reverse();
+	        previewGrid.innerHTML = recentImages.map(src => `<img src="${escapeAttribute(src)}" class="gallery-item" onclick="window.open(this.src)">`).join('');
+	        if(recentImages.length === 0) previewGrid.innerHTML = '<span style="grid-column:span 3; text-align:center; color:#ccc; font-size:12px;">사진 없음</span>';
+	    }
 
     window.openFullGallery = () => {
         showScreen('full-gallery-screen');
@@ -1113,14 +1099,14 @@ function createMessageHTML(data, docId) {
         if(snapshot.empty) {
             isGalleryEnd = true;
             document.getElementById('gallery-loading').innerText = "모든 사진을 불러왔습니다.";
-        } else {
-            galleryLastSnap = snapshot.docs[snapshot.docs.length - 1];
-            snapshot.forEach(doc => {
-                const url = doc.data().imageUrl;
-                grid.insertAdjacentHTML('beforeend', `<img src="${url}" class="gallery-item" onclick="window.open(this.src)">`);
-            });
-            document.getElementById('gallery-loading').style.display = 'none';
-        }
+	        } else {
+	            galleryLastSnap = snapshot.docs[snapshot.docs.length - 1];
+	            snapshot.forEach(doc => {
+	                const url = doc.data().imageUrl;
+	                grid.insertAdjacentHTML('beforeend', `<img src="${escapeAttribute(url)}" class="gallery-item" onclick="window.open(this.src)">`);
+	            });
+	            document.getElementById('gallery-loading').style.display = 'none';
+	        }
         isGalleryLoading = false;
     }
 
@@ -1292,8 +1278,6 @@ msgInputBox.addEventListener('keydown', function(e) {
 });// ==========================================
     // 📢 [추가] 업데이트 팝업 로직
     // ==========================================
-    const CURRENT_VERSION = "1.8"; // 👈 [중요] 패치할 때마다 이 숫자를 바꾸세요!
-
     window.checkUpdatePopup = function() {
         const savedVersion = localStorage.getItem('seen_version');
         

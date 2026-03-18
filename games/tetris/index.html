@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pastel Co-op Tetris</title>
-    <link rel="apple-touch-icon" href="icon.png">
-    <link rel="icon" href="icon.png">
-    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="../../icon.png">
+    <link rel="icon" href="../../icon.png">
+    <link rel="manifest" href="../../manifest.json">
     <style>
         /* [디자인 수정] 전체 배경은 파스텔 핑크 */
         body { 
@@ -260,7 +260,7 @@
             <button class="mode-btn btn-multi" onclick="startMulti()"><span>👥</span> 같이 하기 (2인)</button>
             <button class="mode-btn btn-rank" onclick="openRanking()"><span>🏆</span> 랭킹 보기</button>
             <button class="mode-btn btn-manual" onclick="openManual()"><span>📜</span> 게임 설명서</button>
-            <a href="gamelist.html" class="btn-back">나가기</a>
+            <a href="../index.html" class="btn-back">나가기</a>
         </div>
 
         <div id="solo-menu">
@@ -316,7 +316,7 @@
             </div>
             <button id="btn-save-rank" class="mode-btn btn-save" onclick="saveRankToDB()">📝 랭킹에 저장하기</button>
             <button class="mode-btn btn-solo" onclick="location.reload()">🔄 다시 하기</button>
-            <a href="gamelist.html" class="btn-back">나가기</a>
+            <a href="../index.html" class="btn-back">나가기</a>
         </div>
 
         <div id="ranking-screen">
@@ -774,7 +774,7 @@
                 setTimeout(() => { toast.style.display = 'none'; }, 2000);
             } 
         };
-        window.saveAndExit = () => { if(gameMode === 'solo') { saveGameToLocal(); } location.href = "gamelist.html"; };
+        window.saveAndExit = () => { if(gameMode === 'solo') { saveGameToLocal(); } location.href = "../index.html"; };
     </script>
 </body>
 </html>

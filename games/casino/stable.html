@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Stable</title>
-    <link rel="apple-touch-icon" href="icon.png">
+        <link rel="apple-touch-icon" href="../../icon.png">
     <style>
         body { 
             font-family: 'Apple SD Gothic Neo', sans-serif; 
@@ -205,7 +205,7 @@
     </div>
 
     <div class="nav-bar">
-        <button class="nav-btn back" onclick="location.href='game3.html'">나가기</button>
+        <button class="nav-btn back" onclick="location.href='index.html'">나가기</button>
         <button class="nav-btn" onclick="location.reload()">새로고침</button>
     </div>
 
@@ -259,7 +259,7 @@
         // 1. 초기화
         async function init() {
             const snap = await getDoc(userRef);
-            if(!snap.exists()) { alert("로그인 정보 없음"); location.href='game3.html'; return; }
+            if(!snap.exists()) { alert("로그인 정보 없음"); location.href='index.html'; return; }
 
             myData = snap.data();
             updateCoinUI();
