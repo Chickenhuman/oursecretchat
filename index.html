@@ -427,7 +427,7 @@
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
     import { getAuth, signInAnonymously, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { firebaseConfig, STICKER_PACKS, emojiList, CURRENT_VERSION, RELEASE_DATE, PATCH_NOTES } from "./scripts/chat/config.js";
+    import { firebaseConfig, STICKER_PACKS, emojiList, CURRENT_VERSION, RELEASE_DATE, PATCH_NOTES, UPDATE_SIGNATURE } from "./scripts/chat/config.js";
     import { escapeHtml, escapeAttribute, encodeInlineParam, decodeInlineParam, getMessagePreviewText, linkify } from "./scripts/chat/utils.js";
 
     const app = initializeApp(firebaseConfig);
@@ -578,11 +578,17 @@ window.toggleSticker = () => {
     
     // [날짜 구분선용 변수]
     let lastPrintedDate = null;
+    function getMessageDate(timestamp) {
+        if (timestamp && typeof timestamp.toDate === 'function') {
+            return timestamp.toDate();
+        }
+        return new Date();
+    }
+
     function getDateString(timestamp) {
-        if (!timestamp) return null;
-        const date = timestamp.toDate();
-        return new Intl.DateTimeFormat('ko-KR', { 
-            year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' 
+        const date = getMessageDate(timestamp);
+        return new Intl.DateTimeFormat('ko-KR', {
+            year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
         }).format(date);
     }
 
@@ -885,7 +891,7 @@ input.value = "";
         // 2. 변경된 부분만 처리
         snapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
-                const data = change.doc.data();
+                const data = change.doc.data({ serverTimestamps: 'estimate' });
                 const docId = change.doc.id;
 
                 // [중복 방지] 이미 화면에 존재하는 메시지라면 스킵 (실시간 갱신 오류 방지)
@@ -982,8 +988,8 @@ const msgBox = document.getElementById('messages');
                 const existingTopDate = existingTopDivider ? existingTopDivider.innerText.trim() : null;
 
                 docs.forEach(doc => {
-                    const data = doc.data();
-                    const msgDateStr = getDateString(data.timestamp);
+                const data = doc.data({ serverTimestamps: 'estimate' });
+                const msgDateStr = getDateString(data.timestamp);
 
                     // 이번 배치 내에서 날짜가 바뀌었으면 구분선 추가
                     if (msgDateStr && tempLastDate !== msgDateStr) {
@@ -1028,7 +1034,7 @@ const msgBox = document.getElementById('messages');
 	function createMessageHTML(data, docId) {
 	    const isMe = data.sender === myName;
 	    const msgTime = data.timestamp ? data.timestamp.toMillis() : Date.now();
-	    const date = data.timestamp ? data.timestamp.toDate() : new Date();
+	    const date = getMessageDate(data.timestamp);
 	    const timeStr = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
 	    const safeSender = escapeHtml(data.sender || "");
 	    const previewText = getMessagePreviewText(data);
@@ -1329,16 +1335,17 @@ msgInputBox.addEventListener('keydown', function(e) {
     // 📢 [추가] 업데이트 팝업 로직
     // ==========================================
     window.checkUpdatePopup = function() {
-        const savedVersion = localStorage.getItem('seen_version');
-        
-        // 저장된 버전과 현재 버전이 다르면 팝업 띄움
-        if (savedVersion !== CURRENT_VERSION) {
+        const savedUpdateSignature = localStorage.getItem('seen_update_signature');
+
+        // 저장된 패치 서명과 현재 패치 정보가 다르면 팝업 띄움
+        if (savedUpdateSignature !== UPDATE_SIGNATURE) {
             document.getElementById('update-modal').style.display = 'flex';
         }
     };
 
 	    window.closeUpdatePopup = function() {
-	        // 닫기 버튼 누르면 현재 버전을 저장함 (다음에 안 뜨게)
+	        // 닫기 버튼 누르면 현재 패치 정보를 저장함 (다음에 안 뜨게)
+	        localStorage.setItem('seen_update_signature', UPDATE_SIGNATURE);
 	        localStorage.setItem('seen_version', CURRENT_VERSION);
 	        document.getElementById('update-modal').style.display = 'none';
 	    };
