@@ -282,14 +282,14 @@
 
 html.excel-theme body {
     font-family: Calibri, "Segoe UI", sans-serif;
-    background-color: #f3f2f1;
+    background-color: #e1dfdd;
     color: #201f1e;
 }
 
 html.excel-theme #app {
     background: #ffffff;
-    border: 1px solid #e1dfdd;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border: 1px solid #a6a6a6;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
 }
 
 html.excel-theme .screen,
@@ -333,10 +333,10 @@ html.excel-theme #update-title {
 }
 
 html.excel-theme #chat-header {
-    background: #ffffff;
-    color: #201f1e;
+    background: #107c41;
+    color: #ffffff;
     box-shadow: none;
-    border-bottom: 2px solid #107c41;
+    border-bottom: 1px solid #0f6b38;
 }
 
 html.excel-theme #chat-title {
@@ -345,35 +345,34 @@ html.excel-theme #chat-title {
 }
 
 html.excel-theme #status-area {
-    color: #605e5c;
+    color: rgba(255,255,255,0.9);
 }
 
 html.excel-theme .online-dot {
-    background-color: #107c41;
-    box-shadow: none;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.3);
 }
 
 html.excel-theme .offline-dot {
-    background-color: #8a8886;
+    background-color: rgba(255,255,255,0.55);
 }
 
 html.excel-theme .icon-btn {
-    color: #605e5c;
-    background: #f3f2f1;
+    color: #ffffff;
+    background: rgba(255,255,255,0.08);
     border: 1px solid transparent;
-    border-bottom: none;
-    border-radius: 4px 4px 0 0;
+    border-radius: 2px;
     width: 32px;
     height: 32px;
     margin-top: 0;
 }
 
 html.excel-theme .icon-btn:hover {
-    background: #ffffff;
+    background: rgba(255,255,255,0.16);
 }
 
 html.excel-theme .header-icons {
-    gap: 2px;
+    gap: 4px;
 }
 
 html.excel-theme #search-container {
@@ -388,9 +387,10 @@ html.excel-theme #search-input {
 html.excel-theme #messages {
     background-color: #ffffff !important;
     background-image:
-        linear-gradient(#f3f2f1 1px, transparent 1px),
-        linear-gradient(90deg, #f3f2f1 1px, transparent 1px);
-    background-size: 56px 32px;
+        linear-gradient(#d4d4d4 1px, transparent 1px),
+        linear-gradient(90deg, #d4d4d4 1px, transparent 1px);
+    background-size: 74px 24px;
+    background-position: 0 0;
 }
 
 html.excel-theme .date-divider span {
@@ -453,20 +453,20 @@ html.excel-theme #sticker-tabs {
 html.excel-theme .message {
     border-radius: 2px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    border: 1px solid #e1dfdd;
+    border: 1px solid #d4d4d4;
 }
 
 html.excel-theme .my-msg {
     background: #edf6ee;
     color: #201f1e;
-    border: 1px solid #b7d8c2;
+    border: 1px solid #9ad0ad;
     border-bottom-right-radius: 2px;
 }
 
 html.excel-theme .other-msg {
     background: white;
     color: #201f1e;
-    border: 1px solid #e1dfdd;
+    border: 1px solid #d4d4d4;
     border-bottom-left-radius: 2px;
 }
 
@@ -523,6 +523,12 @@ html.excel-theme .settings-menu {
 
 html.excel-theme .menu-item {
     border-bottom: 1px solid #e1dfdd;
+}
+
+@media (min-width: 900px) {
+    html.excel-theme #app {
+        max-width: 960px;
+    }
 }
 
     </style>
