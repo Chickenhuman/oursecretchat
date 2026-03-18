@@ -282,118 +282,145 @@
 
 html.excel-theme body {
     font-family: Calibri, "Segoe UI", sans-serif;
-    background-color: #dde5dd;
+    background-color: #f3f2f1;
+    color: #201f1e;
 }
 
 html.excel-theme #app {
-    background: #f5f7f5;
-    box-shadow: 0 0 0 1px #c6d3c5, 0 10px 24px rgba(40, 64, 47, 0.14);
+    background: #ffffff;
+    border: 1px solid #e1dfdd;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 html.excel-theme .screen,
 html.excel-theme #settings-screen,
 html.excel-theme #full-gallery-screen {
-    background: #f5f7f5;
+    background: #f3f2f1;
 }
 
 html.excel-theme input,
 html.excel-theme #msg-input {
-    border-radius: 4px;
-    border-color: #c0ccc0;
-    background: white;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.04);
+    background: #ffffff;
+    border: 1px solid #8a8886;
+    color: #201f1e;
+    border-radius: 2px;
+    box-shadow: none;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 13px;
+}
+
+html.excel-theme input:focus,
+html.excel-theme #msg-input:focus {
+    border-color: #107c41;
+    outline: 1px solid #107c41;
 }
 
 html.excel-theme .btn-primary,
 html.excel-theme #send-draw-btn {
-    background: #217346;
-    border-radius: 6px;
+    background: #107c41;
+    border-radius: 2px;
+}
+
+html.excel-theme .btn-primary:hover,
+html.excel-theme #send-draw-btn:hover,
+html.excel-theme #send-btn:hover {
+    background: #185c37;
 }
 
 html.excel-theme #login-title,
 html.excel-theme #update-title {
-    color: #217346 !important;
+    color: #107c41 !important;
 }
 
 html.excel-theme #chat-header {
-    background: linear-gradient(180deg, #f7faf7 0%, #edf3ed 100%);
-    color: #1d3524;
+    background: #ffffff;
+    color: #201f1e;
     box-shadow: none;
-    border-bottom: 1px solid #ccd8cc;
+    border-bottom: 2px solid #107c41;
 }
 
 html.excel-theme #chat-title {
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    font-weight: 700;
+    letter-spacing: 0;
 }
 
 html.excel-theme #status-area {
-    color: #54715d;
+    color: #605e5c;
 }
 
 html.excel-theme .online-dot {
-    background-color: #217346;
+    background-color: #107c41;
     box-shadow: none;
 }
 
 html.excel-theme .offline-dot {
-    background-color: #9aa99d;
+    background-color: #8a8886;
 }
 
 html.excel-theme .icon-btn {
-    color: #244330;
-    background: #f4f7f4;
-    border: 1px solid #cad6ca;
-    border-radius: 6px;
+    color: #605e5c;
+    background: #f3f2f1;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
     width: 32px;
     height: 32px;
+    margin-top: 0;
+}
+
+html.excel-theme .icon-btn:hover {
+    background: #ffffff;
+}
+
+html.excel-theme .header-icons {
+    gap: 2px;
 }
 
 html.excel-theme #search-container {
-    background: #edf4ed;
-    border-bottom: 1px solid #d2ddd2;
+    background: #f3f2f1;
+    border-bottom: 1px solid #d2d0ce;
 }
 
 html.excel-theme #search-input {
-    border-color: #b7c8b7;
+    border-radius: 2px;
 }
 
 html.excel-theme #messages {
     background-color: #ffffff !important;
     background-image:
-        linear-gradient(#e3ebe3 1px, transparent 1px),
-        linear-gradient(90deg, #e3ebe3 1px, transparent 1px);
-    background-size: 44px 28px;
+        linear-gradient(#f3f2f1 1px, transparent 1px),
+        linear-gradient(90deg, #f3f2f1 1px, transparent 1px);
+    background-size: 56px 32px;
 }
 
 html.excel-theme .date-divider span {
-    background: #217346;
+    background: #107c41;
     color: white;
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 html.excel-theme #reply-preview-bar {
-    background: #f7faf7;
-    border-top: 1px solid #d8e1d8;
-    border-left-color: #217346;
+    background: #ffffff;
+    border-top: 1px solid #e1dfdd;
+    border-left-color: #107c41;
 }
 
 html.excel-theme .reply-to-name {
-    color: #217346;
+    color: #107c41;
 }
 
 html.excel-theme #input-area {
-    background: #f3f7f3;
-    border-top: 1px solid #d3ddd3;
+    background: #ffffff;
+    border-top: 1px solid #e1dfdd;
 }
 
 html.excel-theme #send-btn {
-    background: #217346;
-    border-radius: 6px;
+    background: #107c41;
+    border-radius: 2px;
 }
 
 html.excel-theme .tool-btn {
-    color: #486553;
+    color: #605e5c;
 }
 
 html.excel-theme #emoji-picker,
@@ -403,64 +430,99 @@ html.excel-theme .update-content,
 html.excel-theme .gallery-section,
 html.excel-theme .settings-menu,
 html.excel-theme .settings-header {
-    background: #fdfefd;
-    border-color: #d0dbd0;
+    background: #ffffff;
+    border: 1px solid #e1dfdd;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 html.excel-theme .tab-btn.active-tab {
-    border-bottom-color: #217346;
-    color: #217346;
+    background: #ffffff;
+    color: #107c41;
+    font-weight: bold;
+    border: 1px solid #d2d0ce;
+    border-bottom: 2px solid #ffffff;
+    position: relative;
+    top: 1px;
 }
 
 html.excel-theme #sticker-tabs {
-    background: #f1f5f1;
+    background: #f3f2f1;
+    border-bottom: 1px solid #d2d0ce;
 }
 
 html.excel-theme .message {
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(39, 68, 48, 0.08);
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    border: 1px solid #e1dfdd;
 }
 
 html.excel-theme .my-msg {
-    background: #e8f3ea;
-    color: #1b2f20;
-    border: 1px solid #abc7af;
-    border-bottom-right-radius: 4px;
+    background: #edf6ee;
+    color: #201f1e;
+    border: 1px solid #b7d8c2;
+    border-bottom-right-radius: 2px;
 }
 
 html.excel-theme .other-msg {
     background: white;
-    color: #243126;
-    border: 1px solid #d5ded5;
-    border-bottom-left-radius: 4px;
+    color: #201f1e;
+    border: 1px solid #e1dfdd;
+    border-bottom-left-radius: 2px;
 }
 
 html.excel-theme .my-msg .quote-block {
-    background: rgba(33, 115, 70, 0.12);
-    border-left-color: rgba(33, 115, 70, 0.5);
-    color: #1b2f20;
+    background: rgba(16, 124, 65, 0.08);
+    border-left-color: rgba(16, 124, 65, 0.45);
+    color: #201f1e;
 }
 
 html.excel-theme .message a,
 html.excel-theme .my-msg a {
-    color: #185c37;
+    color: #107c41;
 }
 
 html.excel-theme .view-all-btn {
-    color: #217346;
+    color: #107c41;
+    font-weight: bold;
 }
 
 html.excel-theme input:checked + .slider {
-    background-color: #217346;
+    background-color: #107c41;
+}
+
+html.excel-theme .theme-btn {
+    background: #107c41;
+    color: white;
+    border: none;
+    border-radius: 2px;
+}
+
+html.excel-theme .theme-btn.active {
+    background: #185c37;
+    border: none;
 }
 
 html.excel-theme .danger-btn {
     color: #a63a2b;
     border-color: #d7b7b1;
+    background: #ffffff;
 }
 
 html.excel-theme .spinner {
-    border-top-color: #217346;
+    border-top-color: #107c41;
+}
+
+html.excel-theme .settings-header {
+    border-bottom: 2px solid #107c41;
+}
+
+html.excel-theme .gallery-section,
+html.excel-theme .settings-menu {
+    margin-top: 12px;
+}
+
+html.excel-theme .menu-item {
+    border-bottom: 1px solid #e1dfdd;
 }
 
     </style>
