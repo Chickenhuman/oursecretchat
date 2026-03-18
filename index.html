@@ -14,6 +14,14 @@
     <link rel="manifest" href="manifest.json">
 
     <title>잰갱이톡</title>
+    <script>
+        (function () {
+            if (localStorage.getItem('chat_theme') === 'excel') {
+                document.documentElement.classList.add('excel-theme');
+                document.title = '2026_업무정리.xlsx';
+            }
+        })();
+    </script>
     <style>
         /* [기본 설정] */
         body { font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #f0f0f0; margin: 0; display: flex; justify-content: center; height: 100dvh; overflow: hidden; touch-action: manipulation; }
@@ -154,7 +162,9 @@
         .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #ff6b6b; }
         input:checked + .slider:before { transform: translateX(18px); }
-        
+        .theme-btn { font-size: 12px; color: #217346; border: 1px solid #b7cdb9; padding: 6px 12px; border-radius: 6px; background: #edf6ee; cursor: pointer; font-weight: bold; }
+        .theme-btn.active { background: #217346; color: white; border-color: #217346; }
+
         .version-info { text-align: center; color: #aaa; font-size: 11px; margin-top: 20px; padding-bottom: 20px; }
 
         #full-gallery-screen { background: white; overflow-y: auto; }
@@ -270,6 +280,189 @@
     100% { transform: scale(1); opacity: 1; }
 }
 
+html.excel-theme body {
+    font-family: Calibri, "Segoe UI", sans-serif;
+    background-color: #dde5dd;
+}
+
+html.excel-theme #app {
+    background: #f5f7f5;
+    box-shadow: 0 0 0 1px #c6d3c5, 0 10px 24px rgba(40, 64, 47, 0.14);
+}
+
+html.excel-theme .screen,
+html.excel-theme #settings-screen,
+html.excel-theme #full-gallery-screen {
+    background: #f5f7f5;
+}
+
+html.excel-theme input,
+html.excel-theme #msg-input {
+    border-radius: 4px;
+    border-color: #c0ccc0;
+    background: white;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+html.excel-theme .btn-primary,
+html.excel-theme #send-draw-btn {
+    background: #217346;
+    border-radius: 6px;
+}
+
+html.excel-theme #login-title,
+html.excel-theme #update-title {
+    color: #217346 !important;
+}
+
+html.excel-theme #chat-header {
+    background: linear-gradient(180deg, #f7faf7 0%, #edf3ed 100%);
+    color: #1d3524;
+    box-shadow: none;
+    border-bottom: 1px solid #ccd8cc;
+}
+
+html.excel-theme #chat-title {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+html.excel-theme #status-area {
+    color: #54715d;
+}
+
+html.excel-theme .online-dot {
+    background-color: #217346;
+    box-shadow: none;
+}
+
+html.excel-theme .offline-dot {
+    background-color: #9aa99d;
+}
+
+html.excel-theme .icon-btn {
+    color: #244330;
+    background: #f4f7f4;
+    border: 1px solid #cad6ca;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+}
+
+html.excel-theme #search-container {
+    background: #edf4ed;
+    border-bottom: 1px solid #d2ddd2;
+}
+
+html.excel-theme #search-input {
+    border-color: #b7c8b7;
+}
+
+html.excel-theme #messages {
+    background-color: #ffffff !important;
+    background-image:
+        linear-gradient(#e3ebe3 1px, transparent 1px),
+        linear-gradient(90deg, #e3ebe3 1px, transparent 1px);
+    background-size: 44px 28px;
+}
+
+html.excel-theme .date-divider span {
+    background: #217346;
+    color: white;
+    border-radius: 4px;
+}
+
+html.excel-theme #reply-preview-bar {
+    background: #f7faf7;
+    border-top: 1px solid #d8e1d8;
+    border-left-color: #217346;
+}
+
+html.excel-theme .reply-to-name {
+    color: #217346;
+}
+
+html.excel-theme #input-area {
+    background: #f3f7f3;
+    border-top: 1px solid #d3ddd3;
+}
+
+html.excel-theme #send-btn {
+    background: #217346;
+    border-radius: 6px;
+}
+
+html.excel-theme .tool-btn {
+    color: #486553;
+}
+
+html.excel-theme #emoji-picker,
+html.excel-theme #sticker-picker,
+html.excel-theme .drawing-container,
+html.excel-theme .update-content,
+html.excel-theme .gallery-section,
+html.excel-theme .settings-menu,
+html.excel-theme .settings-header {
+    background: #fdfefd;
+    border-color: #d0dbd0;
+}
+
+html.excel-theme .tab-btn.active-tab {
+    border-bottom-color: #217346;
+    color: #217346;
+}
+
+html.excel-theme #sticker-tabs {
+    background: #f1f5f1;
+}
+
+html.excel-theme .message {
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(39, 68, 48, 0.08);
+}
+
+html.excel-theme .my-msg {
+    background: #e8f3ea;
+    color: #1b2f20;
+    border: 1px solid #abc7af;
+    border-bottom-right-radius: 4px;
+}
+
+html.excel-theme .other-msg {
+    background: white;
+    color: #243126;
+    border: 1px solid #d5ded5;
+    border-bottom-left-radius: 4px;
+}
+
+html.excel-theme .my-msg .quote-block {
+    background: rgba(33, 115, 70, 0.12);
+    border-left-color: rgba(33, 115, 70, 0.5);
+    color: #1b2f20;
+}
+
+html.excel-theme .message a,
+html.excel-theme .my-msg a {
+    color: #185c37;
+}
+
+html.excel-theme .view-all-btn {
+    color: #217346;
+}
+
+html.excel-theme input:checked + .slider {
+    background-color: #217346;
+}
+
+html.excel-theme .danger-btn {
+    color: #a63a2b;
+    border-color: #d7b7b1;
+}
+
+html.excel-theme .spinner {
+    border-top-color: #217346;
+}
+
     </style>
 </head>
 <body>
@@ -296,20 +489,20 @@
 	</div>
     <div id="login-screen" class="screen active">
         <div class="auth-container">
-            <h2 style="color:#ff6b6b;">🔒 Secret Access</h2>
-            <p style="color:#666; margin-bottom:30px;">우리만의 비밀 공간</p>
+            <h2 id="login-title" style="color:#ff6b6b;">🔒 Secret Access</h2>
+            <p id="login-subtitle" style="color:#666; margin-bottom:30px;">우리만의 비밀 공간</p>
             <input type="password" id="password-input" placeholder="비밀번호 입력">
-            <button class="btn-primary" onclick="checkPassword()">입장하기</button>
-            <p style="font-size:12px; color:#aaa; margin-top:20px;">힌트: 0726</p>
+            <button id="login-submit-btn" class="btn-primary" onclick="checkPassword()">입장하기</button>
+            <p id="login-hint" style="font-size:12px; color:#aaa; margin-top:20px;">힌트: 0726</p>
         </div>
     </div>
 
     <div id="name-screen" class="screen">
         <div class="auth-container">
-            <h2>반가워요! 👋</h2>
-            <p>채팅방에서 쓸 이름을 정해주세요.</p>
+            <h2 id="name-title">반가워요! 👋</h2>
+            <p id="name-subtitle">채팅방에서 쓸 이름을 정해주세요.</p>
             <input type="text" id="name-input" placeholder="예: 재똥장군, 잰">
-            <button class="btn-primary" onclick="setName()">시작하기</button>
+            <button id="name-submit-btn" class="btn-primary" onclick="setName()">시작하기</button>
         </div>
     </div>
 
@@ -363,12 +556,12 @@
     </div>
 
     <div id="settings-screen" class="screen">
-        <div class="settings-header"><button class="back-btn" onclick="closeSettings()">←</button><h2 style="margin:0;">설정 & 추억함</h2></div>
-        
+        <div class="settings-header"><button class="back-btn" onclick="closeSettings()">←</button><h2 id="settings-title" style="margin:0;">설정 & 추억함</h2></div>
+
         <div class="gallery-section">
             <div class="gallery-header">
-                <h3 style="margin:0; font-size:16px;">📂 최근 사진 (3장)</h3>
-                <span class="view-all-btn" onclick="openFullGallery()">전체 모아보기 ></span>
+                <h3 id="gallery-title" style="margin:0; font-size:16px;">📂 최근 사진 (3장)</h3>
+                <span id="gallery-view-all" class="view-all-btn" onclick="openFullGallery()">전체 모아보기 ></span>
             </div>
             <div id="gallery-preview" class="gallery-grid"></div>
         </div>
@@ -390,7 +583,11 @@
                     <div class="color-circle" style="background:#f3e5f5;" onclick="changeBg('#f3e5f5')"></div>
                 </div>
             </div>
-            
+            <div class="menu-item">
+                <span id="theme-menu-label" class="menu-label">📊 기본/엑셀 테마</span>
+                <button id="theme-toggle-btn" class="theme-btn" onclick="toggleThemeMode()">엑셀 테마로</button>
+            </div>
+
             <div class="menu-item">
                 <span class="menu-label">🧹 캐시 삭제</span>
                 <button class="danger-btn" onclick="clearCache()">실행</button>
@@ -550,6 +747,7 @@ window.toggleSticker = () => {
     let myId = localStorage.getItem('chat_uid');
     if (!myId) { myId = 'user_' + Date.now() + Math.floor(Math.random() * 1000); localStorage.setItem('chat_uid', myId); }
     let savedBg = localStorage.getItem('chat_bg') || '#fafafa';
+    let currentTheme = localStorage.getItem('chat_theme') === 'excel' ? 'excel' : 'default';
 
     // 2. 이모티콘 및 기능 관련
     const deleteReqRef = doc(db, "settings", "delete_request");
@@ -557,11 +755,20 @@ window.toggleSticker = () => {
     // 3. 접속 상태 및 탭 알림 관련 변수
     let presenceUnsub = null;
     let otherUserReadTime = 0;
-    let lastPartnerMsgTime = 0; 
-    let flashInterval = null; 
-    const originalTitle = document.title; 
+    let currentOnlineUsers = [];
+    let lastPartnerMsgTime = 0;
+    let flashInterval = null;
+    let baseDocumentTitle = document.title;
     const originalFavicon = document.getElementById('favicon').href;
-    const alertFavicon = "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"; 
+    const excelFavicon = `data:image/svg+xml,${encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+            <rect width="64" height="64" rx="10" fill="#217346"/>
+            <rect x="22" y="10" width="30" height="44" rx="4" fill="#ffffff" opacity="0.98"/>
+            <path d="M29 21h16M29 30h16M29 39h16M37 16v32" stroke="#c9d7c8" stroke-width="2"/>
+            <path d="M10 16h18v32H10z" fill="#185c37"/>
+            <path d="M15 25l3.5 5 3.5-5M15 39l3.5-5 3.5 5" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+    `)}`;
 
     // 4. 로딩 상태 관련
     let isInitialLoad = true;
@@ -575,7 +782,7 @@ window.toggleSticker = () => {
 	    let deleteVotesUnsub = null;
 	    let presenceHeartbeatTimer = null;
 	    let isPerformingDeletion = false;
-    
+
     // [날짜 구분선용 변수]
     let lastPrintedDate = null;
     function getMessageDate(timestamp) {
@@ -600,6 +807,128 @@ window.toggleSticker = () => {
 	    // ==========================================
 
 	    applyBg(savedBg);
+
+        const themeLabels = {
+            default: {
+                documentTitle: "잰갱이톡",
+                loginTitle: "🔒 Secret Access",
+                loginSubtitle: "우리만의 비밀 공간",
+                loginButton: "입장하기",
+                loginHint: "힌트: 0726",
+                passwordPlaceholder: "비밀번호 입력",
+                nameTitle: "반가워요! 👋",
+                nameSubtitle: "채팅방에서 쓸 이름을 정해주세요.",
+                nameButton: "시작하기",
+                namePlaceholder: "예: 재똥장군, 잰",
+                chatTitle: "❤️ 우리만의 채팅방",
+                settingsTitle: "설정 & 추억함",
+                galleryTitle: "📂 최근 사진 (3장)",
+                galleryViewAll: "전체 모아보기 >",
+                themeToggle: "엑셀 테마로",
+                onlineSuffix: "접속 중",
+                offlineStatus: "상대방 기다리는 중...",
+                hiddenNotificationTitle: "💌 새 메시지",
+                hiddenNotificationBody: "비밀 메시지가 도착했습니다. 🔒",
+                imageNotificationBody: "사진을 보냈습니다."
+            },
+            excel: {
+                documentTitle: "2026_업무정리.xlsx",
+                loginTitle: "Microsoft Excel",
+                loginSubtitle: "보호된 문서를 열려면 암호를 입력하세요.",
+                loginButton: "파일 열기",
+                loginHint: "문서 키: 0726",
+                passwordPlaceholder: "문서 암호 입력",
+                nameTitle: "사용자 확인",
+                nameSubtitle: "문서에서 표시할 이름을 정해주세요.",
+                nameButton: "확인",
+                namePlaceholder: "예: 검토자A, 담당자",
+                chatTitle: "2026년 업무 데이터 정리",
+                settingsTitle: "문서 옵션 & 자료함",
+                galleryTitle: "📂 최근 첨부 자료 (3개)",
+                galleryViewAll: "전체 자료 보기 >",
+                themeToggle: "기본 테마로",
+                onlineSuffix: "공동 편집 중",
+                offlineStatus: "검토자 대기 중...",
+                hiddenNotificationTitle: "문서 업데이트",
+                hiddenNotificationBody: "문서에 새 메모가 도착했습니다.",
+                imageNotificationBody: "새 첨부 파일이 추가되었습니다."
+            }
+        };
+
+        function setElementText(id, text) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.innerText = text;
+            }
+        }
+
+        function getThemeLabelSet() {
+            return themeLabels[currentTheme] || themeLabels.default;
+        }
+
+        function updatePresenceStatus() {
+            const statusArea = document.getElementById('status-area');
+            if (!statusArea) return;
+
+            const labels = getThemeLabelSet();
+            const safeNames = currentOnlineUsers.map((name) => escapeHtml(name)).join(', ');
+            statusArea.innerHTML = currentOnlineUsers.length > 0
+                ? `<span class="online-dot"></span> ${safeNames} ${labels.onlineSuffix}`
+                : `<span class="offline-dot"></span> ${labels.offlineStatus}`;
+        }
+
+        function applyTheme(theme) {
+            currentTheme = theme === 'excel' ? 'excel' : 'default';
+            localStorage.setItem('chat_theme', currentTheme);
+
+            const labels = getThemeLabelSet();
+            const isExcelTheme = currentTheme === 'excel';
+            const favicon = document.getElementById('favicon');
+            const appleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+            const passwordInput = document.getElementById('password-input');
+            const nameInput = document.getElementById('name-input');
+            const msgInput = document.getElementById('msg-input');
+            const searchInput = document.getElementById('search-input');
+            const themeToggleBtn = document.getElementById('theme-toggle-btn');
+
+            document.documentElement.classList.toggle('excel-theme', isExcelTheme);
+
+            baseDocumentTitle = labels.documentTitle;
+            document.title = baseDocumentTitle;
+            if (favicon) favicon.href = isExcelTheme ? excelFavicon : originalFavicon;
+            if (appleTitleMeta) appleTitleMeta.setAttribute('content', isExcelTheme ? 'Excel' : 'LoveChat');
+
+            setElementText('login-title', labels.loginTitle);
+            setElementText('login-subtitle', labels.loginSubtitle);
+            setElementText('login-submit-btn', labels.loginButton);
+            setElementText('login-hint', labels.loginHint);
+            setElementText('name-title', labels.nameTitle);
+            setElementText('name-subtitle', labels.nameSubtitle);
+            setElementText('name-submit-btn', labels.nameButton);
+            setElementText('chat-title', labels.chatTitle);
+            setElementText('settings-title', labels.settingsTitle);
+            setElementText('gallery-title', labels.galleryTitle);
+            setElementText('gallery-view-all', labels.galleryViewAll);
+
+            if (passwordInput) passwordInput.setAttribute('placeholder', labels.passwordPlaceholder);
+            if (nameInput) nameInput.setAttribute('placeholder', labels.namePlaceholder);
+            if (msgInput) msgInput.setAttribute('placeholder', isExcelTheme ? '메모 입력...' : '메시지...');
+            if (searchInput) searchInput.setAttribute('placeholder', isExcelTheme ? '시트 내용 검색...' : '대화 내용 검색...');
+
+            if (themeToggleBtn) {
+                themeToggleBtn.innerText = labels.themeToggle;
+                themeToggleBtn.classList.toggle('active', isExcelTheme);
+            }
+
+            updatePresenceStatus();
+            stopTabNotification();
+        }
+
+        window.toggleThemeMode = () => {
+            applyTheme(currentTheme === 'excel' ? 'default' : 'excel');
+        };
+
+        applyTheme(currentTheme);
 
 	    // 답장 설정 함수
 	    window.setReply = (id, text, sender) => {
@@ -643,17 +972,18 @@ window.toggleSticker = () => {
     };
 
     function startTabNotification() {
-        if(flashInterval) return; 
+        if(flashInterval) return;
         let toggle = false;
+        const labels = getThemeLabelSet();
         flashInterval = setInterval(() => {
-            document.title = toggle ? "🔴 메세지가 도착했습니다!" : originalTitle;
+            document.title = toggle ? labels.hiddenNotificationTitle : baseDocumentTitle;
             toggle = !toggle;
-        }, 1000); 
+        }, 1000);
     }
 
 	    function stopTabNotification() {
 	        if(flashInterval) { clearInterval(flashInterval); flashInterval = null; }
-	        document.title = originalTitle; 
+	        document.title = baseDocumentTitle;
 	    }
 
 	    function renderReleaseInfo() {
@@ -768,11 +1098,8 @@ window.toggleSticker = () => {
                         }
 	                    });
 	                    otherUserReadTime = maxReadTime;
-	                    const statusArea = document.getElementById('status-area');
-	                    if(statusArea) {
-	                        const safeNames = onlineUsers.map((name) => escapeHtml(name)).join(', ');
-	                        statusArea.innerHTML = onlineUsers.length > 0 ? `<span class="online-dot"></span> ${safeNames} 접속 중` : `<span class="offline-dot"></span> 상대방 기다리는 중...`;
-	                    }
+	                    currentOnlineUsers = onlineUsers;
+	                    updatePresenceStatus();
 	                    updateReadStatus();
 	                });
             }
@@ -919,10 +1246,11 @@ input.value = "";
                     if (document.hidden) {
                         startTabNotification();
                         if (localStorage.getItem('noti_enabled') !== 'false' && Notification.permission === "granted") {
-                            let bodyText = (localStorage.getItem('noti_preview') !== 'false') 
-                                ? (data.type === 'image' ? '사진을 보냈습니다.' : data.text) 
-                                : "비밀 메시지가 도착했습니다. 🔒";
-                            new Notification(`💌 ${data.sender}`, { body: bodyText, icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png' });
+                            const labels = getThemeLabelSet();
+                            let bodyText = (localStorage.getItem('noti_preview') !== 'false')
+                                ? (data.type === 'image' ? labels.imageNotificationBody : data.text)
+                                : labels.hiddenNotificationBody;
+                            new Notification(currentTheme === 'excel' ? labels.hiddenNotificationTitle : `💌 ${data.sender}`, { body: bodyText, icon: document.getElementById('favicon').href });
                         }
                     }
                 }
