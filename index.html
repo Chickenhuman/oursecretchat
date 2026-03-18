@@ -668,13 +668,26 @@ window.toggleSticker = () => {
 	        }
 	    }
 
-	    function showScreen(id) { 
-	        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
-        document.getElementById(id).classList.add('active'); 
+	    function showScreen(id) {
+	        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
         if(id === 'chat-screen') {
             setTimeout(scrollToBottom, 100);
-            stopTabNotification(); 
+            stopTabNotification();
         }
+	    }
+
+	    function enterChat() {
+	        if (!myName) {
+	            showScreen('name-screen');
+	            return;
+	        }
+
+	        showScreen('chat-screen');
+	        loadMessages();
+	        startPresenceSystem();
+	        monitorDeletionVotes();
+	        window.requestNotiPermission();
 	    }
 
 	    function monitorDeletionVotes() {
@@ -765,19 +778,21 @@ window.toggleSticker = () => {
 	    function markAsRead() { if(!myName) return; setDoc(doc(db, "presence", myId), { name: myName, lastSeen: serverTimestamp(), lastRead: serverTimestamp() }, { merge: true }).catch(() => {}); }
     
   // [수정 후] 이렇게 바꾸세요! 👇
-document.addEventListener("visibilitychange", () => { 
+document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === 'visible') {
-        markAsRead(); 
-        stopTabNotification(); 
+        markAsRead();
+        stopTabNotification();
         togglePresenceListener(true);
         
         // [추가됨] 화면에 돌아오면 강제로 스크롤을 싹 내려서 최신 글을 보여줌
-        setTimeout(scrollToBottom, 100); 
+        setTimeout(scrollToBottom, 100);
     } else {
-        togglePresenceListener(false); 
+        togglePresenceListener(false);
     }
 });
-    window.onclick = markAsRead;
+    document.addEventListener('click', () => {
+        markAsRead();
+    });
 
     function updateReadStatus() {
         const effectiveReadTime = Math.max(otherUserReadTime, lastPartnerMsgTime);
@@ -791,20 +806,19 @@ document.addEventListener("visibilitychange", () => {
         });
     }
 
-	    window.checkPassword = function() { 
-        if (document.getElementById('password-input').value === '0726') { 
-            localStorage.setItem('chat_auth_pw', '0726'); 
-            if (myName) { showScreen('chat-screen'); loadMessages(); startPresenceSystem(); monitorDeletionVotes(); window.requestNotiPermission(); } 
-            else { showScreen('name-screen'); } 
-        } else { alert('비밀번호가 틀립니다!'); } 
+	    window.checkPassword = function() {
+        if (document.getElementById('password-input').value === '0726') {
+            localStorage.setItem('chat_auth_pw', '0726');
+            enterChat();
+        } else { alert('비밀번호가 틀립니다!'); }
     };
     
     window.setName = function() { 
-        const name = document.getElementById('name-input').value; 
-        if (!name) return alert("이름 입력"); 
-        myName = name; 
-        localStorage.setItem('chat_nickname', name); 
-        showScreen('chat-screen'); loadMessages(); startPresenceSystem(); monitorDeletionVotes(); window.requestNotiPermission(); 
+        const name = document.getElementById('name-input').value;
+        if (!name) return alert("이름 입력");
+        myName = name;
+        localStorage.setItem('chat_nickname', name);
+        enterChat();
     };
 
     window.sendMessage = async function() { 
@@ -945,62 +959,68 @@ const msgBox = document.getElementById('messages');
         if (isFetchingOlder) return;
         isFetchingOlder = true;
         const topLoading = document.getElementById('top-loading');
+        topLoading.innerText = "불러오는 중... ⏳";
         topLoading.style.display = 'block';
-        
-        const q = query(collection(db, "chats"), orderBy("timestamp", "desc"), startAfter(oldestMessageSnap), limit(30));
-        const snapshot = await getDocs(q);
-        
-        if (!snapshot.empty) {
-            const msgBox = document.getElementById('messages');
-            const oldHeight = msgBox.scrollHeight;
-            
-            // 불러온 데이터를 시간순(과거->미래)으로 정렬
-            const docs = snapshot.docs.reverse(); 
-            oldestMessageSnap = docs[0]; 
-            
-            let html = "";
-            let tempLastDate = null; // 이번 배치 안에서 날짜 체크용
 
-            // 현재 화면의 맨 위에 있는 날짜 구분선이 있다면 날짜를 가져옴 (중복 방지용)
-            const existingTopDivider = msgBox.querySelector('.date-divider');
-            const existingTopDate = existingTopDivider ? existingTopDivider.innerText.trim() : null;
+        try {
+            const q = query(collection(db, "chats"), orderBy("timestamp", "desc"), startAfter(oldestMessageSnap), limit(30));
+            const snapshot = await getDocs(q);
 
-            docs.forEach(doc => { 
-                const data = doc.data();
-                const msgDateStr = getDateString(data.timestamp);
+            if (!snapshot.empty) {
+                const msgBox = document.getElementById('messages');
+                const oldHeight = msgBox.scrollHeight;
 
-                // 이번 배치 내에서 날짜가 바뀌었으면 구분선 추가
-                if (msgDateStr && tempLastDate !== msgDateStr) {
-                    html += `<div class="date-divider"><span>${msgDateStr}</span></div>`;
-                    tempLastDate = msgDateStr;
+                // 불러온 데이터를 시간순(과거->미래)으로 정렬
+                const docs = snapshot.docs.reverse();
+                oldestMessageSnap = docs[0];
+
+                let html = "";
+                let tempLastDate = null; // 이번 배치 안에서 날짜 체크용
+
+                // 현재 화면의 맨 위에 있는 날짜 구분선이 있다면 날짜를 가져옴 (중복 방지용)
+                const existingTopDivider = msgBox.querySelector('.date-divider');
+                const existingTopDate = existingTopDivider ? existingTopDivider.innerText.trim() : null;
+
+                docs.forEach(doc => {
+                    const data = doc.data();
+                    const msgDateStr = getDateString(data.timestamp);
+
+                    // 이번 배치 내에서 날짜가 바뀌었으면 구분선 추가
+                    if (msgDateStr && tempLastDate !== msgDateStr) {
+                        html += `<div class="date-divider"><span>${msgDateStr}</span></div>`;
+                        tempLastDate = msgDateStr;
+                    }
+
+                    html += createMessageHTML(data, doc.id);
+
+                    if(data.type === 'image') allImages.unshift(data.imageUrl);
+                    if(data.sender !== myName && data.timestamp) {
+                        const time = data.timestamp.toMillis();
+                        if(time > lastPartnerMsgTime) lastPartnerMsgTime = time;
+                    }
+                });
+
+                // [중요] 새로 로딩한 마지막 날짜와 기존 화면의 첫 날짜가 같으면
+                // 기존 화면 맨 위에 있던 구분선은 중복이므로 삭제
+                if (tempLastDate === existingTopDate && existingTopDivider) {
+                    existingTopDivider.remove();
                 }
 
-                html += createMessageHTML(data, doc.id); 
-                
-                if(data.type === 'image') allImages.unshift(data.imageUrl); 
-                if(data.sender !== myName && data.timestamp) {
-                    const time = data.timestamp.toMillis();
-                    if(time > lastPartnerMsgTime) lastPartnerMsgTime = time;
-                }
-            });
+                topLoading.insertAdjacentHTML('afterend', html);
 
-            // [중요] 새로 로딩한 마지막 날짜와 기존 화면의 첫 날짜가 같으면
-            // 기존 화면 맨 위에 있던 구분선은 중복이므로 삭제
-            if (tempLastDate === existingTopDate && existingTopDivider) {
-                existingTopDivider.remove();
+                const newHeight = msgBox.scrollHeight;
+                msgBox.scrollTop = newHeight - oldHeight;
+                updateReadStatus();
+                topLoading.style.display = 'none';
+            } else {
+                topLoading.innerText = "대화의 시작입니다.";
             }
-
-            topLoading.insertAdjacentHTML('afterend', html);
-            
-            const newHeight = msgBox.scrollHeight;
-            msgBox.scrollTop = newHeight - oldHeight;
-            updateReadStatus(); 
-        } else { 
-            topLoading.innerText = "대화의 시작입니다."; 
+        } catch (e) {
+            console.error("이전 메시지 불러오기 실패:", e);
+            topLoading.innerText = "불러오기 실패. 다시 시도해주세요.";
+        } finally {
+            isFetchingOlder = false;
         }
-        
-        topLoading.style.display = 'none';
-        isFetchingOlder = false;
     }
 
     // 🛠️ [수정됨] 답장 기능 및 HTML 생성
@@ -1099,30 +1119,38 @@ const msgBox = document.getElementById('messages');
     async function loadGalleryImages() {
         if(isGalleryLoading || isGalleryEnd) return;
         isGalleryLoading = true;
-        document.getElementById('gallery-loading').style.display = 'block';
+        const galleryLoading = document.getElementById('gallery-loading');
+        galleryLoading.innerText = "불러오는 중...";
+        galleryLoading.style.display = 'block';
 
-        let q;
-        if (galleryLastSnap) {
-            q = query(collection(db, "chats"), where("type", "==", "image"), orderBy("timestamp", "desc"), startAfter(galleryLastSnap), limit(15));
-        } else {
-            q = query(collection(db, "chats"), where("type", "==", "image"), orderBy("timestamp", "desc"), limit(15));
-        }
+        try {
+            let q;
+            if (galleryLastSnap) {
+                q = query(collection(db, "chats"), where("type", "==", "image"), orderBy("timestamp", "desc"), startAfter(galleryLastSnap), limit(15));
+            } else {
+                q = query(collection(db, "chats"), where("type", "==", "image"), orderBy("timestamp", "desc"), limit(15));
+            }
 
-        const snapshot = await getDocs(q);
-        const grid = document.getElementById('full-gallery-grid');
+            const snapshot = await getDocs(q);
+            const grid = document.getElementById('full-gallery-grid');
 
-        if(snapshot.empty) {
-            isGalleryEnd = true;
-            document.getElementById('gallery-loading').innerText = "모든 사진을 불러왔습니다.";
+            if(snapshot.empty) {
+                isGalleryEnd = true;
+                galleryLoading.innerText = "모든 사진을 불러왔습니다.";
 	        } else {
 	            galleryLastSnap = snapshot.docs[snapshot.docs.length - 1];
 	            snapshot.forEach(doc => {
 	                const url = doc.data().imageUrl;
 	                grid.insertAdjacentHTML('beforeend', `<img src="${escapeAttribute(url)}" class="gallery-item" onclick="window.open(this.src)">`);
 	            });
-	            document.getElementById('gallery-loading').style.display = 'none';
+	                galleryLoading.style.display = 'none';
 	        }
-        isGalleryLoading = false;
+        } catch (e) {
+            console.error("갤러리 불러오기 실패:", e);
+            galleryLoading.innerText = "불러오기 실패. 다시 시도해주세요.";
+        } finally {
+            isGalleryLoading = false;
+        }
     }
 
     document.getElementById('full-gallery-screen').addEventListener('scroll', (e) => {
@@ -1262,14 +1290,7 @@ window.toggleSearch = () => {
 
             const savedPasswordFinal = localStorage.getItem('chat_auth_pw');
             if (savedPasswordFinal === '0726') {
-                if (myName) { 
-                    showScreen('chat-screen'); 
-                    loadMessages(); // 이제 안전하게 실행됨
-                    startPresenceSystem(); 
-                    monitorDeletionVotes();
-                    window.requestNotiPermission(); 
-                } 
-                else { showScreen('name-screen'); }
+                enterChat();
             }
         } else {
             // 로그인이 안 된 상태 (보통은 자동으로 signInAnonymously가 실행되므로 기다리면 됨)
