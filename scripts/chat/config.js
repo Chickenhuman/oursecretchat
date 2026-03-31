@@ -31,15 +31,11 @@ export const STICKER_PACKS = [
 
 export const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
 
-export const CURRENT_VERSION = "1.10";
-export const RELEASE_DATE = "2026/03/18";
+export const CURRENT_VERSION = "1.11";
+export const RELEASE_DATE = "2026/03/31";
 export const PATCH_NOTES = [
-    "게임 기능은 메인 화면에서 잠시 숨겨뒀어요.",
-    "사무실에서 쓰기 쉽게 기본 테마와 엑셀 테마를 오갈 수 있게 했어요.",
-    "그날 첫 메시지에서도 날짜 구분선이 바로 보이도록 고쳤어요.",
-    "채팅 특수문자와 링크 처리 안정성을 더 다듬었어요.",
-    "채팅 진입 흐름과 클릭 처리 안정성을 더 다듬었어요.",
-    "예전 메시지와 사진 불러오기 실패 시 복구 처리를 보강했어요.",
-    "대화 전체 삭제 시 첨부 이미지 정리도 함께 보강했어요."
+    "복사 붙여넣기한 이미지 전송이 더 안정적으로 되도록 업로드 흐름을 다듬었어요.",
+    "로그인 준비 전에는 이미지 전송이 서두르지 않도록 인증 대기 처리를 보강했어요.",
+    "이미지 전송 실패 시 원인을 더 쉽게 확인할 수 있게 안내와 로그를 보강했어요."
 ];
 export const UPDATE_SIGNATURE = `${CURRENT_VERSION}|${RELEASE_DATE}|${PATCH_NOTES.join("||")}`;

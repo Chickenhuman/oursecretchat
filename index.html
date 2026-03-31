@@ -696,10 +696,16 @@ html.excel-theme .menu-item {
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const storage = getStorage(app);
+const storage = getStorage(app);
 
 // 2. 인증 기능 초기화 및 로그인 실행 (여기 추가!)
 const auth = getAuth(app);
+let resolveAuthReady = null;
+let rejectAuthReady = null;
+const authReady = new Promise((resolve, reject) => {
+    resolveAuthReady = resolve;
+    rejectAuthReady = reject;
+});
 
 
 signInAnonymously(auth)
@@ -708,6 +714,10 @@ signInAnonymously(auth)
   })
   .catch((error) => {
     console.error("로그인 실패:", error);
+    if (rejectAuthReady) {
+        rejectAuthReady(error);
+        rejectAuthReady = null;
+    }
   });
 // [4] 스티커 설정 (1024x512 이미지 기준)
 
@@ -1221,6 +1231,59 @@ document.addEventListener("visibilitychange", () => {
         enterChat();
     };
 
+    function ensureAuthReady() {
+        if (auth.currentUser) return Promise.resolve(auth.currentUser);
+        return authReady;
+    }
+
+    function getImageExtension(type = '') {
+        const rawExt = type.startsWith('image/') ? type.split('/')[1] : '';
+        if (!rawExt) return 'png';
+        return rawExt.replace('jpeg', 'jpg').replace(/[^a-z0-9]/gi, '') || 'png';
+    }
+
+    function buildUploadFileName(fileOrBlob, isDrawing = false) {
+        const rawName = typeof fileOrBlob?.name === 'string' ? fileOrBlob.name.trim() : '';
+        const fallbackName = `${isDrawing ? 'drawing' : 'clipboard-image'}.${getImageExtension(fileOrBlob?.type || '')}`;
+        const safeName = (rawName || fallbackName).replace(/[\\/#?*\[\]]/g, '_');
+        return `${Date.now()}_${safeName}`;
+    }
+
+    function normalizeUploadImage(fileOrBlob, isDrawing = false) {
+        const contentType = typeof fileOrBlob?.type === 'string' && fileOrBlob.type.startsWith('image/')
+            ? fileOrBlob.type
+            : 'image/png';
+        const fileName = buildUploadFileName(fileOrBlob, isDrawing);
+
+        if (typeof File !== 'undefined' && (!(fileOrBlob instanceof File) || !fileOrBlob.name)) {
+            return {
+                file: new File([fileOrBlob], fileName, { type: contentType, lastModified: Date.now() }),
+                fileName,
+                contentType
+            };
+        }
+
+        return { file: fileOrBlob, fileName, contentType };
+    }
+
+    function getUploadErrorMessage(error) {
+        if (error?.message === 'chat/name-not-set') {
+            return "이름 설정이 아직 완료되지 않았어요. 다시 입장한 뒤 시도해주세요.";
+        }
+
+        switch (error?.code) {
+            case 'storage/unauthenticated':
+            case 'storage/unauthorized':
+                return "로그인 또는 업로드 권한 준비가 아직 끝나지 않았어요. 잠시 후 다시 시도해주세요.";
+            case 'storage/canceled':
+                return "이미지 업로드가 취소되었어요.";
+            case 'storage/invalid-argument':
+                return "클립보드 이미지 형식을 처리하지 못했어요. 사진 버튼으로 다시 시도해주세요.";
+            default:
+                return "전송 실패";
+        }
+    }
+
     window.sendMessage = async function() { 
         const input = document.getElementById('msg-input'); 
         const text = input.value; 
@@ -1243,9 +1306,11 @@ input.value = "";
         if (!fileOrBlob) return; 
         document.getElementById('loading').style.display = 'flex'; 
         try { 
-            const fileName = Date.now() + (isDrawing ? '_draw.png' : '_' + fileOrBlob.name); 
+            if (!myName) throw new Error('chat/name-not-set');
+            await ensureAuthReady();
+            const { file: uploadFile, fileName, contentType } = normalizeUploadImage(fileOrBlob, isDrawing);
             const storageRef = ref(storage, 'images/' + fileName); 
-            await uploadBytes(storageRef, fileOrBlob); 
+            await uploadBytes(storageRef, uploadFile, { contentType }); 
             const url = await getDownloadURL(storageRef); 
             
             const payload = { text: isDrawing ? "그림을 보냈습니다." : "사진을 보냈습니다.", imageUrl: url, sender: myName, timestamp: serverTimestamp(), type: 'image' };
@@ -1254,7 +1319,10 @@ input.value = "";
             await addDoc(collection(db, "chats"), payload); 
             cancelReply();
             markAsRead(); scrollToBottom(); 
-        } catch (e) { alert("전송 실패"); } finally { document.getElementById('loading').style.display = 'none'; document.getElementById('photo-input').value = ''; } 
+        } catch (e) {
+            console.error("이미지 전송 실패:", e);
+            alert(getUploadErrorMessage(e));
+        } finally { document.getElementById('loading').style.display = 'none'; document.getElementById('photo-input').value = ''; } 
     };
 
 	    // [수정 완료] 새로운 loadMessages 함수
@@ -1669,13 +1737,24 @@ window.toggleSearch = () => {
     window.sendDrawing = () => { canvas.toBlob((blob) => { if(blob) { uploadImage(blob, true); toggleDrawingPad(); initCanvas(); } }, 'image/png'); };
 
     // 📋 [기존] 이미지 붙여넣기 기능 유지
-    window.addEventListener('paste', (e) => {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].kind === 'file' && items[i].type.includes('image/')) {
-                const file = items[i].getAsFile();
-                if(confirm("📋 클립보드에 있는 이미지를 전송하시겠습니까?")) { uploadImage(file); }
-            }
+    window.addEventListener('paste', async (e) => {
+        const chatScreen = document.getElementById('chat-screen');
+        if (!chatScreen?.classList.contains('active')) return;
+
+        const clipboardData = e.clipboardData || e.originalEvent?.clipboardData;
+        const items = Array.from(clipboardData?.items || []);
+        const imageItem = items.find((item) => item.kind === 'file' && item.type.startsWith('image/'));
+        if (!imageItem) return;
+
+        e.preventDefault();
+        const file = imageItem.getAsFile();
+        if (!file) {
+            alert("클립보드 이미지를 읽지 못했어요. 사진 버튼으로 다시 시도해주세요.");
+            return;
+        }
+
+        if(confirm("📋 클립보드에 있는 이미지를 전송하시겠습니까?")) {
+            await uploadImage(file);
         }
     });
 
@@ -1688,6 +1767,11 @@ window.toggleSearch = () => {
         if (user) {
             // 로그인 된 상태일 때만 실행!
             console.log("✅ 인증 완료: 데이터를 불러옵니다.");
+            if (resolveAuthReady) {
+                resolveAuthReady(user);
+                resolveAuthReady = null;
+                rejectAuthReady = null;
+            }
 
             const savedPasswordFinal = localStorage.getItem('chat_auth_pw');
             if (savedPasswordFinal === '0726') {
