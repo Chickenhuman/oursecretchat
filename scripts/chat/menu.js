@@ -19,6 +19,35 @@ const mealLabelMap = {
     dinner: "저녁"
 };
 
+const COMMAND_GUIDE_SECTIONS = [
+    {
+        title: "기본 조회",
+        items: [
+            { command: "/아침", description: "오늘 아침 메뉴를 보여줘요." },
+            { command: "/점심", description: "오늘 점심 메뉴를 보여줘요." },
+            { command: "/저녁", description: "오늘 저녁 메뉴를 보여줘요." },
+            { command: "/조식 /중식 /석식", description: "같은 의미의 별칭으로도 조회할 수 있어요." }
+        ]
+    },
+    {
+        title: "날짜 지정",
+        items: [
+            { command: "/석식 오늘", description: "오늘 날짜를 명시해서 다시 조회해요." },
+            { command: "/저녁 내일", description: "상대 날짜로 조회할 수 있어요." },
+            { command: "/저녁 4/2", description: "월/일 형식으로 간단히 입력할 수 있어요." },
+            { command: "/석식 2026-04-02", description: "연-월-일 형식도 지원해요." }
+        ]
+    },
+    {
+        title: "입력 예시",
+        items: [
+            { command: "/칠암 석식", description: "캠퍼스 이름을 같이 적어도 이해해요." },
+            { command: "/학생식당 점심", description: "식당 이름을 같이 적어도 돼요." },
+            { command: "/칠암캠퍼스 학생식당 저녁 4/2", description: "길게 적어도 핵심 키워드만 뽑아서 조회해요." }
+        ]
+    }
+];
+
 let cachedMenuData = null;
 let cachedMenuDataAt = 0;
 
@@ -220,4 +249,11 @@ export function getMealCommandHelpText() {
         "/석식 2026-04-01",
         "/저녁 4/1"
     ].join("\n");
+}
+
+export function getCommandGuideSections() {
+    return COMMAND_GUIDE_SECTIONS.map((section) => ({
+        title: section.title,
+        items: section.items.map((item) => ({ ...item }))
+    }));
 }

@@ -237,6 +237,8 @@
 
         #settings-screen { background: #f9f9f9; overflow-y: auto; display: none; flex-direction: column; height: 100%; }
         #settings-screen.active { display: flex; }
+        #command-guide-screen { background: #f9f9f9; overflow-y: auto; display: none; flex-direction: column; height: 100%; }
+        #command-guide-screen.active { display: flex; }
         .settings-header { 
             padding-top: calc(20px + env(safe-area-inset-top)); padding-bottom: 20px; padding-left: 20px; padding-right: 20px;
             background: white; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; flex-shrink: 0; 
@@ -259,6 +261,62 @@
         input:checked + .slider:before { transform: translateX(18px); }
         .theme-btn { font-size: 12px; color: #217346; border: 1px solid #b7cdb9; padding: 6px 12px; border-radius: 6px; background: #edf6ee; cursor: pointer; font-weight: bold; }
         .theme-btn.active { background: #217346; color: white; border-color: #217346; }
+        .command-guide-wrap {
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding-bottom: calc(30px + env(safe-area-inset-bottom));
+        }
+        .command-guide-note,
+        .command-guide-section {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #eee;
+            padding: 16px;
+        }
+        .command-guide-note {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .command-guide-title {
+            margin: 0 0 12px;
+            font-size: 15px;
+            color: #333;
+        }
+        .command-guide-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .command-guide-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-top: 10px;
+            border-top: 1px solid #f1f1f1;
+        }
+        .command-guide-item:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+        .command-guide-chip {
+            display: inline-flex;
+            align-self: flex-start;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #fff1f1;
+            color: #d04f4f;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: "Consolas", "Courier New", monospace;
+        }
+        .command-guide-desc {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.55;
+        }
 
         .version-info { text-align: center; color: #aaa; font-size: 11px; margin-top: 20px; padding-bottom: 20px; }
 
@@ -389,7 +447,8 @@ html.excel-theme #app {
 
 html.excel-theme .screen,
 html.excel-theme #settings-screen,
-html.excel-theme #full-gallery-screen {
+html.excel-theme #full-gallery-screen,
+html.excel-theme #command-guide-screen {
     background: #f3f2f1;
 }
 
@@ -620,6 +679,19 @@ html.excel-theme .menu-item {
     border-bottom: 1px solid #e1dfdd;
 }
 
+html.excel-theme .command-guide-note,
+html.excel-theme .command-guide-section {
+    background: #ffffff;
+    border-color: #d2d0ce;
+    border-radius: 4px;
+}
+
+html.excel-theme .command-guide-chip {
+    background: #edf6ee;
+    color: #185c37;
+    border-radius: 4px;
+}
+
 @media (min-width: 900px) {
     html.excel-theme #app {
         max-width: 960px;
@@ -749,6 +821,10 @@ html.excel-theme .menu-item {
                 <span id="theme-menu-label" class="menu-label">📊 기본/엑셀 테마</span>
                 <button id="theme-toggle-btn" class="theme-btn" onclick="toggleThemeMode()">엑셀 테마로</button>
             </div>
+            <div class="menu-item">
+                <span class="menu-label">⌨️ 입력 가능한 명령어</span>
+                <button class="theme-btn" onclick="openCommandGuide()">보기</button>
+            </div>
 
             <div class="menu-item">
                 <span class="menu-label">🧹 캐시 삭제</span>
@@ -776,6 +852,19 @@ html.excel-theme .menu-item {
         <div id="full-gallery-grid"></div>
         <div id="gallery-loading">더 불러오는 중...</div>
     </div>
+
+    <div id="command-guide-screen" class="screen">
+        <div class="settings-header">
+            <button class="back-btn" onclick="closeCommandGuide()">←</button>
+            <h2 style="margin:0;">입력 가능한 명령어</h2>
+        </div>
+        <div class="command-guide-wrap">
+            <div class="command-guide-note">
+                현재는 칠암캠퍼스 학생식당 식단 명령어를 지원해요. 아래 예시를 그대로 입력하거나 날짜만 바꿔서 사용하면 됩니다.
+            </div>
+            <div id="command-guide-list"></div>
+        </div>
+    </div>
 </div>
 
 <script type="module">
@@ -787,7 +876,7 @@ html.excel-theme .menu-item {
     import { getAuth, signInAnonymously, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { firebaseConfig, STICKER_PACKS, emojiList, CURRENT_VERSION, RELEASE_DATE, PATCH_NOTES, UPDATE_SIGNATURE } from "./scripts/chat/config.js";
-    import { parseMealCommand, resolveMealCommand, getMealCommandHelpText } from "./scripts/chat/menu.js";
+    import { parseMealCommand, resolveMealCommand, getMealCommandHelpText, getCommandGuideSections } from "./scripts/chat/menu.js";
     import { escapeHtml, escapeAttribute, encodeInlineParam, decodeInlineParam, getMessagePreviewText, linkify } from "./scripts/chat/utils.js";
 
     const app = initializeApp(firebaseConfig);
@@ -1140,6 +1229,28 @@ window.toggleSticker = () => {
         span.onclick = () => { document.getElementById('msg-input').value += emo; emojiPicker.style.display = 'none'; };
         emojiPicker.appendChild(span);
     });
+
+    function renderCommandGuide() {
+        const commandGuideList = document.getElementById('command-guide-list');
+        if (!commandGuideList) return;
+
+        const sections = getCommandGuideSections();
+        commandGuideList.innerHTML = sections.map((section) => `
+            <section class="command-guide-section">
+                <h3 class="command-guide-title">${escapeHtml(section.title || "")}</h3>
+                <div class="command-guide-list">
+                    ${section.items.map((item) => `
+                        <div class="command-guide-item">
+                            <span class="command-guide-chip">${escapeHtml(item.command || "")}</span>
+                            <span class="command-guide-desc">${escapeHtml(item.description || "")}</span>
+                        </div>
+                    `).join("")}
+                </div>
+            </section>
+        `).join("");
+    }
+
+    renderCommandGuide();
     
     window.toggleEmoji = () => { 
         const picker = document.getElementById('emoji-picker'); 
@@ -2042,6 +2153,8 @@ window.toggleSearch = () => {
     
     window.filterMessages = () => { const q = document.getElementById('search-input').value.toLowerCase(); document.querySelectorAll('.message').forEach(msg => msg.style.display = (msg.getAttribute('data-text')||"").toLowerCase().includes(q)?'block':'none'); };
     window.openSettings = () => showScreen('settings-screen'); window.closeSettings = () => showScreen('chat-screen');
+    window.openCommandGuide = () => showScreen('command-guide-screen');
+    window.closeCommandGuide = () => showScreen('settings-screen');
     window.changeBg = (c) => { localStorage.setItem('chat_bg', c); applyBg(c); }; function applyBg(c) { document.getElementById('messages').style.backgroundColor = c; }
     
     window.logout = () => { localStorage.removeItem('chat_nickname'); localStorage.removeItem('chat_auth_pw'); location.reload(); }
