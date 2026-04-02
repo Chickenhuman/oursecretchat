@@ -31,11 +31,11 @@ export const STICKER_PACKS = [
 
 export const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
 
-export const CURRENT_VERSION = "1.11";
-export const RELEASE_DATE = "2026/03/31";
+export const CURRENT_VERSION = "1.13";
+export const RELEASE_DATE = "2026/04/02";
 export const PATCH_NOTES = [
-    "복사 붙여넣기한 이미지 전송이 더 안정적으로 되도록 업로드 흐름을 다듬었어요.",
-    "로그인 준비 전에는 이미지 전송이 서두르지 않도록 인증 대기 처리를 보강했어요.",
-    "이미지 전송 실패 시 원인을 더 쉽게 확인할 수 있게 안내와 로그를 보강했어요."
+    "채팅창에서 `/석식`, `/석식 오늘`, `/석식 2026-04-02`, `/저녁 4/2` 명령어로 칠암캠퍼스 학생식당 메뉴를 바로 조회할 수 있어요.",
+    "학교 식단 페이지를 주간 JSON 캐시로 변환하는 스크립트와 GitHub 자동 갱신 워크플로를 추가했어요.",
+    "식단 응답을 카드 형태로 보여주고 원본 식단 페이지로 바로 열 수 있게 했어요."
 ];
 export const UPDATE_SIGNATURE = `${CURRENT_VERSION}|${RELEASE_DATE}|${PATCH_NOTES.join("||")}`;

@@ -26,6 +26,14 @@ export function decodeInlineParam(value = "") {
 
 export function getMessagePreviewText(data) {
     if (data.type === "sticker") return "(이모티콘)";
+    if (data.type === "file") {
+        return data.fileName ? `(파일) ${data.fileName}` : "파일을 보냈습니다.";
+    }
+    if (data.type === "meal") {
+        return data.cardSubtitle
+            ? `(식단) ${data.cardSubtitle}`
+            : "(식단) 칠암캠퍼스 학생식당";
+    }
     return data.text || "";
 }
 
