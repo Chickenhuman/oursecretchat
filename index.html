@@ -49,9 +49,8 @@
             background: #ff6b6b; color: white; display: flex; justify-content: space-between; align-items: center; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; flex-shrink: 0; 
         }
-        .header-left { display: flex; flex-direction: column; }
-        #chat-title { font-weight: bold; font-size: 16px; }
-        #status-area { font-size: 12px; margin-top: 3px; display: flex; align-items: center; gap: 5px; opacity: 0.9; }
+        .header-left { display: flex; align-items: center; min-height: 20px; }
+        #status-area { font-size: 12px; margin-top: 0; display: flex; align-items: center; gap: 5px; opacity: 0.9; }
         .online-dot { width: 8px; height: 8px; background-color: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 5px #00ff00; }
         .offline-dot { width: 8px; height: 8px; background-color: #ccc; border-radius: 50%; display: inline-block; }
         .header-icons { display: flex; gap: 10px; }
@@ -497,11 +496,6 @@ html.excel-theme #chat-header {
     border-bottom: 1px solid #0f6b38;
 }
 
-html.excel-theme #chat-title {
-    font-weight: 700;
-    letter-spacing: 0;
-}
-
 html.excel-theme #status-area {
     color: rgba(255,255,255,0.9);
 }
@@ -750,7 +744,6 @@ html.excel-theme .command-guide-chip {
     <div id="chat-screen" class="screen" style="padding:0;">
 <div id="chat-header">
             <div class="header-left">
-                <div id="chat-title">❤️ 우리만의 채팅방</div>
                 <div id="status-area">접속 확인 중...</div>
             </div>
             <div class="header-icons">
@@ -1190,7 +1183,6 @@ window.toggleSticker = () => {
             setElementText('name-title', labels.nameTitle);
             setElementText('name-subtitle', labels.nameSubtitle);
             setElementText('name-submit-btn', labels.nameButton);
-            setElementText('chat-title', labels.chatTitle);
             setElementText('settings-title', labels.settingsTitle);
             setElementText('gallery-title', labels.galleryTitle);
             setElementText('gallery-view-all', labels.galleryViewAll);
