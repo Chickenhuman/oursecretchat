@@ -1324,6 +1324,7 @@ window.toggleSticker = () => {
 	        startPresenceSystem();
 	        monitorDeletionVotes();
 	        window.requestNotiPermission();
+            checkUpdatePopup();
 	    }
 
 	    function monitorDeletionVotes() {
@@ -1457,16 +1458,27 @@ document.addEventListener("visibilitychange", () => {
         return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || '');
     }
 
+    function isStandaloneWebApp() {
+        return window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
+    }
+
     window.startGoogleSignIn = async function() {
         try {
             setLoadingMessage('Google 로그인 중...');
-            if (isMobileGoogleSignIn()) {
-                await signInWithRedirect(auth, googleProvider);
+            if (isStandaloneWebApp()) {
+                hideLoadingMessage();
+                alert("홈 화면에 추가한 앱에서는 Google 로그인 복귀가 불안정할 수 있어요.\n\n지금은 사파리/크롬 브라우저에서 이 주소를 직접 열어 로그인해주세요.");
                 return;
             }
+
             await signInWithPopup(auth, googleProvider);
         } catch (error) {
             if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/operation-not-supported-in-this-environment') {
+                if (isMobileGoogleSignIn()) {
+                    hideLoadingMessage();
+                    alert("모바일 브라우저에서 팝업이 차단되어 Google 로그인을 진행하지 못했어요.\n\n브라우저 팝업 차단을 해제한 뒤 다시 시도해주세요.");
+                    return;
+                }
                 await signInWithRedirect(auth, googleProvider);
                 return;
             }
@@ -2841,9 +2853,6 @@ msgInputBox.addEventListener('keydown', function(e) {
 	    };
 
 	    renderReleaseInfo();
-
-	    // 시작하자마자 체크 실행
-	    checkUpdatePopup();
 </script>
 </body>
 </html>
