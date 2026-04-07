@@ -1,0 +1,159 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null
+        && request.auth.uid is string
+        && request.auth.token.email is string
+        && request.auth.token.email_verified == true;
+    }
+
+    function emailId() {
+      return request.auth.token.email.lower();
+    }
+
+    function approvedUser() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/approved_emails/$(emailId()));
+    }
+
+    function isOwnEmailDoc(email) {
+      return signedIn() && email == emailId();
+    }
+
+    function isValidReply() {
+      return !('replyTo' in request.resource.data)
+        || (
+          request.resource.data.replyTo is map
+          && request.resource.data.replyTo.keys().hasAll(['id', 'text', 'sender'])
+        );
+    }
+
+    function isValidChatBase() {
+      return request.resource.data.sender is string
+        && request.resource.data.senderUid == request.auth.uid
+        && request.resource.data.timestamp is timestamp
+        && request.resource.data.type is string
+        && isValidReply();
+    }
+
+    function isValidTextChat() {
+      return request.resource.data.keys().hasOnly(['text', 'sender', 'senderUid', 'timestamp', 'type', 'replyTo'])
+        && request.resource.data.type == 'text'
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 4000
+        && isValidChatBase();
+    }
+
+    function isValidStickerChat() {
+      return request.resource.data.keys().hasOnly(['text', 'sender', 'senderUid', 'timestamp', 'type', 'stickerIndex', 'packIndex', 'replyTo'])
+        && request.resource.data.type == 'sticker'
+        && request.resource.data.text is string
+        && request.resource.data.stickerIndex is int
+        && request.resource.data.packIndex is int
+        && isValidChatBase();
+    }
+
+    function isValidMealChat() {
+      return request.resource.data.keys().hasOnly([
+        'text', 'sender', 'senderUid', 'timestamp', 'type', 'replyTo',
+        'cardTitle', 'cardSubtitle', 'mealKey', 'mealLabel', 'dateKey',
+        'campusLabel', 'restaurantLabel', 'items', 'sourceUrl', 'sourceLabel'
+      ])
+        && request.resource.data.type == 'meal'
+        && request.resource.data.text is string
+        && request.resource.data.cardTitle is string
+        && request.resource.data.cardSubtitle is string
+        && request.resource.data.mealKey is string
+        && request.resource.data.mealLabel is string
+        && request.resource.data.dateKey is string
+        && request.resource.data.campusLabel is string
+        && request.resource.data.restaurantLabel is string
+        && request.resource.data.items is list
+        && request.resource.data.items.size() <= 20
+        && (!('sourceUrl' in request.resource.data) || request.resource.data.sourceUrl is string)
+        && (!('sourceLabel' in request.resource.data) || request.resource.data.sourceLabel is string)
+        && isValidChatBase();
+    }
+
+    function isValidImageChat() {
+      return request.resource.data.keys().hasOnly([
+        'text', 'sender', 'senderUid', 'timestamp', 'type', 'replyTo',
+        'storagePath', 'imageWidth', 'imageHeight'
+      ])
+        && request.resource.data.type == 'image'
+        && request.resource.data.text is string
+        && request.resource.data.storagePath is string
+        && request.resource.data.storagePath.matches('^users/' + request.auth.uid + '/images/.+')
+        && (!('imageWidth' in request.resource.data) || request.resource.data.imageWidth is int)
+        && (!('imageHeight' in request.resource.data) || request.resource.data.imageHeight is int)
+        && isValidChatBase();
+    }
+
+    function isValidFileChat() {
+      return request.resource.data.keys().hasOnly([
+        'text', 'sender', 'senderUid', 'timestamp', 'type', 'replyTo',
+        'storagePath', 'fileName', 'fileSize', 'fileMime'
+      ])
+        && request.resource.data.type == 'file'
+        && request.resource.data.text is string
+        && request.resource.data.storagePath is string
+        && request.resource.data.storagePath.matches('^users/' + request.auth.uid + '/attachments/.+')
+        && request.resource.data.fileName is string
+        && request.resource.data.fileSize is int
+        && request.resource.data.fileSize <= 10 * 1024 * 1024
+        && request.resource.data.fileSize > 0
+        && request.resource.data.fileMime is string
+        && (
+          request.resource.data.fileMime == 'application/pdf'
+          || request.resource.data.fileMime == 'application/x-hwp'
+          || request.resource.data.fileMime == 'application/haansofthwp'
+          || request.resource.data.fileMime == 'application/vnd.hancom.hwp'
+          || request.resource.data.fileMime == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          || request.resource.data.fileMime == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        && isValidChatBase();
+    }
+
+    function isValidChatCreate() {
+      return isValidTextChat()
+        || isValidImageChat()
+        || isValidFileChat()
+        || isValidStickerChat()
+        || isValidMealChat();
+    }
+
+    match /approved_emails/{email} {
+      allow get: if isOwnEmailDoc(email);
+      allow list, write: if false;
+    }
+
+    match /profiles/{uid} {
+      allow read, write: if approvedUser() && request.auth.uid == uid;
+    }
+
+    match /chats/{messageId} {
+      allow read: if approvedUser();
+      allow create: if approvedUser() && isValidChatCreate();
+      allow delete: if approvedUser();
+      allow update: if false;
+    }
+
+    match /presence/{uid} {
+      allow read: if approvedUser();
+      allow create, update, delete: if approvedUser() && request.auth.uid == uid;
+    }
+
+    match /settings/delete_request {
+      allow read, write: if approvedUser();
+    }
+
+    match /calendar_events/{dateId} {
+      allow read, write: if approvedUser();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

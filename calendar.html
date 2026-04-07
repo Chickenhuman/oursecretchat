@@ -142,43 +142,74 @@
 
 <script type="module">
  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot, query, where } 
+import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-// 👇 [추가] 인증 모듈 가져오기
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-    // 🔴 [필수] 본인의 firebaseConfig로 교체하세요!
-    const firebaseConfig = {
-      apiKey: "AIzaSyDTMfB6Fl6QiiJdcTjpcU9nha2GP4Ne_6o",
-      authDomain: "lovechatproject-2db11.firebaseapp.com",
-      projectId: "lovechatproject-2db11",
-      storageBucket: "lovechatproject-2db11.firebasestorage.app",
-      messagingSenderId: "1069136590072",
-      appId: "1:1069136590072:web:7712e718db03c70bff370d",
-      measurementId: "G-ERG2LL283F"
-    };
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { firebaseConfig } from "./scripts/chat/config.js";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    const approvedEmailsCollection = "approved_emails";
 
     let currentDate = new Date();
     let selectedDateStr = "";
     let eventsCache = {}; 
+    let eventsUnsub = null;
+    let accessGranted = false;
 
+    function normalizeEmail(email = "") {
+        return String(email || "").trim().toLowerCase();
+    }
 
-	// 👇 [추가] 로그인 상태 확인 후 캘린더 로딩
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            console.log("캘린더 접속 성공!");
-            loadEvents(); // 로그인이 확인되면 그때 데이터를 불러옴
-        } else {
-            // 로그인이 안 되어 있다면 익명 로그인 시도
-            signInAnonymously(auth).catch((error) => {
-                console.error("접속 실패:", error);
-            });
+    async function isApprovedUser(user) {
+        const email = normalizeEmail(user?.email);
+        if (!email) return false;
+        const approvedSnap = await getDoc(doc(db, approvedEmailsCollection, email));
+        return approvedSnap.exists();
+    }
+
+    async function handleDeniedUser(user) {
+        accessGranted = false;
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.warn("캘린더 로그아웃 실패:", error);
         }
+        const label = user?.email ? `(${user.email}) ` : "";
+        console.warn(`캘린더 접근 거부 ${label}승인된 Google 계정이 아닙니다.`);
+        window.location.replace("index.html");
+    }
+
+
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            window.location.replace("index.html");
+            return;
+        }
+
+        isApprovedUser(user)
+            .then((approved) => {
+                if (!approved) {
+                    handleDeniedUser(user);
+                    return;
+                }
+                accessGranted = true;
+                console.log("캘린더 접속 성공!");
+                loadEvents();
+                requestNotiPermission();
+            })
+            .catch((error) => {
+                console.error("승인 확인 실패:", error);
+                window.location.replace("index.html");
+            });
     });
+
+    function ensureApprovedSession() {
+        if (!accessGranted) {
+            throw new Error("승인된 Google 계정만 사용할 수 있습니다.");
+        }
+    }
 
     // [알림 기능] 권한 요청
     function requestNotiPermission() {
@@ -238,9 +269,14 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
     };
 
     function loadEvents() {
+        ensureApprovedSession();
         document.getElementById('loading').style.display = 'block';
+        if (eventsUnsub) {
+            eventsUnsub();
+            eventsUnsub = null;
+        }
         const colRef = collection(db, "calendar_events");
-        onSnapshot(colRef, (snapshot) => {
+        eventsUnsub = onSnapshot(colRef, (snapshot) => {
             eventsCache = {}; 
             snapshot.forEach(doc => {
                 eventsCache[doc.id] = doc.data();
@@ -309,6 +345,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
     };
 
     window.saveEvent = async () => {
+        ensureApprovedSession();
         const title = document.getElementById('event-title').value;
         const desc = document.getElementById('event-desc').value;
         const notify = document.getElementById('event-notify').checked;
@@ -332,6 +369,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
     };
 
     window.deleteEvent = async () => {
+        ensureApprovedSession();
         if(!confirm("이 날짜의 기록을 삭제할까요?")) return;
         try {
             await deleteDoc(doc(db, "calendar_events", selectedDateStr));
@@ -340,8 +378,6 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
             alert("삭제 실패");
         }
     };
-
-    requestNotiPermission(); // 접속 시 권한 요청
 
 </script>
 </body>

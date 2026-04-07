@@ -31,11 +31,11 @@ export const STICKER_PACKS = [
 
 export const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
 
-export const CURRENT_VERSION = "1.13";
-export const RELEASE_DATE = "2026/04/02";
+export const CURRENT_VERSION = "1.24";
+export const RELEASE_DATE = "2026/04/07";
 export const PATCH_NOTES = [
-    "채팅창에서 `/석식`, `/석식 오늘`, `/석식 2026-04-02`, `/저녁 4/2` 명령어로 칠암캠퍼스 학생식당 메뉴를 바로 조회할 수 있어요.",
-    "학교 식단 페이지를 주간 JSON 캐시로 변환하는 스크립트와 GitHub 자동 갱신 워크플로를 추가했어요.",
-    "식단 응답을 카드 형태로 보여주고 원본 식단 페이지로 바로 열 수 있게 했어요."
+    "기존 비밀번호 입장 방식을 없애고 Google 승인 로그인으로 바꿔, 허용한 계정만 채팅과 캘린더에 들어올 수 있게 했어요.",
+    "별칭을 계정 프로필로 관리하고, 새 이미지/문서는 저장 URL 대신 storagePath만 저장하도록 바꿨어요.",
+    "이미지 자동 압축, 문서 타입/용량 제한, Firestore·Storage 보안 규칙 정비로 업로드 안전장치를 강화했어요."
 ];
 export const UPDATE_SIGNATURE = `${CURRENT_VERSION}|${RELEASE_DATE}|${PATCH_NOTES.join("||")}`;

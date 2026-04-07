@@ -1,0 +1,60 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null
+        && request.auth.uid is string
+        && request.auth.token.email is string
+        && request.auth.token.email_verified == true;
+    }
+
+    function approvedUser() {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/approved_emails/$(request.auth.token.email.lower()));
+    }
+
+    function allowedAttachmentMime() {
+      return request.resource.contentType == 'application/pdf'
+        || request.resource.contentType == 'application/x-hwp'
+        || request.resource.contentType == 'application/haansofthwp'
+        || request.resource.contentType == 'application/vnd.hancom.hwp'
+        || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    }
+
+    function isDeleteRequest() {
+      return request.resource == null;
+    }
+
+    match /users/{uid}/images/{fileName} {
+      allow read: if approvedUser();
+      allow write: if approvedUser()
+        && (
+          isDeleteRequest()
+          || (
+            request.auth.uid == uid
+            && request.resource.size <= 4 * 1024 * 1024
+            && request.resource.contentType.matches('image/.*')
+          )
+        );
+    }
+
+    match /users/{uid}/attachments/{fileName} {
+      allow read: if approvedUser();
+      allow write: if approvedUser()
+        && (
+          isDeleteRequest()
+          || (
+            request.auth.uid == uid
+            && request.resource.size <= 10 * 1024 * 1024
+            && fileName.lower().matches('^.*\\.(pdf|hwp|docx|xlsx)$')
+            && allowedAttachmentMime()
+          )
+        );
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

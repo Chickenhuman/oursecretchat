@@ -724,11 +724,10 @@ html.excel-theme .command-guide-chip {
 	</div>
     <div id="login-screen" class="screen active">
         <div class="auth-container">
-            <h2 id="login-title" style="color:#ff6b6b;">🔒 Secret Access</h2>
-            <p id="login-subtitle" style="color:#666; margin-bottom:30px;">우리만의 비밀 공간</p>
-            <input type="password" id="password-input" placeholder="비밀번호 입력">
-            <button id="login-submit-btn" class="btn-primary" onclick="checkPassword()">입장하기</button>
-            <p id="login-hint" style="font-size:12px; color:#aaa; margin-top:20px;">힌트: 0726</p>
+            <h2 id="login-title" style="color:#ff6b6b;">🔐 Google 승인 로그인</h2>
+            <p id="login-subtitle" style="color:#666; margin-bottom:30px;">승인된 Google 계정만 입장할 수 있어요.</p>
+            <button id="login-submit-btn" class="btn-primary" onclick="startGoogleSignIn()">Google로 계속하기</button>
+            <p id="login-hint" style="font-size:12px; color:#aaa; margin-top:20px;">승인되지 않은 계정은 자동으로 차단됩니다.</p>
         </div>
     </div>
 
@@ -786,7 +785,7 @@ html.excel-theme .command-guide-chip {
   <textarea id="msg-input" placeholder="메시지..." rows="1"></textarea>
     <button id="send-btn" onclick="sendMessage()">➤</button>
 </div>
-        <input type="file" id="photo-input" onchange="uploadSelectedFile(this.files[0])" disabled>
+        <input type="file" id="photo-input" accept="image/*,.pdf,.hwp,.docx,.xlsx,application/pdf,application/x-hwp,application/haansofthwp,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onchange="uploadSelectedFile(this.files[0])" disabled>
     </div>
 
     <div id="settings-screen" class="screen">
@@ -873,7 +872,7 @@ html.excel-theme .command-guide-chip {
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } 
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged }
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { firebaseConfig, STICKER_PACKS, emojiList, CURRENT_VERSION, RELEASE_DATE, PATCH_NOTES, UPDATE_SIGNATURE } from "./scripts/chat/config.js";
     import { parseMealCommand, resolveMealCommand, getMealCommandHelpText, getCommandGuideSections } from "./scripts/chat/menu.js";
@@ -881,29 +880,33 @@ html.excel-theme .command-guide-chip {
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-const storage = getStorage(app);
+    const storage = getStorage(app);
+    const auth = getAuth(app);
+    const googleProvider = new GoogleAuthProvider();
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-// 2. 인증 기능 초기화 및 로그인 실행 (여기 추가!)
-const auth = getAuth(app);
-let resolveAuthReady = null;
-let rejectAuthReady = null;
-const authReady = new Promise((resolve, reject) => {
-    resolveAuthReady = resolve;
-    rejectAuthReady = reject;
-});
-
-
-signInAnonymously(auth)
-  .then(() => {
-    console.log("Firebase 로그인 성공! 이제 데이터베이스를 쓸 수 있습니다.");
-  })
-  .catch((error) => {
-    console.error("로그인 실패:", error);
-    if (rejectAuthReady) {
-        rejectAuthReady(error);
-        rejectAuthReady = null;
-    }
-  });
+    const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+    const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+    const IMAGE_MAX_EDGE = 1600;
+    const IMAGE_WEBP_QUALITY = 0.82;
+    const IMAGE_JPEG_QUALITY = 0.85;
+    const APPROVED_EMAILS_COLLECTION = "approved_emails";
+    const PROFILES_COLLECTION = "profiles";
+    const ALLOWED_ATTACHMENT_EXTENSIONS = new Set(['pdf', 'hwp', 'docx', 'xlsx']);
+    const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
+        'application/pdf',
+        'application/x-hwp',
+        'application/haansofthwp',
+        'application/vnd.hancom.hwp',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ]);
+    const DOCUMENT_MIME_BY_EXTENSION = {
+        pdf: 'application/pdf',
+        hwp: 'application/x-hwp',
+        docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    };
 // [4] 스티커 설정 (1024x512 이미지 기준)
 
 // ==========================================
@@ -969,11 +972,14 @@ function switchTab(index) {
 // 4. 스티커 전송 함수 (수정됨)
 window.sendSticker = async function(stickerIdx, packIdx) {
     try {
+        ensureApprovedSession();
+        if (!myName) throw createChatError('chat/name-not-set');
         const payload = { 
             text: "(이모티콘)", 
             stickerIndex: stickerIdx, 
             packIndex: packIdx, // 🔴 어떤 팩인지 정보 추가
             sender: myName, 
+            senderUid: myId,
             timestamp: serverTimestamp(), 
             type: 'sticker' 
         };
@@ -1005,9 +1011,13 @@ window.toggleSticker = () => {
     // ==========================================
     
     // 1. 사용자 정보
-    let myName = localStorage.getItem('chat_nickname');
-    let myId = localStorage.getItem('chat_uid');
-    if (!myId) { myId = 'user_' + Date.now() + Math.floor(Math.random() * 1000); localStorage.setItem('chat_uid', myId); }
+    let myName = "";
+    let myId = "";
+    let myEmail = "";
+    let currentProfile = null;
+    let accessApproved = false;
+    let isAuthResolved = false;
+    let authGuardToken = 0;
     let savedBg = localStorage.getItem('chat_bg') || '#fafafa';
     let currentTheme = localStorage.getItem('chat_theme') === 'excel' ? 'excel' : 'default';
 
@@ -1044,6 +1054,10 @@ window.toggleSticker = () => {
 	    let deleteVotesUnsub = null;
 	    let presenceHeartbeatTimer = null;
 	    let isPerformingDeletion = false;
+    const storageUrlCache = new Map();
+    const storageUrlPending = new Map();
+    const galleryImageOrder = [];
+    const galleryImageUrlMap = new Map();
 
     // [날짜 구분선용 변수]
     let lastPrintedDate = null;
@@ -1073,11 +1087,10 @@ window.toggleSticker = () => {
         const themeLabels = {
             default: {
                 documentTitle: "잰갱이톡",
-                loginTitle: "🔒 Secret Access",
-                loginSubtitle: "우리만의 비밀 공간",
-                loginButton: "입장하기",
-                loginHint: "힌트: 0726",
-                passwordPlaceholder: "비밀번호 입력",
+                loginTitle: "🔐 Google 승인 로그인",
+                loginSubtitle: "승인된 Google 계정만 입장할 수 있어요.",
+                loginButton: "Google로 계속하기",
+                loginHint: "승인되지 않은 계정은 자동으로 차단됩니다.",
                 nameTitle: "반가워요! 👋",
                 nameSubtitle: "채팅방에서 쓸 이름을 정해주세요.",
                 nameButton: "시작하기",
@@ -1097,10 +1110,9 @@ window.toggleSticker = () => {
             excel: {
                 documentTitle: "2026_업무정리.xlsx",
                 loginTitle: "Microsoft Excel",
-                loginSubtitle: "보호된 문서를 열려면 암호를 입력하세요.",
-                loginButton: "파일 열기",
-                loginHint: "문서 키: 0726",
-                passwordPlaceholder: "문서 암호 입력",
+                loginSubtitle: "승인된 Google 계정으로만 보호된 문서를 열 수 있습니다.",
+                loginButton: "승인된 계정으로 열기",
+                loginHint: "허용된 공동 작업자 계정만 접근할 수 있어요.",
                 nameTitle: "사용자 확인",
                 nameSubtitle: "문서에서 표시할 이름을 정해주세요.",
                 nameButton: "확인",
@@ -1149,7 +1161,6 @@ window.toggleSticker = () => {
             const isExcelTheme = currentTheme === 'excel';
             const favicon = document.getElementById('favicon');
             const appleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-            const passwordInput = document.getElementById('password-input');
             const nameInput = document.getElementById('name-input');
             const msgInput = document.getElementById('msg-input');
             const searchInput = document.getElementById('search-input');
@@ -1174,7 +1185,6 @@ window.toggleSticker = () => {
             setElementText('gallery-title', labels.galleryTitle);
             setElementText('gallery-view-all', labels.galleryViewAll);
 
-            if (passwordInput) passwordInput.setAttribute('placeholder', labels.passwordPlaceholder);
             if (nameInput) nameInput.setAttribute('placeholder', labels.namePlaceholder);
             if (msgInput) msgInput.setAttribute('placeholder', isExcelTheme ? '메모 입력...' : '메시지...');
             if (searchInput) searchInput.setAttribute('placeholder', isExcelTheme ? '시트 내용 검색...' : '대화 내용 검색...');
@@ -1300,6 +1310,10 @@ window.toggleSticker = () => {
 	    }
 
 	    function enterChat() {
+	        if (!accessApproved || !myId) {
+	            showScreen('login-screen');
+	            return;
+	        }
 	        if (!myName) {
 	            showScreen('name-screen');
 	            return;
@@ -1373,7 +1387,7 @@ window.toggleSticker = () => {
                     let maxReadTime = 0; 
                     snapshot.forEach((docSnap) => {
                         const data = docSnap.data();
-                        if(docSnap.id !== myId && data.name !== myName) {
+                        if(docSnap.id !== myId) {
                             if (data.lastRead) {
                                 const time = data.lastRead.toMillis();
                                 if (time > maxReadTime) maxReadTime = time;
@@ -1425,25 +1439,134 @@ document.addEventListener("visibilitychange", () => {
         });
     }
 
-	    window.checkPassword = function() {
-        if (document.getElementById('password-input').value === '0726') {
-            localStorage.setItem('chat_auth_pw', '0726');
-            enterChat();
-        } else { alert('비밀번호가 틀립니다!'); }
-    };
-    
-    window.setName = function() { 
-        const name = document.getElementById('name-input').value;
-        if (!name) return alert("이름 입력");
-        myName = name;
-        localStorage.setItem('chat_nickname', name);
-        enterChat();
+    function createChatError(code) {
+        const error = new Error(code);
+        error.code = code;
+        return error;
+    }
+
+    function normalizeEmail(email = '') {
+        return String(email || '').trim().toLowerCase();
+    }
+
+    function getApprovedEmailDocId(email = '') {
+        return normalizeEmail(email);
+    }
+
+    function isMobileGoogleSignIn() {
+        return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || '');
+    }
+
+    window.startGoogleSignIn = async function() {
+        try {
+            setLoadingMessage('Google 로그인 중...');
+            if (isMobileGoogleSignIn()) {
+                await signInWithRedirect(auth, googleProvider);
+                return;
+            }
+            await signInWithPopup(auth, googleProvider);
+        } catch (error) {
+            if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/operation-not-supported-in-this-environment') {
+                await signInWithRedirect(auth, googleProvider);
+                return;
+            }
+            if (error?.code !== 'auth/popup-closed-by-user') {
+                console.error('Google 로그인 실패:', error);
+                alert('Google 로그인에 실패했어요. 잠시 후 다시 시도해주세요.');
+            }
+            hideLoadingMessage();
+        }
     };
 
-    function ensureAuthReady() {
-        if (auth.currentUser) return Promise.resolve(auth.currentUser);
-        return authReady;
+    async function isApprovedEmail(email) {
+        const docId = getApprovedEmailDocId(email);
+        if (!docId) return false;
+        const approvedSnap = await getDoc(doc(db, APPROVED_EMAILS_COLLECTION, docId));
+        return approvedSnap.exists();
     }
+
+    async function syncUserProfile(user, aliasOverride = "") {
+        const profileRef = doc(db, PROFILES_COLLECTION, user.uid);
+        const profileSnap = await getDoc(profileRef);
+        const existingProfile = profileSnap.exists() ? profileSnap.data() : {};
+        const legacyAlias = (localStorage.getItem('chat_nickname') || "").trim();
+        const nextAlias = (aliasOverride || existingProfile.chatAlias || legacyAlias).trim();
+        const payload = {
+            email: normalizeEmail(user.email || ""),
+            googleDisplayName: user.displayName || "",
+            photoURL: user.photoURL || "",
+            lastLoginAt: serverTimestamp()
+        };
+
+        if (nextAlias) {
+            payload.chatAlias = nextAlias;
+        }
+
+        await setDoc(profileRef, payload, { merge: true });
+
+        const mergedProfile = {
+            ...existingProfile,
+            ...payload,
+            chatAlias: payload.chatAlias || existingProfile.chatAlias || ""
+        };
+
+        if (mergedProfile.chatAlias) {
+            localStorage.setItem('chat_nickname', mergedProfile.chatAlias);
+        }
+
+        return mergedProfile;
+    }
+
+    async function applyApprovedSession(user) {
+        currentProfile = await syncUserProfile(user);
+        myId = user.uid;
+        myEmail = normalizeEmail(user.email || "");
+        myName = currentProfile.chatAlias || "";
+        accessApproved = true;
+
+        if (myName) {
+            enterChat();
+        } else {
+            showScreen('name-screen');
+            const nameInput = document.getElementById('name-input');
+            if (nameInput) {
+                nameInput.value = user.displayName || "";
+                nameInput.focus();
+            }
+        }
+    }
+
+    async function rejectUnapprovedSession(user) {
+        accessApproved = false;
+        currentProfile = null;
+        myName = "";
+        myId = "";
+        myEmail = "";
+        alert(`승인되지 않은 계정입니다.\n관리자가 허용한 Google 이메일만 입장할 수 있어요.\n\n현재 계정: ${user?.email || '확인 불가'}`);
+        await signOut(auth);
+    }
+
+    function ensureApprovedSession() {
+        if (!auth.currentUser || !accessApproved || !myId) {
+            throw createChatError('chat/not-authorized');
+        }
+    }
+
+    window.setName = async function() {
+        const name = document.getElementById('name-input').value.trim();
+        if (!name) return alert("이름 입력");
+
+        try {
+            ensureApprovedSession();
+            currentProfile = await syncUserProfile(auth.currentUser, name);
+            myName = currentProfile.chatAlias || name;
+            localStorage.setItem('chat_nickname', myName);
+            enterChat();
+        } catch (error) {
+            console.error('이름 저장 실패:', error);
+            alert("이름 저장 중 오류가 발생했어요.");
+        }
+    };
 
     function getMimeExtension(type = '', fallback = 'bin') {
         if (!type.includes('/')) return fallback;
@@ -1454,23 +1577,54 @@ document.addEventListener("visibilitychange", () => {
             .replace(/[^a-z0-9.+-]/gi, '') || fallback;
     }
 
-    function buildUploadFileName(fileOrBlob, defaultBaseName = 'attachment', fallbackExt = 'bin') {
+    function getFileExtension(fileName = '') {
+        const cleaned = String(fileName || '').trim().replace(/^.*[\\/]/, '');
+        const dotIndex = cleaned.lastIndexOf('.');
+        if (dotIndex < 0) return '';
+        return cleaned.slice(dotIndex + 1).toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function getBaseName(fileName = '', fallbackBaseName = 'attachment') {
+        const cleaned = String(fileName || '').trim().replace(/^.*[\\/]/, '');
+        if (!cleaned) return fallbackBaseName;
+        const dotIndex = cleaned.lastIndexOf('.');
+        return dotIndex > 0 ? cleaned.slice(0, dotIndex) : cleaned;
+    }
+
+    function sanitizeFileNameSegment(value = '', fallback = 'attachment') {
+        const cleaned = String(value || '')
+            .trim()
+            .replace(/\s+/g, ' ')
+            .replace(/[\\/#?*\[\]<>:"|]/g, '_')
+            .slice(0, 80);
+        return cleaned || fallback;
+    }
+
+    function buildUploadFileName(fileOrBlob, defaultBaseName = 'attachment', fallbackExt = 'bin', preferredExt = '') {
         const rawName = typeof fileOrBlob?.name === 'string' ? fileOrBlob.name.trim() : '';
-        const fallbackName = `${defaultBaseName}.${getMimeExtension(fileOrBlob?.type || '', fallbackExt)}`;
-        const safeName = (rawName || fallbackName).replace(/[\\/#?*\[\]]/g, '_');
-        return `${Date.now()}_${safeName}`;
+        const baseName = sanitizeFileNameSegment(getBaseName(rawName, defaultBaseName), defaultBaseName);
+        const extension = sanitizeFileNameSegment(
+            preferredExt || getFileExtension(rawName) || getMimeExtension(fileOrBlob?.type || '', fallbackExt),
+            fallbackExt
+        ).replace(/\s+/g, '');
+        return `${Date.now()}_${baseName}.${extension || fallbackExt}`;
+    }
+
+    function guessDocumentMimeType(extension = '') {
+        return DOCUMENT_MIME_BY_EXTENSION[String(extension || '').toLowerCase()] || 'application/octet-stream';
     }
 
     function normalizeUploadBinary(fileOrBlob, options = {}) {
         const {
             defaultBaseName = 'attachment',
             fallbackType = 'application/octet-stream',
-            fallbackExt = 'bin'
+            fallbackExt = 'bin',
+            preferredExt = ''
         } = options;
         const contentType = typeof fileOrBlob?.type === 'string' && fileOrBlob.type
             ? fileOrBlob.type
             : fallbackType;
-        const fileName = buildUploadFileName(fileOrBlob, defaultBaseName, fallbackExt);
+        const fileName = buildUploadFileName(fileOrBlob, defaultBaseName, fallbackExt, preferredExt);
 
         if (typeof File !== 'undefined' && (!(fileOrBlob instanceof File) || !fileOrBlob.name)) {
             return {
@@ -1481,6 +1635,118 @@ document.addEventListener("visibilitychange", () => {
         }
 
         return { file: fileOrBlob, fileName, contentType };
+    }
+
+    function isAllowedDocumentFile(file) {
+        const extension = getFileExtension(file?.name || '');
+        const mime = String(file?.type || '').toLowerCase();
+        if (!ALLOWED_ATTACHMENT_EXTENSIONS.has(extension)) return false;
+        if (!mime || mime === 'application/octet-stream') return true;
+        return ALLOWED_ATTACHMENT_MIME_TYPES.has(mime);
+    }
+
+    function validateDocumentFile(file) {
+        if (!file) throw createChatError('chat/file-type-not-allowed');
+        if (!isAllowedDocumentFile(file)) throw createChatError('chat/file-type-not-allowed');
+        if (Number(file.size || 0) > MAX_ATTACHMENT_BYTES) throw createChatError('chat/file-too-large');
+    }
+
+    function loadImageElement(file) {
+        return new Promise((resolve, reject) => {
+            const objectUrl = URL.createObjectURL(file);
+            const image = new Image();
+            image.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+                resolve(image);
+            };
+            image.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                reject(createChatError('chat/image-decode-failed'));
+            };
+            image.src = objectUrl;
+        });
+    }
+
+    function canvasToBlob(canvas, type, quality) {
+        return new Promise((resolve, reject) => {
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    reject(createChatError('chat/image-encode-failed'));
+                    return;
+                }
+                resolve(blob);
+            }, type, quality);
+        });
+    }
+
+    function getResizedDimensions(width, height, maxEdge) {
+        if (!width || !height) {
+            return { width: maxEdge, height: maxEdge };
+        }
+        const longestEdge = Math.max(width, height);
+        if (longestEdge <= maxEdge) {
+            return { width, height };
+        }
+        const scale = maxEdge / longestEdge;
+        return {
+            width: Math.max(1, Math.round(width * scale)),
+            height: Math.max(1, Math.round(height * scale))
+        };
+    }
+
+    async function prepareImageUpload(fileOrBlob, isDrawing = false) {
+        const normalizedSource = normalizeUploadBinary(fileOrBlob, {
+            defaultBaseName: isDrawing ? 'drawing' : 'image',
+            fallbackType: 'image/png',
+            fallbackExt: 'png'
+        });
+        const sourceFile = normalizedSource.file;
+
+        if (!sourceFile?.type?.startsWith('image/')) {
+            throw createChatError('chat/file-type-not-allowed');
+        }
+        if (Number(sourceFile.size || 0) > MAX_IMAGE_BYTES) {
+            throw createChatError('chat/image-too-large');
+        }
+
+        const image = await loadImageElement(sourceFile);
+        const naturalWidth = image.naturalWidth || image.width;
+        const naturalHeight = image.naturalHeight || image.height;
+        const { width, height } = getResizedDimensions(naturalWidth, naturalHeight, IMAGE_MAX_EDGE);
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        if (!context) {
+            throw createChatError('chat/image-encode-failed');
+        }
+        context.drawImage(image, 0, 0, width, height);
+
+        let blob;
+        let contentType = 'image/webp';
+        let preferredExt = 'webp';
+        try {
+            blob = await canvasToBlob(canvas, contentType, IMAGE_WEBP_QUALITY);
+        } catch (error) {
+            contentType = 'image/jpeg';
+            preferredExt = 'jpg';
+            blob = await canvasToBlob(canvas, contentType, IMAGE_JPEG_QUALITY);
+        }
+
+        if (Number(blob?.size || 0) > MAX_IMAGE_BYTES) {
+            throw createChatError('chat/image-compressed-too-large');
+        }
+
+        const fileName = buildUploadFileName(sourceFile, isDrawing ? 'drawing' : 'image', preferredExt, preferredExt);
+        const uploadFile = new File([blob], fileName, { type: contentType, lastModified: Date.now() });
+
+        return {
+            file: uploadFile,
+            fileName,
+            contentType,
+            width,
+            height
+        };
     }
 
     function formatFileSize(size = 0) {
@@ -1527,8 +1793,36 @@ document.addEventListener("visibilitychange", () => {
     }
 
     function getUploadErrorMessage(error) {
-        if (error?.message === 'chat/name-not-set') {
+        const errorCode = error?.code || error?.message;
+
+        if (errorCode === 'chat/name-not-set') {
             return "이름 설정이 아직 완료되지 않았어요. 다시 입장한 뒤 시도해주세요.";
+        }
+        if (errorCode === 'chat/not-authorized') {
+            return "승인된 Google 계정으로 로그인한 뒤 다시 시도해주세요.";
+        }
+        if (errorCode === 'chat/image-too-large') {
+            return "이미지는 원본 기준 4MB 이하만 전송할 수 있어요.";
+        }
+        if (errorCode === 'chat/image-compressed-too-large') {
+            return "압축 후에도 4MB를 넘는 이미지는 전송할 수 없어요.";
+        }
+        if (errorCode === 'chat/image-decode-failed') {
+            return "이미지를 읽지 못했어요. 다른 이미지로 다시 시도해주세요.";
+        }
+        if (errorCode === 'chat/image-encode-failed') {
+            return "이미지 압축 중 오류가 발생했어요.";
+        }
+        if (errorCode === 'chat/file-type-not-allowed') {
+            return "이미지 또는 PDF/HWP/DOCX/XLSX 파일만 전송할 수 있어요.";
+        }
+        if (errorCode === 'chat/file-too-large') {
+            return "문서 파일은 10MB 이하만 전송할 수 있어요.";
+        }
+
+        const serverMessage = extractStorageServerMessage(error);
+        if (serverMessage) {
+            return `첨부 전송 실패: ${serverMessage}`;
         }
 
         switch (error?.code) {
@@ -1542,6 +1836,19 @@ document.addEventListener("visibilitychange", () => {
             default:
                 return "첨부 전송 실패";
         }
+    }
+
+    function extractStorageServerMessage(error) {
+        const rawResponse = error?.customData?.serverResponse || error?.serverResponse;
+        if (!rawResponse) return "";
+        try {
+            const parsed = JSON.parse(rawResponse);
+            const message = parsed?.error?.message || parsed?.error?.status || "";
+            if (message) return String(message);
+        } catch (e) {
+            // Ignore JSON parse errors and fall back to raw text.
+        }
+        return String(rawResponse).slice(0, 200);
     }
 
     function setLoadingMessage(message) {
@@ -1566,10 +1873,116 @@ document.addEventListener("visibilitychange", () => {
         }
     }
 
+    function isCurrentUserMessage(data) {
+        if (!data) return false;
+        if (data.type === 'meal' || data.sender === '식단봇') {
+            return false;
+        }
+        if (data.senderUid) {
+            return data.senderUid === myId;
+        }
+        return !!myName && data.sender === myName;
+    }
+
+    function getGalleryImageKey(docId, data) {
+        return data?.storagePath || data?.imageUrl || docId;
+    }
+
+    function rebuildGalleryImages() {
+        allImages = galleryImageOrder
+            .map((key) => ({ key, url: galleryImageUrlMap.get(key) }))
+            .filter((item) => item.url);
+    }
+
+    function registerGalleryImageKey(key, prepend = false) {
+        if (!key || galleryImageOrder.includes(key)) return;
+        if (prepend) galleryImageOrder.unshift(key);
+        else galleryImageOrder.push(key);
+    }
+
+    function rememberGalleryImage(key, url, prepend = false) {
+        registerGalleryImageKey(key, prepend);
+        if (url) {
+            galleryImageUrlMap.set(key, url);
+        }
+        rebuildGalleryImages();
+        updateGalleryPreview();
+    }
+
+    function resetGalleryState() {
+        allImages = [];
+        galleryImageOrder.length = 0;
+        galleryImageUrlMap.clear();
+        galleryLastSnap = null;
+        isGalleryEnd = false;
+        const fullGalleryGrid = document.getElementById('full-gallery-grid');
+        if (fullGalleryGrid) {
+            fullGalleryGrid.innerHTML = '';
+        }
+    }
+
+    async function resolveStorageUrl(storagePath) {
+        if (!storagePath) return "";
+        if (storageUrlCache.has(storagePath)) {
+            return storageUrlCache.get(storagePath);
+        }
+        if (storageUrlPending.has(storagePath)) {
+            return storageUrlPending.get(storagePath);
+        }
+
+        const pending = getDownloadURL(ref(storage, storagePath))
+            .then((url) => {
+                storageUrlCache.set(storagePath, url);
+                storageUrlPending.delete(storagePath);
+                return url;
+            })
+            .catch((error) => {
+                storageUrlPending.delete(storagePath);
+                throw error;
+            });
+
+        storageUrlPending.set(storagePath, pending);
+        return pending;
+    }
+
+    async function resolveImageAssetUrl(data) {
+        if (data?.imageUrl) return data.imageUrl;
+        if (data?.storagePath) return resolveStorageUrl(data.storagePath);
+        return "";
+    }
+
+    async function resolveFileAssetUrl(data) {
+        if (data?.fileUrl) return data.fileUrl;
+        if (data?.storagePath) return resolveStorageUrl(data.storagePath);
+        return "";
+    }
+
+    function queueGalleryImage(docId, data, prepend = false) {
+        const key = getGalleryImageKey(docId, data);
+        registerGalleryImageKey(key, prepend);
+
+        if (data?.imageUrl) {
+            rememberGalleryImage(key, data.imageUrl, prepend);
+            return;
+        }
+
+        if (data?.storagePath) {
+            resolveImageAssetUrl(data)
+                .then((url) => {
+                    if (url) rememberGalleryImage(key, url, prepend);
+                })
+                .catch((error) => {
+                    console.warn('갤러리 이미지 URL 조회 실패:', data.storagePath, error);
+                });
+        }
+    }
+
     async function postBotTextMessage(text, replyTo = null) {
+        ensureApprovedSession();
         const payload = {
             text,
             sender: '식단봇',
+            senderUid: myId,
             timestamp: serverTimestamp(),
             type: 'text'
         };
@@ -1582,9 +1995,11 @@ document.addEventListener("visibilitychange", () => {
     }
 
     async function postMealCardMessage(payload, replyTo = null) {
+        ensureApprovedSession();
         const messagePayload = {
             ...payload,
             sender: '식단봇',
+            senderUid: myId,
             timestamp: serverTimestamp()
         };
 
@@ -1639,7 +2054,9 @@ document.addEventListener("visibilitychange", () => {
             return;
         }
         try { 
-            const payload = { text: text, sender: myName, timestamp: serverTimestamp(), type: 'text' };
+            ensureApprovedSession();
+            if (!myName) throw createChatError('chat/name-not-set');
+            const payload = { text: text, sender: myName, senderUid: myId, timestamp: serverTimestamp(), type: 'text' };
             // 답장 중이면 답장 데이터 포함
             if(currentReplyTarget) {
                 payload.replyTo = currentReplyTarget;
@@ -1658,26 +2075,35 @@ input.value = "";
             await uploadImage(file);
             return;
         }
+        if (!isAllowedDocumentFile(file)) {
+            alert("이미지 또는 PDF/HWP/DOCX/XLSX 파일만 전송할 수 있어요.");
+            document.getElementById('photo-input').value = '';
+            return;
+        }
         await uploadFile(file);
     };
 
     window.uploadImage = async function(fileOrBlob, isDrawing = false) { 
         if (!fileOrBlob) return; 
-        document.getElementById('loading').style.display = 'flex'; 
+        setLoadingMessage(isDrawing ? '그림을 압축해 전송하는 중...' : '이미지를 압축해 전송하는 중...'); 
         try { 
-            if (!myName) throw new Error('chat/name-not-set');
-            await ensureAuthReady();
-            const { file: uploadFile, fileName, contentType } = normalizeUploadBinary(fileOrBlob, {
-                defaultBaseName: isDrawing ? 'drawing' : 'clipboard-image',
-                fallbackType: 'image/png',
-                fallbackExt: 'png'
-            });
-            const storagePath = 'images/' + fileName;
+            ensureApprovedSession();
+            if (!myName) throw createChatError('chat/name-not-set');
+            const preparedImage = await prepareImageUpload(fileOrBlob, isDrawing);
+            const storagePath = `users/${myId}/images/${preparedImage.fileName}`;
             const storageRef = ref(storage, storagePath); 
-            await uploadBytes(storageRef, uploadFile, { contentType }); 
-            const url = await getDownloadURL(storageRef); 
+            await uploadBytes(storageRef, preparedImage.file, { contentType: preparedImage.contentType }); 
             
-            const payload = { text: isDrawing ? "그림을 보냈습니다." : "사진을 보냈습니다.", imageUrl: url, storagePath, sender: myName, timestamp: serverTimestamp(), type: 'image' };
+            const payload = {
+                text: isDrawing ? "그림을 보냈습니다." : "사진을 보냈습니다.",
+                storagePath,
+                sender: myName,
+                senderUid: myId,
+                timestamp: serverTimestamp(),
+                type: 'image',
+                imageWidth: preparedImage.width,
+                imageHeight: preparedImage.height
+            };
             if(currentReplyTarget) { payload.replyTo = currentReplyTarget; }
 
             await addDoc(collection(db, "chats"), payload); 
@@ -1685,34 +2111,40 @@ input.value = "";
             markAsRead(); scrollToBottom(); 
         } catch (e) {
             console.error("이미지 전송 실패:", e);
+            const serverResponse = e?.customData?.serverResponse || e?.serverResponse;
+            if (serverResponse) {
+                console.error("Storage 서버 응답:", serverResponse);
+            }
             alert(getUploadErrorMessage(e));
-        } finally { document.getElementById('loading').style.display = 'none'; document.getElementById('photo-input').value = ''; } 
+        } finally { hideLoadingMessage(); document.getElementById('photo-input').value = ''; } 
     };
 
     window.uploadFile = async function(file) {
         if (!file) return;
-        document.getElementById('loading').style.display = 'flex';
+        setLoadingMessage('문서를 전송하는 중...');
         try {
-            if (!myName) throw new Error('chat/name-not-set');
-            await ensureAuthReady();
+            ensureApprovedSession();
+            if (!myName) throw createChatError('chat/name-not-set');
+            validateDocumentFile(file);
+            const extension = getFileExtension(file.name);
             const { file: uploadFile, fileName, contentType } = normalizeUploadBinary(file, {
-                defaultBaseName: 'attachment',
-                fallbackType: 'application/octet-stream',
-                fallbackExt: 'bin'
+                defaultBaseName: getBaseName(file.name, 'attachment'),
+                fallbackType: guessDocumentMimeType(extension),
+                fallbackExt: extension || 'bin',
+                preferredExt: extension || 'bin'
             });
-            const storagePath = 'attachments/' + fileName;
+            const storagePath = `users/${myId}/attachments/${fileName}`;
             const storageRef = ref(storage, storagePath);
             await uploadBytes(storageRef, uploadFile, { contentType });
-            const url = await getDownloadURL(storageRef);
 
             const payload = {
                 text: "파일을 보냈습니다.",
-                fileUrl: url,
-                fileName: uploadFile.name || fileName,
+                fileName: file.name || uploadFile.name || fileName,
                 fileSize: uploadFile.size || 0,
                 fileMime: contentType,
                 storagePath,
                 sender: myName,
+                senderUid: myId,
                 timestamp: serverTimestamp(),
                 type: 'file'
             };
@@ -1724,9 +2156,13 @@ input.value = "";
             scrollToBottom();
         } catch (e) {
             console.error("파일 전송 실패:", e);
+            const serverResponse = e?.customData?.serverResponse || e?.serverResponse;
+            if (serverResponse) {
+                console.error("Storage 서버 응답:", serverResponse);
+            }
             alert(getUploadErrorMessage(e));
         } finally {
-            document.getElementById('loading').style.display = 'none';
+            hideLoadingMessage();
             document.getElementById('photo-input').value = '';
         }
     };
@@ -1738,7 +2174,7 @@ input.value = "";
 	        messageUnsub = null;
 	    }
 	    isInitialLoad = true;
-	    allImages = [];
+	    resetGalleryState();
 	    oldestMessageSnap = null;
 	    isFetchingOlder = false;
 	    lastPartnerMsgTime = 0;
@@ -1777,7 +2213,7 @@ input.value = "";
                 }
 
                 // 4. 알림 로직 (EXE 및 윈도우 알림)
-                if (!isInitialLoad && data.sender !== myName) {
+                if (!isInitialLoad && !isCurrentUserMessage(data)) {
                     // EXE 작업표시줄 깜빡임
                     if (window.electronAPI) {
                         window.electronAPI.triggerFlash();
@@ -1803,10 +2239,11 @@ input.value = "";
                 // 5. 메시지 화면에 추가
                 const msgHTML = createMessageHTML(data, docId);
                 msgBox.insertAdjacentHTML('beforeend', msgHTML); 
+                hydrateMessageAsset(docId, data);
                 
                 // 데이터 보관 및 읽음 처리용 시간 업데이트
-                if(data.type === 'image') allImages.push(data.imageUrl);
-                if(data.sender !== myName && data.timestamp) {
+                if (data.type === 'image') queueGalleryImage(docId, data, false);
+                if(!isCurrentUserMessage(data) && data.timestamp) {
                     const time = data.timestamp.toMillis();
                     if(time > lastPartnerMsgTime) lastPartnerMsgTime = time;
                 }
@@ -1871,9 +2308,8 @@ const msgBox = document.getElementById('messages');
                     }
 
                     html += createMessageHTML(data, doc.id);
-
-                    if(data.type === 'image') allImages.unshift(data.imageUrl);
-                    if(data.sender !== myName && data.timestamp) {
+                    if (data.type === 'image') queueGalleryImage(doc.id, data, true);
+                    if(!isCurrentUserMessage(data) && data.timestamp) {
                         const time = data.timestamp.toMillis();
                         if(time > lastPartnerMsgTime) lastPartnerMsgTime = time;
                     }
@@ -1886,6 +2322,9 @@ const msgBox = document.getElementById('messages');
                 }
 
                 topLoading.insertAdjacentHTML('afterend', html);
+                docs.forEach((docSnap) => {
+                    hydrateMessageAsset(docSnap.id, docSnap.data({ serverTimestamps: 'estimate' }));
+                });
 
                 const newHeight = msgBox.scrollHeight;
                 msgBox.scrollTop = newHeight - oldHeight;
@@ -1902,10 +2341,95 @@ const msgBox = document.getElementById('messages');
         }
     }
 
+    function buildResolvedFileCardHtml(url, data) {
+        const safeFileUrl = escapeAttribute(url || "");
+        const safeFileName = escapeHtml(data.fileName || "첨부 파일");
+        const safeDownloadName = escapeAttribute(data.fileName || "attachment");
+        const safeFileType = escapeHtml(getFileTypeLabel(data.fileMime || "", data.fileName || ""));
+        const safeFileSize = escapeHtml(formatFileSize(Number(data.fileSize || 0)));
+        const safeFileIcon = escapeHtml(getFileIcon(data.fileMime || "", data.fileName || ""));
+
+        return `
+            <a href="${safeFileUrl}" class="file-card" target="_blank" rel="noopener noreferrer" download="${safeDownloadName}">
+                <span class="file-icon">${safeFileIcon}</span>
+                <span class="file-meta">
+                    <span class="file-name">${safeFileName}</span>
+                    <span class="file-sub">${safeFileType} · ${safeFileSize}</span>
+                    <span class="file-link">열기 / 다운로드</span>
+                </span>
+            </a>`;
+    }
+
+    function buildPendingFileCardHtml(data, docId) {
+        const safeFileName = escapeHtml(data.fileName || "첨부 파일");
+        const safeFileType = escapeHtml(getFileTypeLabel(data.fileMime || "", data.fileName || ""));
+        const safeFileSize = escapeHtml(formatFileSize(Number(data.fileSize || 0)));
+        const safeFileIcon = escapeHtml(getFileIcon(data.fileMime || "", data.fileName || ""));
+
+        return `
+            <div class="file-card" data-asset-kind="file" data-doc-id="${escapeAttribute(docId)}" style="opacity:0.78; cursor:default;">
+                <span class="file-icon">${safeFileIcon}</span>
+                <span class="file-meta">
+                    <span class="file-name">${safeFileName}</span>
+                    <span class="file-sub">${safeFileType} · ${safeFileSize}</span>
+                    <span class="file-link">링크 준비 중...</span>
+                </span>
+            </div>`;
+    }
+
+    function buildPendingImageHtml(docId) {
+        return `
+            <div data-asset-kind="image" data-doc-id="${escapeAttribute(docId)}" style="width:220px; max-width:100%; min-height:120px; display:flex; align-items:center; justify-content:center; border-radius:12px; background:rgba(255,255,255,0.78); color:#888; font-size:13px;">
+                이미지 불러오는 중...
+            </div>`;
+    }
+
+    async function hydrateMessageAsset(docId, data) {
+        const messageEl = document.getElementById(`msg-${docId}`);
+        if (!messageEl) return;
+
+        if (data.type === 'image' && !data.imageUrl && data.storagePath) {
+            const placeholder = messageEl.querySelector('[data-asset-kind="image"]');
+            if (!placeholder) return;
+
+            try {
+                const imageUrl = await resolveImageAssetUrl(data);
+                if (!imageUrl) {
+                    placeholder.textContent = '이미지를 불러오지 못했어요.';
+                    return;
+                }
+                placeholder.outerHTML = `<img src="${escapeAttribute(imageUrl)}" class="chat-img" onclick="window.open(this.src)">`;
+            } catch (error) {
+                console.warn('이미지 URL 조회 실패:', data.storagePath, error);
+                placeholder.textContent = '이미지를 불러오지 못했어요.';
+            }
+        }
+
+        if (data.type === 'file' && !data.fileUrl && data.storagePath) {
+            const placeholder = messageEl.querySelector('[data-asset-kind="file"]');
+            if (!placeholder) return;
+
+            try {
+                const fileUrl = await resolveFileAssetUrl(data);
+                if (!fileUrl) {
+                    placeholder.querySelector('.file-link').textContent = '링크를 준비하지 못했어요.';
+                    return;
+                }
+                placeholder.outerHTML = buildResolvedFileCardHtml(fileUrl, data);
+            } catch (error) {
+                console.warn('파일 URL 조회 실패:', data.storagePath, error);
+                const fileLink = placeholder.querySelector('.file-link');
+                if (fileLink) {
+                    fileLink.textContent = '링크를 준비하지 못했어요.';
+                }
+            }
+        }
+    }
+
     // 🛠️ [수정됨] 답장 기능 및 HTML 생성
     // [5] 메시지 HTML 생성 함수 (수정됨)
 	function createMessageHTML(data, docId) {
-	    const isMe = data.sender === myName;
+	    const isMe = isCurrentUserMessage(data);
 	    const msgTime = data.timestamp ? data.timestamp.toMillis() : Date.now();
 	    const date = getMessageDate(data.timestamp);
 	    const timeStr = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
@@ -1916,32 +2440,17 @@ const msgBox = document.getElementById('messages');
 	    
 	    let contentHtml = "";
 
-	    // A. 텍스트일 때
 	    if (!data.type || data.type === 'text') {
 	        contentHtml = linkify(data.text);
-	    } 
-	    // B. 사진일 때
-	    else if (data.type === 'image') {
-	        contentHtml = `<img src="${escapeAttribute(data.imageUrl || "")}" class="chat-img" onclick="window.open(this.src)">`;
-	    }
-	    else if (data.type === 'file') {
-            const safeFileUrl = escapeAttribute(data.fileUrl || "");
-            const safeFileName = escapeHtml(data.fileName || "첨부 파일");
-            const safeDownloadName = escapeAttribute(data.fileName || "attachment");
-            const safeFileType = escapeHtml(getFileTypeLabel(data.fileMime || "", data.fileName || ""));
-            const safeFileSize = escapeHtml(formatFileSize(Number(data.fileSize || 0)));
-            const safeFileIcon = escapeHtml(getFileIcon(data.fileMime || "", data.fileName || ""));
-            contentHtml = `
-                <a href="${safeFileUrl}" class="file-card" target="_blank" rel="noopener noreferrer" download="${safeDownloadName}">
-                    <span class="file-icon">${safeFileIcon}</span>
-                    <span class="file-meta">
-                        <span class="file-name">${safeFileName}</span>
-                        <span class="file-sub">${safeFileType} · ${safeFileSize}</span>
-                        <span class="file-link">열기 / 다운로드</span>
-                    </span>
-                </a>`;
-        }
-	    else if (data.type === 'meal') {
+	    } else if (data.type === 'image') {
+            contentHtml = data.imageUrl
+                ? `<img src="${escapeAttribute(data.imageUrl || "")}" class="chat-img" onclick="window.open(this.src)">`
+                : buildPendingImageHtml(docId);
+	    } else if (data.type === 'file') {
+            contentHtml = data.fileUrl
+                ? buildResolvedFileCardHtml(data.fileUrl, data)
+                : buildPendingFileCardHtml(data, docId);
+        } else if (data.type === 'meal') {
             const safeCardTitle = escapeHtml(data.cardTitle || "식단");
             const safeCardSubtitle = escapeHtml(data.cardSubtitle || "");
             const safeSourceUrl = escapeAttribute(data.sourceUrl || "");
@@ -1960,27 +2469,19 @@ const msgBox = document.getElementById('messages');
                     <ul class="meal-card-list">${itemHtml}</ul>
                     ${safeSourceUrl ? `<a href="${safeSourceUrl}" class="meal-card-link" target="_blank" rel="noopener noreferrer">${safeSourceLabel}</a>` : ""}
                 </div>`;
-        }
-	    // C. 스티커일 때 (여기가 핵심!)
-	  else if (data.type === 'sticker') {
-        const idx = data.stickerIndex || 0;
-        const pIdx = data.packIndex || 0; // 팩 정보가 없으면 0번(기본)으로 처리
-        
-        // 해당 팩의 정보 가져오기
-        const pack = STICKER_PACKS[pIdx] || STICKER_PACKS[0]; 
-        
-        const col = idx % pack.cols;
-        const row = Math.floor(idx / pack.cols);
-        const unitSize = pack.totalWidth / pack.cols;
-        
-        // 채팅방 표시 크기 (128px)
-        const displaySize = 128; 
-        const scale = displaySize / unitSize;
-        
-        const bgW = pack.totalWidth * scale;
-        const bgH = pack.totalHeight * scale;
-        const bgX = -(col * displaySize);
-        const bgY = -(row * displaySize);
+        } else if (data.type === 'sticker') {
+            const idx = data.stickerIndex || 0;
+            const pIdx = data.packIndex || 0;
+            const pack = STICKER_PACKS[pIdx] || STICKER_PACKS[0];
+            const col = idx % pack.cols;
+            const row = Math.floor(idx / pack.cols);
+            const unitSize = pack.totalWidth / pack.cols;
+            const displaySize = 128;
+            const scale = displaySize / unitSize;
+            const bgW = pack.totalWidth * scale;
+            const bgH = pack.totalHeight * scale;
+            const bgX = -(col * displaySize);
+            const bgY = -(row * displaySize);
 
 	        contentHtml = `
 	            <div class="sticker-msg" style="
@@ -1988,11 +2489,10 @@ const msgBox = document.getElementById('messages');
 	                background-size: ${bgW}px ${bgH}px;
 	                background-position: ${bgX}px ${bgY}px;
 	                width: 128px; height: 128px;
-                background-color: transparent; /* ✨ 여기서도 투명 배경! */
+                background-color: transparent;
             "></div>`;
-    }
+        }
 
-	    // 답장 표시 (기존 코드 유지)
 	    const replyBlock = data.replyTo ? `
 	        <div class="quote-block" onclick="scrollToMessage('${data.replyTo.id}')">
 	            <span class="quote-sender">To. ${escapeHtml(data.replyTo.sender || "")}</span>
@@ -2020,7 +2520,7 @@ const msgBox = document.getElementById('messages');
 	    function updateGalleryPreview() {
 	        const previewGrid = document.getElementById('gallery-preview');
 	        const recentImages = allImages.slice(-3).reverse();
-	        previewGrid.innerHTML = recentImages.map(src => `<img src="${escapeAttribute(src)}" class="gallery-item" onclick="window.open(this.src)">`).join('');
+	        previewGrid.innerHTML = recentImages.map((item) => `<img src="${escapeAttribute(item.url)}" class="gallery-item" onclick="window.open(this.src)">`).join('');
 	        if(recentImages.length === 0) previewGrid.innerHTML = '<span style="grid-column:span 3; text-align:center; color:#ccc; font-size:12px;">사진 없음</span>';
 	    }
 
@@ -2055,11 +2555,18 @@ const msgBox = document.getElementById('messages');
                 galleryLoading.innerText = "모든 사진을 불러왔습니다.";
 	        } else {
 	            galleryLastSnap = snapshot.docs[snapshot.docs.length - 1];
-	            snapshot.forEach(doc => {
-	                const url = doc.data().imageUrl;
-	                grid.insertAdjacentHTML('beforeend', `<img src="${escapeAttribute(url)}" class="gallery-item" onclick="window.open(this.src)">`);
-	            });
-	                galleryLoading.style.display = 'none';
+                const resolvedImages = await Promise.all(snapshot.docs.map(async (docSnap) => {
+                    const data = docSnap.data();
+                    try {
+                        const imageUrl = await resolveImageAssetUrl(data);
+                        return imageUrl ? `<img src="${escapeAttribute(imageUrl)}" class="gallery-item" onclick="window.open(this.src)">` : '';
+                    } catch (error) {
+                        console.warn('갤러리 이미지 조회 실패:', docSnap.id, error);
+                        return '';
+                    }
+                }));
+                grid.insertAdjacentHTML('beforeend', resolvedImages.filter(Boolean).join(''));
+	            galleryLoading.style.display = 'none';
 	        }
         } catch (e) {
             console.error("갤러리 불러오기 실패:", e);
@@ -2076,9 +2583,14 @@ const msgBox = document.getElementById('messages');
         }
     });
 
-    window.clearCache = () => {
+    window.clearCache = async () => {
         if(confirm("캐시를 삭제하면 자동 로그인 정보가 지워집니다. 진행할까요?")) {
             localStorage.clear();
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.warn('캐시 삭제 중 로그아웃 실패:', error);
+            }
             location.reload();
         }
     };
@@ -2087,6 +2599,7 @@ const msgBox = document.getElementById('messages');
         if(!confirm("⚠️ 모든 대화와 첨부 파일이 삭제됩니다. 복구 불가!\n\n동의하시겠습니까? (상대방도 동의해야 최종 삭제됩니다)")) return;
 
         try {
+            ensureApprovedSession();
             await setDoc(deleteReqRef, { requestedBy: arrayUnion(myId) }, { merge: true });
             alert("삭제 요청을 보냈습니다. 상대방도 동의하면 즉시 삭제됩니다.");
         } catch(e) { console.error(e); alert("요청 중 오류 발생"); }
@@ -2157,7 +2670,15 @@ window.toggleSearch = () => {
     window.closeCommandGuide = () => showScreen('settings-screen');
     window.changeBg = (c) => { localStorage.setItem('chat_bg', c); applyBg(c); }; function applyBg(c) { document.getElementById('messages').style.backgroundColor = c; }
     
-    window.logout = () => { localStorage.removeItem('chat_nickname'); localStorage.removeItem('chat_auth_pw'); location.reload(); }
+    window.logout = async () => {
+        localStorage.removeItem('chat_nickname');
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.warn('로그아웃 실패:', error);
+        }
+        location.reload();
+    }
 
     if(localStorage.getItem('noti_enabled') === null) localStorage.setItem('noti_enabled', 'true');
     if(localStorage.getItem('noti_preview') === null) localStorage.setItem('noti_preview', 'true');
@@ -2170,6 +2691,10 @@ window.toggleSearch = () => {
     };
 
     window.triggerFileUpload = () => {
+        if (!accessApproved || !myId) {
+            alert("승인된 Google 계정으로 로그인한 뒤 다시 시도해주세요.");
+            return;
+        }
         const fileInput = document.getElementById('photo-input');
         fileInput.disabled = false; fileInput.click(); setTimeout(() => { fileInput.disabled = true; }, 1000); 
     };
@@ -2216,23 +2741,56 @@ window.toggleSearch = () => {
     // ==========================================
     
     // ▼▼▼ [기존 코드를 이렇게 감싸주세요] ▼▼▼
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            // 로그인 된 상태일 때만 실행!
-            console.log("✅ 인증 완료: 데이터를 불러옵니다.");
-            if (resolveAuthReady) {
-                resolveAuthReady(user);
-                resolveAuthReady = null;
-                rejectAuthReady = null;
+    getRedirectResult(auth).catch((error) => {
+        console.error('Google 리디렉션 로그인 실패:', error);
+        alert('Google 로그인 복귀 처리 중 오류가 발생했어요.');
+        hideLoadingMessage();
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+        const guardToken = ++authGuardToken;
+        isAuthResolved = true;
+
+        if (!user) {
+            accessApproved = false;
+            currentProfile = null;
+            myName = "";
+            myId = "";
+            myEmail = "";
+            showScreen('login-screen');
+            hideLoadingMessage();
+            return;
+        }
+
+        setLoadingMessage('승인된 계정인지 확인하는 중...');
+        try {
+            const normalizedEmail = normalizeEmail(user.email || "");
+            if (!normalizedEmail) {
+                await rejectUnapprovedSession(user);
+                return;
             }
 
-            const savedPasswordFinal = localStorage.getItem('chat_auth_pw');
-            if (savedPasswordFinal === '0726') {
-                enterChat();
+            const approved = await isApprovedEmail(normalizedEmail);
+            if (guardToken !== authGuardToken) return;
+
+            if (!approved) {
+                await rejectUnapprovedSession(user);
+                return;
             }
-        } else {
-            // 로그인이 안 된 상태 (보통은 자동으로 signInAnonymously가 실행되므로 기다리면 됨)
-            console.log("⏳ 로그인 대기 중...");
+
+            await applyApprovedSession(user);
+        } catch (error) {
+            console.error("인증 상태 확인 실패:", error);
+            alert("로그인 상태를 확인하는 중 오류가 발생했어요. 다시 로그인해주세요.");
+            try {
+                await signOut(auth);
+            } catch (signOutError) {
+                console.warn('인증 확인 실패 후 로그아웃 실패:', signOutError);
+            }
+        } finally {
+            if (guardToken === authGuardToken) {
+                hideLoadingMessage();
+            }
         }
     });
 
