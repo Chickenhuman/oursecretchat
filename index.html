@@ -183,6 +183,11 @@
             color: white;
         }
         .my-msg .file-link { color: white; }
+        .my-msg .gif-card {
+            background: rgba(255,255,255,0.16);
+            border-color: rgba(255,255,255,0.22);
+            color: white;
+        }
         .meal-card {
             min-width: 220px;
             max-width: 100%;
@@ -226,6 +231,39 @@
             font-weight: 700;
             color: #c95c00;
             text-decoration: none;
+        }
+        .gif-card {
+            display: block;
+            min-width: 220px;
+            max-width: min(280px, 70vw);
+            border-radius: 14px;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+        .gif-card img {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            max-height: 320px;
+            object-fit: cover;
+            background: #f2f2f2;
+        }
+        .gif-provider-badge {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .gif-provider-badge small {
+            font-size: 11px;
+            font-weight: 600;
+            opacity: 0.7;
         }
         .message a { color: #007bff; text-decoration: underline; }
         .my-msg a { color: white; }
@@ -325,6 +363,113 @@
             font-size: 13px;
             color: #666;
             line-height: 1.55;
+        }
+        #gif-picker-screen { background: #f9f9f9; overflow-y: auto; display: none; flex-direction: column; height: 100%; }
+        #gif-picker-screen.active { display: flex; }
+        .gif-picker-wrap {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-bottom: calc(28px + env(safe-area-inset-bottom));
+        }
+        .gif-provider-tabs {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .gif-provider-btn {
+            border: 1px solid #ffd4d4;
+            background: #fff3f3;
+            color: #d04f4f;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+        }
+        .gif-provider-btn.active {
+            background: #ff6b6b;
+            border-color: #ff6b6b;
+            color: white;
+        }
+        .gif-provider-btn.is-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .gif-search-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        #gif-search-input {
+            margin: 0;
+            flex: 1;
+        }
+        .gif-search-status {
+            min-height: 20px;
+            font-size: 13px;
+            color: #777;
+            line-height: 1.5;
+        }
+        .gif-results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .gif-result-btn {
+            border: 1px solid #eee;
+            border-radius: 14px;
+            overflow: hidden;
+            padding: 0;
+            background: white;
+            cursor: pointer;
+            text-align: left;
+        }
+        .gif-result-btn img {
+            display: block;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            background: #f2f2f2;
+        }
+        .gif-result-meta {
+            padding: 8px 10px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 12px;
+            color: #555;
+        }
+        .gif-result-provider {
+            font-weight: 700;
+            color: #d04f4f;
+        }
+        .gif-result-select {
+            font-size: 11px;
+            font-weight: 700;
+            opacity: 0.7;
+        }
+        .gif-provider-hint {
+            background: white;
+            border: 1px dashed #ffd4d4;
+            border-radius: 14px;
+            padding: 16px;
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+            text-align: center;
+        }
+        .gif-empty-state {
+            grid-column: 1 / -1;
+            background: white;
+            border: 1px dashed #e6e6e6;
+            border-radius: 14px;
+            padding: 20px 16px;
+            text-align: center;
+            color: #888;
+            font-size: 13px;
         }
 
         .version-info { text-align: center; color: #aaa; font-size: 11px; margin-top: 20px; padding-bottom: 20px; }
@@ -670,6 +815,36 @@ html.excel-theme .danger-btn {
     background: #ffffff;
 }
 
+html.excel-theme .gif-card {
+    background: #ffffff;
+    border-color: #d2d0ce;
+    border-radius: 4px;
+}
+
+html.excel-theme .gif-provider-btn {
+    border-color: #d2d0ce;
+    background: #ffffff;
+    color: #185c37;
+    border-radius: 4px;
+}
+
+html.excel-theme .gif-provider-btn.active {
+    background: #107c41;
+    border-color: #107c41;
+    color: #ffffff;
+}
+
+html.excel-theme .gif-result-btn,
+html.excel-theme .gif-provider-hint,
+html.excel-theme .gif-empty-state {
+    border-radius: 4px;
+    border-color: #d2d0ce;
+}
+
+html.excel-theme .gif-result-provider {
+    color: #185c37;
+}
+
 html.excel-theme .spinner {
     border-top-color: #107c41;
 }
@@ -703,6 +878,10 @@ html.excel-theme .command-guide-chip {
 @media (min-width: 900px) {
     html.excel-theme #app {
         max-width: 960px;
+    }
+
+    .gif-results-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
 
@@ -791,8 +970,9 @@ html.excel-theme .command-guide-chip {
 <div id="input-area">
     <button class="tool-btn" onclick="toggleEmoji()">😊</button>
     <button class="tool-btn" onclick="toggleSticker()">🐻</button> <button class="tool-btn" onclick="toggleDrawingPad()">🖌️</button>
+    <button class="tool-btn" onclick="openGifPicker()">GIF</button>
     <button class="tool-btn" onclick="triggerFileUpload()">📎</button>
-    
+
   <textarea id="msg-input" placeholder="메시지..." rows="1"></textarea>
     <button id="send-btn" onclick="sendMessage()">➤</button>
 </div>
@@ -883,6 +1063,26 @@ html.excel-theme .command-guide-chip {
             <div id="command-guide-list"></div>
         </div>
     </div>
+
+    <div id="gif-picker-screen" class="screen">
+        <div class="settings-header">
+            <button class="back-btn" onclick="closeGifPicker()">←</button>
+            <h2 style="margin:0;">GIF 검색</h2>
+        </div>
+        <div class="gif-picker-wrap">
+            <div class="gif-provider-tabs">
+                <button id="gif-tab-tenor" class="gif-provider-btn" onclick="switchGifProvider('tenor')">Tenor</button>
+                <button id="gif-tab-giphy" class="gif-provider-btn" onclick="switchGifProvider('giphy')">GIPHY</button>
+            </div>
+            <div class="gif-search-row">
+                <input type="search" id="gif-search-input" placeholder="GIF 검색어를 입력하세요">
+                <button id="gif-search-btn" class="theme-btn" onclick="refreshGifResults()">검색</button>
+            </div>
+            <div id="gif-search-status" class="gif-search-status"></div>
+            <div id="gif-provider-hint" class="gif-provider-hint" style="display:none;"></div>
+            <div id="gif-results-grid" class="gif-results-grid"></div>
+        </div>
+    </div>
 </div>
 
 <script type="module">
@@ -893,9 +1093,30 @@ html.excel-theme .command-guide-chip {
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithCredential, onAuthStateChanged, signOut }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { firebaseConfig, googleWebClientId, STICKER_PACKS, emojiList, CURRENT_VERSION, RELEASE_DATE, PATCH_NOTES, UPDATE_SIGNATURE } from "./scripts/chat/config.js";
+    import {
+        firebaseConfig,
+        googleWebClientId,
+        STICKER_PACKS,
+        emojiList,
+        CURRENT_VERSION,
+        RELEASE_DATE,
+        PATCH_NOTES,
+        UPDATE_SIGNATURE,
+        TENOR_API_KEY,
+        TENOR_CLIENT_KEY,
+        GIPHY_API_KEY
+    } from "./scripts/chat/config.js";
     import { parseMealCommand, resolveMealCommand, getMealCommandHelpText, getCommandGuideSections } from "./scripts/chat/menu.js";
     import { escapeHtml, escapeAttribute, encodeInlineParam, decodeInlineParam, getMessagePreviewText, linkify } from "./scripts/chat/utils.js";
+    import {
+        GIF_PROVIDER_ORDER,
+        extractGifUrlCandidates,
+        fetchGifFeed,
+        getDefaultGifProvider,
+        getGifProviderAvailability,
+        getGifProviderLabel,
+        resolveGifDescriptorFromUrl
+    } from "./scripts/chat/gif.js";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -927,6 +1148,13 @@ html.excel-theme .command-guide-chip {
         hwp: 'application/x-hwp',
         docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    };
+    const GIF_SEARCH_LIMIT = 24;
+    const GIF_SEARCH_DEBOUNCE_MS = 300;
+    const gifApiConfig = {
+        tenorApiKey: TENOR_API_KEY,
+        tenorClientKey: TENOR_CLIENT_KEY,
+        giphyApiKey: GIPHY_API_KEY
     };
 // [4] 스티커 설정 (1024x512 이미지 기준)
 
@@ -1102,6 +1330,12 @@ window.toggleSticker = () => {
 
 	    // 5. [NEW] 답장 기능 관련 변수
 	    let currentReplyTarget = null; // { id: "msgId", text: "내용", sender: "보낸이" }
+        const gifProviderAvailability = getGifProviderAvailability(gifApiConfig);
+        let currentGifProvider = getDefaultGifProvider(gifApiConfig);
+        let currentGifResults = [];
+        let currentGifSearchTerm = "";
+        let gifSearchDebounceTimer = null;
+        let gifSearchRequestToken = 0;
 
 	    // ==========================================
 	    // ⚙️ 기능 함수 정의
@@ -1305,11 +1539,218 @@ window.toggleSticker = () => {
     }
 
     renderCommandGuide();
-    
-    window.toggleEmoji = () => { 
-        const picker = document.getElementById('emoji-picker'); 
-        picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid'; 
+
+    function isGifProviderEnabled(provider) {
+        return Boolean(gifProviderAvailability[provider]);
+    }
+
+    function getGifSearchInputValue() {
+        const input = document.getElementById('gif-search-input');
+        return input ? input.value.trim() : "";
+    }
+
+    function setGifStatus(message = "") {
+        const statusEl = document.getElementById('gif-search-status');
+        if (statusEl) {
+            statusEl.innerText = message;
+        }
+    }
+
+    function setGifProviderHint(message = "") {
+        const hintEl = document.getElementById('gif-provider-hint');
+        if (!hintEl) return;
+        hintEl.style.display = message ? 'block' : 'none';
+        hintEl.innerText = message || "";
+    }
+
+    function renderGifProviderTabs() {
+        GIF_PROVIDER_ORDER.forEach((provider) => {
+            const button = document.getElementById(`gif-tab-${provider}`);
+            if (!button) return;
+            button.innerText = getGifProviderLabel(provider);
+            button.classList.toggle('active', currentGifProvider === provider);
+            button.classList.toggle('is-disabled', !isGifProviderEnabled(provider));
+        });
+    }
+
+    function renderGifSearchControls() {
+        const input = document.getElementById('gif-search-input');
+        const searchBtn = document.getElementById('gif-search-btn');
+        const enabled = isGifProviderEnabled(currentGifProvider);
+        const providerLabel = getGifProviderLabel(currentGifProvider);
+
+        if (input) {
+            input.disabled = !enabled;
+            input.placeholder = enabled
+                ? `${providerLabel} GIF 검색어를 입력하세요`
+                : `${providerLabel} API 키를 config에 추가하면 검색할 수 있어요`;
+            if (input.value !== currentGifSearchTerm) {
+                input.value = currentGifSearchTerm;
+            }
+        }
+
+        if (searchBtn) {
+            searchBtn.disabled = !enabled;
+            searchBtn.style.opacity = enabled ? '1' : '0.5';
+        }
+    }
+
+    function renderGifResults() {
+        const grid = document.getElementById('gif-results-grid');
+        if (!grid) return;
+
+        if (!currentGifResults.length) {
+            grid.innerHTML = `<div class="gif-empty-state">보여드릴 GIF가 아직 없어요.</div>`;
+            return;
+        }
+
+        grid.innerHTML = "";
+        currentGifResults.forEach((item, index) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'gif-result-btn';
+            button.onclick = () => window.sendGifFromPicker(index);
+            button.innerHTML = `
+                <img src="${escapeAttribute(item.previewUrl || item.gifUrl || "")}" alt="${escapeAttribute(item.altText || "GIF 미리보기")}">
+                <div class="gif-result-meta">
+                    <span class="gif-result-provider">${escapeHtml(getGifProviderLabel(item.provider))}</span>
+                    <span class="gif-result-select">선택</span>
+                </div>`;
+            grid.appendChild(button);
+        });
+    }
+
+    async function loadGifResults() {
+        const enabled = isGifProviderEnabled(currentGifProvider);
+        currentGifSearchTerm = getGifSearchInputValue();
+        renderGifProviderTabs();
+        renderGifSearchControls();
+
+        if (!enabled) {
+            currentGifResults = [];
+            setGifProviderHint(`${getGifProviderLabel(currentGifProvider)} API 키를 scripts/chat/config.js에 넣으면 검색과 자동 임베드를 사용할 수 있어요.`);
+            setGifStatus("GIF 공급자 설정이 필요해요.");
+            renderGifResults();
+            return;
+        }
+
+        setGifProviderHint("");
+        if (currentGifSearchTerm && currentGifSearchTerm.length < 2) {
+            currentGifResults = [];
+            renderGifResults();
+            setGifStatus("검색어는 두 글자 이상 입력해주세요.");
+            return;
+        }
+        const hasQuery = currentGifSearchTerm.length >= 2;
+        const requestToken = ++gifSearchRequestToken;
+        setGifStatus(hasQuery ? `${getGifProviderLabel(currentGifProvider)}에서 "${currentGifSearchTerm}" 검색 중...` : `${getGifProviderLabel(currentGifProvider)} 인기 GIF를 불러오는 중...`);
+
+        try {
+            const results = await fetchGifFeed(currentGifProvider, {
+                query: hasQuery ? currentGifSearchTerm : "",
+                limit: GIF_SEARCH_LIMIT
+            }, gifApiConfig);
+            if (requestToken !== gifSearchRequestToken) return;
+            currentGifResults = results;
+            renderGifResults();
+            if (results.length) {
+                setGifStatus(hasQuery
+                    ? `"${currentGifSearchTerm}" 검색 결과 ${results.length}개`
+                    : `${getGifProviderLabel(currentGifProvider)} 인기 GIF ${results.length}개`);
+            } else {
+                setGifStatus(hasQuery ? "검색 결과가 없어요." : "지금 보여드릴 인기 GIF가 없어요.");
+            }
+        } catch (error) {
+            if (requestToken !== gifSearchRequestToken) return;
+            console.error('GIF 검색 실패:', error);
+            currentGifResults = [];
+            renderGifResults();
+            setGifStatus("GIF를 불러오지 못했어요. API 키와 네트워크 상태를 확인해주세요.");
+        }
+    }
+
+    window.handleGifSearchInput = () => {
+        currentGifSearchTerm = getGifSearchInputValue();
+        if (gifSearchDebounceTimer) {
+            clearTimeout(gifSearchDebounceTimer);
+        }
+        gifSearchDebounceTimer = setTimeout(() => {
+            loadGifResults();
+        }, GIF_SEARCH_DEBOUNCE_MS);
     };
+
+    window.refreshGifResults = () => {
+        if (gifSearchDebounceTimer) {
+            clearTimeout(gifSearchDebounceTimer);
+            gifSearchDebounceTimer = null;
+        }
+        currentGifSearchTerm = getGifSearchInputValue();
+        loadGifResults();
+    };
+
+    window.switchGifProvider = (provider) => {
+        if (!GIF_PROVIDER_ORDER.includes(provider)) return;
+        currentGifProvider = provider;
+        currentGifResults = [];
+        gifSearchRequestToken += 1;
+        renderGifProviderTabs();
+        renderGifSearchControls();
+        renderGifResults();
+        loadGifResults();
+    };
+
+    window.openGifPicker = () => {
+        emojiPicker.style.display = 'none';
+        document.getElementById('sticker-picker').style.display = 'none';
+        currentGifProvider = isGifProviderEnabled(currentGifProvider)
+            ? currentGifProvider
+            : getDefaultGifProvider(gifApiConfig);
+        showScreen('gif-picker-screen');
+        renderGifProviderTabs();
+        renderGifSearchControls();
+        renderGifResults();
+        loadGifResults();
+        const input = document.getElementById('gif-search-input');
+        if (input && !input.disabled) {
+            setTimeout(() => input.focus(), 100);
+        }
+    };
+
+    window.closeGifPicker = () => {
+        showScreen('chat-screen');
+    };
+
+    window.sendGifFromPicker = async (index) => {
+        const descriptor = currentGifResults[index];
+        if (!descriptor) return;
+
+        try {
+            await sendGifMessage(descriptor, currentReplyTarget);
+            closeGifPicker();
+            cancelReply();
+            markAsRead();
+            scrollToBottom();
+        } catch (error) {
+            console.error('GIF 전송 실패:', error);
+            alert("GIF 전송에 실패했어요.");
+        }
+    };
+
+    const gifSearchInput = document.getElementById('gif-search-input');
+    if (gifSearchInput) {
+        gifSearchInput.addEventListener('input', window.handleGifSearchInput);
+        gifSearchInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                window.refreshGifResults();
+            }
+        });
+	    }
+
+	    window.toggleEmoji = () => {
+	        const picker = document.getElementById('emoji-picker');
+	        picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid';
+	    };
 
     function startTabNotification() {
         if(flashInterval) return;
@@ -2139,11 +2580,11 @@ document.addEventListener("visibilitychange", () => {
         await addDoc(collection(db, "chats"), messagePayload);
     }
 
-    async function handleSlashCommand(rawText) {
-        const command = parseMealCommand(rawText);
-        if (!command) {
-            return false;
-        }
+	    async function handleSlashCommand(rawText) {
+	        const command = parseMealCommand(rawText);
+	        if (!command) {
+	            return false;
+	        }
 
         setLoadingMessage('식단 조회 중...');
         try {
@@ -2170,34 +2611,154 @@ document.addEventListener("visibilitychange", () => {
             hideLoadingMessage();
         }
 
-        return true;
-    }
- 
-    window.sendMessage = async function() { 
-        const input = document.getElementById('msg-input'); 
-        const text = input.value; 
-        if (text.trim() === "") return; 
-        if (await handleSlashCommand(text)) {
-            input.value = "";
-            input.style.height = '45px';
-            return;
+	        return true;
+	    }
+
+        function normalizeMessageTextAfterGifExtraction(value = "") {
+            return String(value || "")
+                .replace(/[ \t]+\n/g, "\n")
+                .replace(/\n[ \t]+/g, "\n")
+                .replace(/[ \t]{2,}/g, " ")
+                .replace(/\n{3,}/g, "\n\n")
+                .trim();
         }
-        try { 
+
+        async function splitMessageTextAndGifDescriptors(rawText = "") {
+            const source = String(rawText || "");
+            const candidates = extractGifUrlCandidates(source);
+            if (!candidates.length) {
+                return {
+                    text: source.trim(),
+                    gifs: []
+                };
+            }
+
+            const resolvedGifs = [];
+            const removedRanges = [];
+
+            for (const candidate of candidates) {
+                if (!isGifProviderEnabled(candidate.provider)) continue;
+
+                try {
+                    const descriptor = await resolveGifDescriptorFromUrl(candidate.url, gifApiConfig);
+                    resolvedGifs.push(descriptor);
+                    removedRanges.push({
+                        start: candidate.start,
+                        end: candidate.end
+                    });
+                } catch (error) {
+                    console.warn('GIF 링크 해석 실패:', candidate.url, error);
+                }
+            }
+
+            if (!removedRanges.length) {
+                return {
+                    text: source.trim(),
+                    gifs: []
+                };
+            }
+
+            let cursor = 0;
+            let combinedText = "";
+            removedRanges.forEach((range) => {
+                combinedText += source.slice(cursor, range.start);
+                cursor = range.end;
+            });
+            combinedText += source.slice(cursor);
+
+            return {
+                text: normalizeMessageTextAfterGifExtraction(combinedText),
+                gifs: resolvedGifs
+            };
+        }
+
+        async function sendTextMessage(text, replyTo = null) {
             ensureApprovedSession();
             if (!myName) throw createChatError('chat/name-not-set');
-            const payload = { text: text, sender: myName, senderUid: myId, timestamp: serverTimestamp(), type: 'text' };
-            // 답장 중이면 답장 데이터 포함
-            if(currentReplyTarget) {
-                payload.replyTo = currentReplyTarget;
+
+            const payload = {
+                text,
+                sender: myName,
+                senderUid: myId,
+                timestamp: serverTimestamp(),
+                type: 'text'
+            };
+            if (replyTo) {
+                payload.replyTo = replyTo;
             }
-            await addDoc(collection(db, "chats"), payload); 
-input.value = ""; 
-        input.style.height = '45px'; // 전송 후 높이 초기화 (이 위치가 가장 안전합니다)
-        cancelReply();
-        markAsRead(); 
-        scrollToBottom(); 
-    } catch (e) { alert("전송 실패"); } 
-};
+
+            await addDoc(collection(db, "chats"), payload);
+        }
+
+        async function sendGifMessage(descriptor, replyTo = null) {
+            ensureApprovedSession();
+            if (!myName) throw createChatError('chat/name-not-set');
+            if (!descriptor?.provider || !descriptor?.providerId || !descriptor?.sourceUrl || !descriptor?.gifUrl) {
+                throw new Error('gif/invalid-descriptor');
+            }
+
+            const payload = {
+                text: descriptor.altText ? `(GIF) ${descriptor.altText}` : "(GIF)",
+                sender: myName,
+                senderUid: myId,
+                timestamp: serverTimestamp(),
+                type: 'gif',
+                provider: descriptor.provider,
+                providerId: descriptor.providerId,
+                sourceUrl: descriptor.sourceUrl,
+                gifUrl: descriptor.gifUrl
+            };
+
+            if (replyTo) {
+                payload.replyTo = replyTo;
+            }
+            if (descriptor.previewUrl) {
+                payload.previewUrl = descriptor.previewUrl;
+            }
+            if (Number.isInteger(descriptor.width)) {
+                payload.width = descriptor.width;
+            }
+            if (Number.isInteger(descriptor.height)) {
+                payload.height = descriptor.height;
+            }
+            if (descriptor.altText) {
+                payload.altText = descriptor.altText;
+            }
+
+            await addDoc(collection(db, "chats"), payload);
+        }
+
+	    window.sendMessage = async function() {
+	        const input = document.getElementById('msg-input');
+	        const text = input.value;
+	        if (text.trim() === "") return;
+	        if (await handleSlashCommand(text)) {
+	            input.value = "";
+	            input.style.height = '45px';
+	            return;
+	        }
+	        try {
+	            const splitPayload = await splitMessageTextAndGifDescriptors(text);
+                let nextReplyTarget = currentReplyTarget;
+
+                if (splitPayload.text) {
+                    await sendTextMessage(splitPayload.text, nextReplyTarget);
+                    nextReplyTarget = null;
+                }
+
+                for (const descriptor of splitPayload.gifs) {
+                    await sendGifMessage(descriptor, nextReplyTarget);
+                    nextReplyTarget = null;
+                }
+
+	                if (!splitPayload.text && !splitPayload.gifs.length) return;
+	                input.value = "";
+	                input.style.height = '45px';
+	                cancelReply();
+	                markAsRead();
+	                scrollToBottom();
+	    } catch (e) { console.error("메시지 전송 실패:", e); alert("전송 실패"); }
+	};
     window.uploadSelectedFile = async function(file) {
         if (!file) return;
         if (file.type && file.type.startsWith('image/')) {
@@ -2569,12 +3130,31 @@ const msgBox = document.getElementById('messages');
 	    
 	    let contentHtml = "";
 
-	    if (!data.type || data.type === 'text') {
-	        contentHtml = linkify(data.text);
-	    } else if (data.type === 'image') {
-            contentHtml = data.imageUrl
-                ? `<img src="${escapeAttribute(data.imageUrl || "")}" class="chat-img" onclick="window.open(this.src)">`
-                : buildPendingImageHtml(docId);
+		    if (!data.type || data.type === 'text') {
+		        contentHtml = linkify(data.text);
+            } else if (data.type === 'gif') {
+                const safeGifUrl = escapeAttribute(data.gifUrl || data.previewUrl || "");
+                const safeSourceUrl = escapeAttribute(data.sourceUrl || data.gifUrl || "");
+                const safeAltText = escapeAttribute(data.altText || `${getGifProviderLabel(data.provider || "")} GIF`);
+                const providerLabel = escapeHtml(getGifProviderLabel(data.provider || ""));
+                const badgeNote = data.altText ? `<small>${escapeHtml(data.altText || "")}</small>` : "";
+                const aspectStyle = Number.isInteger(data.width) && Number.isInteger(data.height)
+                    ? ` style="aspect-ratio:${data.width} / ${data.height};"`
+                    : "";
+                contentHtml = safeGifUrl
+                    ? `
+                        <a href="${safeSourceUrl}" class="gif-card" target="_blank" rel="noopener noreferrer">
+                            <img src="${safeGifUrl}" alt="${safeAltText}"${aspectStyle}>
+                            <span class="gif-provider-badge">
+                                <span>GIF · ${providerLabel}</span>
+                                ${badgeNote}
+                            </span>
+                        </a>`
+                    : `<a href="${safeSourceUrl}" target="_blank" rel="noopener noreferrer">GIF 열기</a>`;
+		    } else if (data.type === 'image') {
+	            contentHtml = data.imageUrl
+	                ? `<img src="${escapeAttribute(data.imageUrl || "")}" class="chat-img" onclick="window.open(this.src)">`
+	                : buildPendingImageHtml(docId);
 	    } else if (data.type === 'file') {
             contentHtml = data.fileUrl
                 ? buildResolvedFileCardHtml(data.fileUrl, data)
