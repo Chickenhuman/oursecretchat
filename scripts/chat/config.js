@@ -37,7 +37,7 @@ export const STICKER_PACKS = [
 
 export const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
 
-export const CURRENT_VERSION = "1.26";
+export const CURRENT_VERSION = "1.27";
 export const RELEASE_DATE = "2026/04/17";
 export const PATCH_NOTES = [
     "기존 비밀번호 입장 방식을 없애고 Google 승인 로그인으로 바꿔, 허용한 계정만 채팅과 캘린더에 들어올 수 있게 했어요.",
