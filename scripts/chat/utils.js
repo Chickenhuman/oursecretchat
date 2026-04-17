@@ -26,10 +26,6 @@ export function decodeInlineParam(value = "") {
 
 export function getMessagePreviewText(data) {
     if (data.type === "sticker") return "(이모티콘)";
-    if (data.type === "gif") {
-        const altText = String(data.altText || "").trim();
-        return altText ? `(GIF) ${altText}` : "(GIF)";
-    }
     if (data.type === "file") {
         return data.fileName ? `(파일) ${data.fileName}` : "파일을 보냈습니다.";
     }
