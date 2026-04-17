@@ -79,7 +79,7 @@ service cloud.firestore {
     function isValidGifChat() {
       return request.resource.data.keys().hasOnly([
         'text', 'sender', 'senderUid', 'timestamp', 'type', 'replyTo',
-        'provider', 'providerId', 'sourceUrl', 'gifUrl', 'previewUrl',
+        'provider', 'providerId', 'sourceUrl', 'gifUrl', 'embedUrl', 'previewUrl',
         'width', 'height', 'altText'
       ])
         && request.resource.data.type == 'gif'
@@ -92,8 +92,16 @@ service cloud.firestore {
         && request.resource.data.providerId is string
         && request.resource.data.sourceUrl is string
         && request.resource.data.sourceUrl.matches('^https://.+')
-        && request.resource.data.gifUrl is string
-        && request.resource.data.gifUrl.matches('^https://.+')
+        && (!('gifUrl' in request.resource.data)
+          || (
+            request.resource.data.gifUrl is string
+            && request.resource.data.gifUrl.matches('^https://.+')
+          ))
+        && (!('embedUrl' in request.resource.data)
+          || (
+            request.resource.data.embedUrl is string
+            && request.resource.data.embedUrl.matches('^https://.+')
+          ))
         && (!('previewUrl' in request.resource.data)
           || (
             request.resource.data.previewUrl is string
