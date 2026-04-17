@@ -20,14 +20,6 @@ function normalizeAltText(value = "") {
     return String(value || "").replace(/\s+/g, " ").trim();
 }
 
-function slugToAltText(value = "") {
-    return normalizeAltText(
-        String(value || "")
-            .replace(/[-_]+/g, " ")
-            .replace(/\bgif\b/gi, "")
-    );
-}
-
 function getLocaleInfo() {
     const rawLocale = typeof navigator !== "undefined" && navigator.language
         ? navigator.language
@@ -82,12 +74,9 @@ function detectTenorGif(url) {
     const lastSegment = segments[segments.length - 1] || "";
     const match = lastSegment.match(/-(\d+)$/);
     if (!match) return null;
-    const slug = lastSegment.replace(/-\d+$/g, "");
     return {
         provider: "tenor",
-        providerId: match[1],
-        sourceUrl: url.toString(),
-        altText: slugToAltText(slug)
+        providerId: match[1]
     };
 }
 
@@ -98,12 +87,9 @@ function detectGiphyGif(url) {
     const lastSegment = segments[segments.length - 1] || "";
     const candidateId = lastSegment.split("-").pop() || "";
     if (!/^[A-Za-z0-9]+$/.test(candidateId)) return null;
-    const slug = lastSegment.replace(new RegExp(`-${candidateId}$`), "");
     return {
         provider: "giphy",
-        providerId: candidateId,
-        sourceUrl: url.toString(),
-        altText: slugToAltText(slug)
+        providerId: candidateId
     };
 }
 
@@ -122,44 +108,6 @@ function chooseFirstMedia(mediaFormats, keys) {
         const media = mediaFormats[key];
         if (media?.url) return media;
     }
-    return null;
-}
-
-function buildGiphyEmbedUrl(providerId = "") {
-    return providerId ? `https://giphy.com/embed/${providerId}` : "";
-}
-
-function buildGiphyFallbackGifUrl(providerId = "") {
-    return providerId ? `https://media.giphy.com/media/${providerId}/giphy.gif` : "";
-}
-
-function buildKeylessDescriptor(detected) {
-    if (!detected?.provider || !detected?.providerId || !detected?.sourceUrl) {
-        return null;
-    }
-
-    if (detected.provider === "giphy") {
-        const fallbackGifUrl = buildGiphyFallbackGifUrl(detected.providerId);
-        return {
-            provider: "giphy",
-            providerId: detected.providerId,
-            sourceUrl: detected.sourceUrl,
-            embedUrl: buildGiphyEmbedUrl(detected.providerId),
-            gifUrl: fallbackGifUrl,
-            previewUrl: fallbackGifUrl,
-            altText: detected.altText || ""
-        };
-    }
-
-    if (detected.provider === "tenor") {
-        return {
-            provider: "tenor",
-            providerId: detected.providerId,
-            sourceUrl: detected.sourceUrl,
-            altText: detected.altText || ""
-        };
-    }
-
     return null;
 }
 
@@ -198,7 +146,6 @@ function normalizeGiphyResult(result) {
         provider: "giphy",
         providerId: String(result?.id || ""),
         sourceUrl: String(result?.url || ""),
-        embedUrl: buildGiphyEmbedUrl(String(result?.id || "")),
         gifUrl: String(gifUrl),
         previewUrl: String(previewMedia?.url || gifUrl),
         width: parsePositiveInt(sendMedia?.width) || parsePositiveInt(previewMedia?.width),
@@ -344,18 +291,6 @@ export async function resolveGifDescriptorFromUrl(rawUrl = "", config = {}) {
     const detected = detectGifUrl(rawUrl);
     if (!detected) {
         throw new Error("gif/unsupported-url");
-    }
-
-    const providerEnabled = detected.provider === "tenor"
-        ? hasApiKey(config.tenorApiKey)
-        : hasApiKey(config.giphyApiKey);
-
-    if (!providerEnabled) {
-        const keylessDescriptor = buildKeylessDescriptor(detected);
-        if (!keylessDescriptor) {
-            throw new Error("gif/provider-disabled");
-        }
-        return keylessDescriptor;
     }
 
     const descriptor = detected.provider === "tenor"

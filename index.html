@@ -251,21 +251,6 @@
             object-fit: cover;
             background: #f2f2f2;
         }
-        .gif-embed-frame {
-            display: block;
-            width: 100%;
-            min-height: 240px;
-            border: none;
-            background: #f2f2f2;
-        }
-        .tenor-embed-shell {
-            width: 100%;
-            min-height: 240px;
-            background: #f2f2f2;
-        }
-        .tenor-embed-shell .tenor-gif-embed {
-            margin: 0 auto;
-        }
         .gif-provider-badge {
             display: flex;
             align-items: center;
@@ -279,10 +264,6 @@
             font-size: 11px;
             font-weight: 600;
             opacity: 0.7;
-        }
-        .gif-provider-link {
-            color: inherit;
-            text-decoration: underline;
         }
         .message a { color: #007bff; text-decoration: underline; }
         .my-msg a { color: white; }
@@ -1355,7 +1336,6 @@ window.toggleSticker = () => {
         let currentGifSearchTerm = "";
         let gifSearchDebounceTimer = null;
         let gifSearchRequestToken = 0;
-        let tenorEmbedRefreshTimer = null;
 
 	    // ==========================================
 	    // ⚙️ 기능 함수 정의
@@ -1648,8 +1628,8 @@ window.toggleSticker = () => {
 
         if (!enabled) {
             currentGifResults = [];
-            setGifProviderHint(`${getGifProviderLabel(currentGifProvider)} 검색은 API 키가 필요하지만, 채팅창에 ${getGifProviderLabel(currentGifProvider)} 링크를 붙여넣으면 자동 임베드는 바로 사용할 수 있어요.`);
-            setGifStatus("검색은 설정이 필요하지만 링크 임베드는 바로 쓸 수 있어요.");
+            setGifProviderHint(`${getGifProviderLabel(currentGifProvider)} API 키를 scripts/chat/config.js에 넣으면 검색과 자동 임베드를 사용할 수 있어요.`);
+            setGifStatus("GIF 공급자 설정이 필요해요.");
             renderGifResults();
             return;
         }
@@ -2257,26 +2237,6 @@ document.addEventListener("visibilitychange", () => {
         });
     }
 
-    function scheduleTenorEmbedRefresh() {
-        if (tenorEmbedRefreshTimer) {
-            clearTimeout(tenorEmbedRefreshTimer);
-        }
-
-        tenorEmbedRefreshTimer = setTimeout(() => {
-            tenorEmbedRefreshTimer = null;
-            const previousScript = document.querySelector('script[data-tenor-embed-script="true"]');
-            if (previousScript) {
-                previousScript.remove();
-            }
-
-            const script = document.createElement('script');
-            script.async = true;
-            script.src = 'https://tenor.com/embed.js';
-            script.dataset.tenorEmbedScript = 'true';
-            document.body.appendChild(script);
-        }, 0);
-    }
-
     function canvasToBlob(canvas, type, quality) {
         return new Promise((resolve, reject) => {
             canvas.toBlob((blob) => {
@@ -2677,6 +2637,8 @@ document.addEventListener("visibilitychange", () => {
             const removedRanges = [];
 
             for (const candidate of candidates) {
+                if (!isGifProviderEnabled(candidate.provider)) continue;
+
                 try {
                     const descriptor = await resolveGifDescriptorFromUrl(candidate.url, gifApiConfig);
                     resolvedGifs.push(descriptor);
@@ -2731,7 +2693,7 @@ document.addEventListener("visibilitychange", () => {
         async function sendGifMessage(descriptor, replyTo = null) {
             ensureApprovedSession();
             if (!myName) throw createChatError('chat/name-not-set');
-            if (!descriptor?.provider || !descriptor?.providerId || !descriptor?.sourceUrl) {
+            if (!descriptor?.provider || !descriptor?.providerId || !descriptor?.sourceUrl || !descriptor?.gifUrl) {
                 throw new Error('gif/invalid-descriptor');
             }
 
@@ -2750,14 +2712,8 @@ document.addEventListener("visibilitychange", () => {
             if (replyTo) {
                 payload.replyTo = replyTo;
             }
-            if (descriptor.embedUrl) {
-                payload.embedUrl = descriptor.embedUrl;
-            }
             if (descriptor.previewUrl) {
                 payload.previewUrl = descriptor.previewUrl;
-            }
-            if (descriptor.gifUrl) {
-                payload.gifUrl = descriptor.gifUrl;
             }
             if (Number.isInteger(descriptor.width)) {
                 payload.width = descriptor.width;
@@ -3122,10 +3078,6 @@ const msgBox = document.getElementById('messages');
         const messageEl = document.getElementById(`msg-${docId}`);
         if (!messageEl) return;
 
-        if (data.type === 'gif' && data.provider === 'tenor') {
-            scheduleTenorEmbedRefresh();
-        }
-
         if (data.type === 'image' && !data.imageUrl && data.storagePath) {
             const placeholder = messageEl.querySelector('[data-asset-kind="image"]');
             if (!placeholder) return;
@@ -3176,63 +3128,30 @@ const msgBox = document.getElementById('messages');
 	    const encodedPreviewText = encodeInlineParam(previewText);
 	    const encodedSender = encodeInlineParam(data.sender || "");
 	    
-		    let contentHtml = "";
+	    let contentHtml = "";
 
-			    if (!data.type || data.type === 'text') {
-			        contentHtml = linkify(data.text);
+		    if (!data.type || data.type === 'text') {
+		        contentHtml = linkify(data.text);
             } else if (data.type === 'gif') {
                 const safeGifUrl = escapeAttribute(data.gifUrl || data.previewUrl || "");
-                const safeEmbedUrl = escapeAttribute(data.embedUrl || "");
-                const safeSourceUrl = escapeAttribute(data.sourceUrl || data.gifUrl || data.embedUrl || "");
+                const safeSourceUrl = escapeAttribute(data.sourceUrl || data.gifUrl || "");
                 const safeAltText = escapeAttribute(data.altText || `${getGifProviderLabel(data.provider || "")} GIF`);
                 const providerLabel = escapeHtml(getGifProviderLabel(data.provider || ""));
-                const badgeLink = `<a href="${safeSourceUrl}" class="gif-provider-link" target="_blank" rel="noopener noreferrer">원본 열기</a>`;
-                const aspectRatio = Number.isInteger(data.width) && Number.isInteger(data.height)
-                    ? `${data.width} / ${data.height}`
-                    : '1 / 1';
-
-                if (data.provider === 'tenor') {
-                    contentHtml = `
-                        <div class="gif-card">
-                            <div class="tenor-embed-shell" style="aspect-ratio:${aspectRatio};">
-                                <div class="tenor-gif-embed" data-postid="${escapeAttribute(data.providerId || "")}" data-share-method="host" data-width="100%" data-aspect-ratio="${escapeAttribute(Number.isInteger(data.width) && Number.isInteger(data.height) ? String(data.width / data.height) : '1')}">
-                                    <a href="${safeSourceUrl}">${safeAltText}</a>
-                                </div>
-                            </div>
-                            <span class="gif-provider-badge">
-                                <span>GIF · ${providerLabel}</span>
-                                ${badgeLink}
-                            </span>
-                        </div>`;
-                } else if (safeEmbedUrl) {
-                    contentHtml = `
-                        <div class="gif-card">
-                            <iframe
-                                class="gif-embed-frame"
-                                src="${safeEmbedUrl}"
-                                title="${safeAltText}"
-                                allowfullscreen
-                                loading="lazy"
-                                style="aspect-ratio:${aspectRatio};"
-                            ></iframe>
-                            <span class="gif-provider-badge">
-                                <span>GIF · ${providerLabel}</span>
-                                ${badgeLink}
-                            </span>
-                        </div>`;
-                } else if (safeGifUrl) {
-                    contentHtml = `
+                const badgeNote = data.altText ? `<small>${escapeHtml(data.altText || "")}</small>` : "";
+                const aspectStyle = Number.isInteger(data.width) && Number.isInteger(data.height)
+                    ? ` style="aspect-ratio:${data.width} / ${data.height};"`
+                    : "";
+                contentHtml = safeGifUrl
+                    ? `
                         <a href="${safeSourceUrl}" class="gif-card" target="_blank" rel="noopener noreferrer">
-                            <img src="${safeGifUrl}" alt="${safeAltText}" style="aspect-ratio:${aspectRatio};">
+                            <img src="${safeGifUrl}" alt="${safeAltText}"${aspectStyle}>
                             <span class="gif-provider-badge">
                                 <span>GIF · ${providerLabel}</span>
-                                <small>원본 열기</small>
+                                ${badgeNote}
                             </span>
-                        </a>`;
-                } else {
-                    contentHtml = `<a href="${safeSourceUrl}" target="_blank" rel="noopener noreferrer">GIF 열기</a>`;
-                }
-			    } else if (data.type === 'image') {
+                        </a>`
+                    : `<a href="${safeSourceUrl}" target="_blank" rel="noopener noreferrer">GIF 열기</a>`;
+		    } else if (data.type === 'image') {
 	            contentHtml = data.imageUrl
 	                ? `<img src="${escapeAttribute(data.imageUrl || "")}" class="chat-img" onclick="window.open(this.src)">`
 	                : buildPendingImageHtml(docId);
