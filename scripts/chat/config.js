@@ -10,6 +10,10 @@ export const firebaseConfig = {
 
 export const googleWebClientId = "1069136590072-5u6dvoeegaes22bc88pqe9osqdffs0fd.apps.googleusercontent.com";
 
+export const TENOR_API_KEY = "";
+export const TENOR_CLIENT_KEY = "oursecretchat_web";
+export const GIPHY_API_KEY = "";
+
 export const STICKER_PACKS = [
     {
         name: "토끼와 곰돌이",
@@ -33,12 +37,13 @@ export const STICKER_PACKS = [
 
 export const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
 
-export const CURRENT_VERSION = "1.25";
-export const RELEASE_DATE = "2026/04/07";
+export const CURRENT_VERSION = "1.26";
+export const RELEASE_DATE = "2026/04/17";
 export const PATCH_NOTES = [
     "기존 비밀번호 입장 방식을 없애고 Google 승인 로그인으로 바꿔, 허용한 계정만 채팅과 캘린더에 들어올 수 있게 했어요.",
     "별칭을 계정 프로필로 관리하고, 새 이미지/문서는 저장 URL 대신 storagePath만 저장하도록 바꿨어요.",
     "이미지 자동 압축, 문서 타입/용량 제한, Firestore·Storage 보안 규칙 정비로 업로드 안전장치를 강화했어요.",
-    "GitHub Pages에서도 모바일 브라우저 Google 로그인이 더 안정적으로 이어지도록 Google Identity Services 기반 로그인 흐름을 추가했어요."
+    "GitHub Pages에서도 모바일 브라우저 Google 로그인이 더 안정적으로 이어지도록 Google Identity Services 기반 로그인 흐름을 추가했어요.",
+    "Tenor/GIPHY 링크를 자동으로 GIF 메시지로 바꿔 보내고, 검색 버튼으로 GIF를 바로 골라 전송할 수 있게 했어요."
 ];
 export const UPDATE_SIGNATURE = `${CURRENT_VERSION}|${RELEASE_DATE}|${PATCH_NOTES.join("||")}`;

@@ -76,6 +76,35 @@ service cloud.firestore {
         && isValidChatBase();
     }
 
+    function isValidGifChat() {
+      return request.resource.data.keys().hasOnly([
+        'text', 'sender', 'senderUid', 'timestamp', 'type', 'replyTo',
+        'provider', 'providerId', 'sourceUrl', 'gifUrl', 'previewUrl',
+        'width', 'height', 'altText'
+      ])
+        && request.resource.data.type == 'gif'
+        && request.resource.data.text is string
+        && request.resource.data.provider is string
+        && (
+          request.resource.data.provider == 'tenor'
+          || request.resource.data.provider == 'giphy'
+        )
+        && request.resource.data.providerId is string
+        && request.resource.data.sourceUrl is string
+        && request.resource.data.sourceUrl.matches('^https://.+')
+        && request.resource.data.gifUrl is string
+        && request.resource.data.gifUrl.matches('^https://.+')
+        && (!('previewUrl' in request.resource.data)
+          || (
+            request.resource.data.previewUrl is string
+            && request.resource.data.previewUrl.matches('^https://.+')
+          ))
+        && (!('width' in request.resource.data) || request.resource.data.width is int)
+        && (!('height' in request.resource.data) || request.resource.data.height is int)
+        && (!('altText' in request.resource.data) || request.resource.data.altText is string)
+        && isValidChatBase();
+    }
+
     function isValidImageChat() {
       return request.resource.data.keys().hasOnly([
         'text', 'sender', 'senderUid', 'timestamp', 'type', 'replyTo',
@@ -117,6 +146,7 @@ service cloud.firestore {
 
     function isValidChatCreate() {
       return isValidTextChat()
+        || isValidGifChat()
         || isValidImageChat()
         || isValidFileChat()
         || isValidStickerChat()
