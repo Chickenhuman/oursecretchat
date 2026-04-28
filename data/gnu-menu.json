@@ -1,6 +1,6 @@
 {
   "botName": "식단봇",
-  "updatedAt": "2026-04-28T05:42:15.293Z",
+  "updatedAt": "2026-04-28T21:34:47.476Z",
   "location": {
     "campus": "칠암캠퍼스",
     "restaurant": "학생식당",
@@ -350,16 +350,16 @@
       "weekday": "금",
       "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-04-28",
       "breakfast": [
-        "근로자의 날"
+        "노 동 절"
       ],
       "lunch": [
         "쌀밥",
         "햄모듬찌개",
         "갈치양념구이",
         "소고기메추리알조림",
-        "미역줄기볶음",
         "콩나물김가루무침",
-        "포기김치/진콩두유"
+        "포기김치",
+        "진콩두유"
       ],
       "dinner": [
         "쌀밥",
