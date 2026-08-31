@@ -1,0 +1,16 @@
+{
+  "name": "oursecretchat-functions",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check index.js && node --check gameEngine.js"
+  },
+  "dependencies": {
+    "firebase-admin": "14.3.0",
+    "firebase-functions": "7.3.0"
+  }
+}

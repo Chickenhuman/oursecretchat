@@ -33,9 +33,10 @@ export const STICKER_PACKS = [
 
 export const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
 
-export const CURRENT_VERSION = "1.25";
-export const RELEASE_DATE = "2026/04/07";
+export const CURRENT_VERSION = "1.26";
+export const RELEASE_DATE = "2026/08/28";
 export const PATCH_NOTES = [
+    "게임 탭에 승인된 두 사람만 참여하는 잰갱따리잰갱따를 추가했어요. 글자 수와 제한 시간을 바꾸고, 서버 사전 판정과 점점 빨라지는 턴을 지원합니다.",
     "기존 비밀번호 입장 방식을 없애고 Google 승인 로그인으로 바꿔, 허용한 계정만 채팅과 캘린더에 들어올 수 있게 했어요.",
     "별칭을 계정 프로필로 관리하고, 새 이미지/문서는 저장 URL 대신 storagePath만 저장하도록 바꿨어요.",
     "이미지 자동 압축, 문서 타입/용량 제한, Firestore·Storage 보안 규칙 정비로 업로드 안전장치를 강화했어요.",

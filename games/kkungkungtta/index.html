@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff8ef">
+  <meta name="description" content="둘이 함께 즐기는 실시간 게임, 잰갱따리잰갱따">
+  <title>잰갱따리잰갱따</title>
+  <link rel="apple-touch-icon" href="../../icon.png">
+  <link rel="icon" href="../../icon.png">
+  <link rel="manifest" href="../../manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="loading" class="loading" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <strong id="loading-message">게임방에 연결하는 중...</strong>
+  </div>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="icon-button" href="../index.html" aria-label="게임 목록으로 돌아가기">←</a>
+      <div class="title-wrap">
+        <strong>🥁 잰갱따리잰갱따</strong>
+        <span id="app-status">연결 확인 중</span>
+      </div>
+      <button id="settings-open" class="icon-button" type="button" aria-label="게임 설정 열기">⚙</button>
+    </header>
+
+    <main>
+      <div id="connection-banner" class="connection-banner" role="alert" hidden></div>
+
+      <section class="players" aria-label="플레이어 목록">
+        <article id="player-card-0" class="player"><span class="turn-dot" aria-hidden="true"></span><div class="player-label">1P · 방장</div><div id="player-name-0" class="player-name">입장 대기</div><div id="player-state-0" class="player-state">비어 있음</div></article>
+        <article id="player-card-1" class="player"><span class="turn-dot" aria-hidden="true"></span><div class="player-label">2P</div><div id="player-name-1" class="player-name">입장 대기</div><div id="player-state-1" class="player-state">비어 있음</div></article>
+      </section>
+
+      <section class="game-card" aria-label="쿵쿵따 게임판">
+        <div id="round-chip" class="round-chip">게임 준비</div>
+        <div id="timer" class="timer" aria-label="남은 시간"><div class="timer-copy"><span>남은 시간</span><strong id="timer-value">--</strong></div><div class="timer-track"><div id="timer-fill" class="timer-fill"></div></div></div>
+        <div class="word-stage"><div><div id="word-display" class="word">쿵쿵따</div><div id="turn-message" class="turn-message" aria-live="polite">게임방에 참가하는 중이에요.</div></div></div>
+        <div id="feedback" class="feedback" role="status" aria-live="assertive" hidden></div>
+        <div id="word-history" class="history" aria-label="사용한 단어"></div>
+        <form id="answer-form" class="answer-form" autocomplete="off"><label class="sr-only" for="word-input">단어 입력</label><input id="word-input" type="text" inputmode="text" maxlength="20" placeholder="세 글자 단어" disabled><button id="submit-button" type="submit" disabled>외치기</button></form>
+      </section>
+
+      <section class="control-card" aria-live="polite">
+        <div><h2 id="control-title">게임방 연결 중</h2><p id="control-copy">채팅방 로그인 정보를 확인하고 있어요.</p></div>
+        <div class="control-actions">
+          <button id="primary-action" class="primary-button" type="button" disabled>잠시만요</button>
+          <button id="forfeit-button" class="secondary-button danger" type="button" hidden>이번 판 포기</button>
+          <a id="login-action" class="primary-button link-button" href="../../index.html" hidden>채팅방에서 로그인하기</a>
+        </div>
+      </section>
+      <p class="dictionary-credit">단어 판정: 국립국어원 표준국어대사전 · 서버 캐시 사용</p>
+    </main>
+  </div>
+
+  <dialog id="settings-dialog" class="settings-dialog">
+    <form id="settings-form">
+      <div class="dialog-heading"><div><span>게임 설정</span><strong>한 판 준비</strong></div><button id="settings-close" class="dialog-close" type="button" aria-label="설정 닫기">×</button></div>
+      <label class="field"><span>단어 길이</span><select id="word-length"><option value="2">2글자</option><option value="3" selected>3글자 (기본)</option><option value="4">4글자</option><option value="0">글자 수 무제한</option></select></label>
+      <label class="field"><span>첫 제한 시간</span><select id="base-turn-seconds"><option value="10">10초</option><option value="12" selected>12초 (기본)</option><option value="15">15초</option><option value="20">20초</option><option value="30">30초</option></select></label>
+      <label class="switch-field"><span><strong>점점 빨라지기</strong><small>정해진 턴마다 제한 시간을 줄여요.</small></span><input id="speed-up-enabled" type="checkbox" checked></label>
+      <div id="speed-up-fields" class="paired-fields">
+        <label class="field compact"><span>몇 턴마다</span><select id="speed-up-every"><option value="3">3턴</option><option value="4" selected>4턴</option><option value="5">5턴</option><option value="6">6턴</option></select></label>
+        <label class="field compact"><span>얼마나 단축</span><select id="speed-up-seconds"><option value="1" selected>1초</option><option value="2">2초</option><option value="3">3초</option></select></label>
+      </div>
+      <label class="field"><span>최소 제한 시간</span><select id="min-turn-seconds"><option value="3">3초</option><option value="5" selected>5초 (기본)</option><option value="7">7초</option><option value="10">10초</option></select></label>
+      <button class="primary-button" type="submit">설정 저장</button>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

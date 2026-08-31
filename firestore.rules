@@ -152,6 +152,18 @@ service cloud.firestore {
       allow read, write: if approvedUser();
     }
 
+    // 쿵쿵따 상태는 승인된 두 사용자에게 실시간으로 보이지만,
+    // 턴 진행과 단어 판정은 Cloud Functions(Admin SDK)만 변경한다.
+    match /kungkungtta_rooms/{roomId} {
+      allow read: if approvedUser();
+      allow create, update, delete: if false;
+    }
+
+    // 표준국어대사전 조회 결과 캐시는 서버 전용이다.
+    match /korean_word_cache/{wordId} {
+      allow read, write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
