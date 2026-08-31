@@ -29,6 +29,9 @@ const VALID_CACHE_MS = 180 * 24 * 60 * 60 * 1000;
 const INVALID_CACHE_MS = 14 * 24 * 60 * 60 * 1000;
 const callableOptions = {
   region: REGION,
+  // 브라우저의 preflight 요청은 인증 토큰 없이 도착하므로 HTTP 진입점은 공개한다.
+  // 실제 게임 요청은 requireApprovedUser에서 Firebase Auth와 승인 이메일을 검사한다.
+  invoker: "public",
   // GitHub Pages의 게임 화면과 로컬 개발 환경에서만 Callable API를 호출할 수 있게 한다.
   cors: [
     "https://chickenhuman.github.io",
