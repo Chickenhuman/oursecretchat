@@ -27,7 +27,16 @@ const WORD_CACHE_COLLECTION = "korean_word_cache";
 const MAX_WORDS_PER_ROUND = 250;
 const VALID_CACHE_MS = 180 * 24 * 60 * 60 * 1000;
 const INVALID_CACHE_MS = 14 * 24 * 60 * 60 * 1000;
-const callableOptions = { region: REGION, maxInstances: 5, timeoutSeconds: 15 };
+const callableOptions = {
+  region: REGION,
+  // GitHub Pages의 게임 화면과 로컬 개발 환경에서만 Callable API를 호출할 수 있게 한다.
+  cors: [
+    "https://chickenhuman.github.io",
+    /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
+  ],
+  maxInstances: 5,
+  timeoutSeconds: 15,
+};
 const dictionaryCallableOptions = {
   ...callableOptions,
   secrets: [STDICT_API_KEY],
