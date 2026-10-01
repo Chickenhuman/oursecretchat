@@ -897,6 +897,8 @@ html.excel-theme .command-guide-chip {
     import { firebaseConfig, googleWebClientId, STICKER_PACKS, emojiList, CURRENT_VERSION, RELEASE_DATE, PATCH_NOTES, UPDATE_SIGNATURE } from "./scripts/chat/config.js";
     import { parseMealCommand, resolveMealCommand, getMealCommandHelpText, getCommandGuideSections } from "./scripts/chat/menu.js";
     import { escapeHtml, escapeAttribute, encodeInlineParam, decodeInlineParam, getMessagePreviewText, linkify } from "./scripts/chat/utils.js";
+    import { openImageViewer } from "./scripts/chat/image-viewer.js";
+    window.openImageViewer = openImageViewer;
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -2528,7 +2530,7 @@ const msgBox = document.getElementById('messages');
                     placeholder.textContent = '이미지를 불러오지 못했어요.';
                     return;
                 }
-                placeholder.outerHTML = `<img src="${escapeAttribute(imageUrl)}" class="chat-img" onclick="window.open(this.src)">`;
+                placeholder.outerHTML = `<img src="${escapeAttribute(imageUrl)}" class="chat-img" onclick="openImageViewer(this)">`;
             } catch (error) {
                 console.warn('이미지 URL 조회 실패:', data.storagePath, error);
                 placeholder.textContent = '이미지를 불러오지 못했어요.';
@@ -2574,7 +2576,7 @@ const msgBox = document.getElementById('messages');
 	        contentHtml = linkify(data.text);
 	    } else if (data.type === 'image') {
             contentHtml = data.imageUrl
-                ? `<img src="${escapeAttribute(data.imageUrl || "")}" class="chat-img" onclick="window.open(this.src)">`
+                ? `<img src="${escapeAttribute(data.imageUrl || "")}" class="chat-img" onclick="openImageViewer(this)">`
                 : buildPendingImageHtml(docId);
 	    } else if (data.type === 'file') {
             contentHtml = data.fileUrl
@@ -2650,7 +2652,7 @@ const msgBox = document.getElementById('messages');
 	    function updateGalleryPreview() {
 	        const previewGrid = document.getElementById('gallery-preview');
 	        const recentImages = allImages.slice(-3).reverse();
-	        previewGrid.innerHTML = recentImages.map((item) => `<img src="${escapeAttribute(item.url)}" class="gallery-item" onclick="window.open(this.src)">`).join('');
+	        previewGrid.innerHTML = recentImages.map((item) => `<img src="${escapeAttribute(item.url)}" class="gallery-item" onclick="openImageViewer(this)">`).join('');
 	        if(recentImages.length === 0) previewGrid.innerHTML = '<span style="grid-column:span 3; text-align:center; color:#ccc; font-size:12px;">사진 없음</span>';
 	    }
 
@@ -2689,7 +2691,7 @@ const msgBox = document.getElementById('messages');
                     const data = docSnap.data();
                     try {
                         const imageUrl = await resolveImageAssetUrl(data);
-                        return imageUrl ? `<img src="${escapeAttribute(imageUrl)}" class="gallery-item" onclick="window.open(this.src)">` : '';
+                        return imageUrl ? `<img src="${escapeAttribute(imageUrl)}" class="gallery-item" onclick="openImageViewer(this)">` : '';
                     } catch (error) {
                         console.warn('갤러리 이미지 조회 실패:', docSnap.id, error);
                         return '';
