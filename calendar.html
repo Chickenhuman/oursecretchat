@@ -146,6 +146,7 @@ import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { firebaseConfig } from "./scripts/chat/config.js";
+import { escapeHtml } from "./scripts/chat/utils.js";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -211,6 +212,11 @@ import { firebaseConfig } from "./scripts/chat/config.js";
         }
     }
 
+    // toISOString()은 UTC 기준이라 한국 시간 오전 0~9시에 하루 전 날짜가 나온다.
+    function toLocalDateKey(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
     // [알림 기능] 권한 요청
     function requestNotiPermission() {
         if ("Notification" in window && Notification.permission !== "granted") {
@@ -236,7 +242,7 @@ import { firebaseConfig } from "./scripts/chat/config.js";
             grid.innerHTML += `<div class="day-cell other-month"><div class="day-num">${prevLastDate - i + 1}</div></div>`;
         }
 
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = toLocalDateKey(new Date());
         for (let i = 1; i <= lastDate; i++) {
             const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             const isToday = dateKey === todayStr ? 'today' : '';
@@ -245,7 +251,7 @@ import { firebaseConfig } from "./scripts/chat/config.js";
             if (eventsCache[dateKey]) {
                 const fullTitle = eventsCache[dateKey].title;
                 const notiClass = eventsCache[dateKey].notify ? 'notified' : '';
-                eventHtml = `<div class="event-dot ${notiClass}">${fullTitle}</div>`;
+                eventHtml = `<div class="event-dot ${notiClass}">${escapeHtml(fullTitle)}</div>`;
             }
 
             grid.innerHTML += `
@@ -289,21 +295,28 @@ import { firebaseConfig } from "./scripts/chat/config.js";
 
     // [핵심] 오늘/내일 일정 체크해서 알림 보내기
     function checkDailyNotifications() {
-        if (Notification.permission !== "granted") return;
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
 
         const today = new Date();
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        const todayStr = today.toISOString().split('T')[0];
-        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+        const todayStr = toLocalDateKey(today);
+        const tomorrowStr = toLocalDateKey(tomorrow);
+        const notify = (title, options) => {
+            try {
+                new Notification(title, options);
+            } catch (error) {
+                console.warn("일정 알림 표시 실패:", error);
+            }
+        };
 
         // 오늘 일정 알림
         if (eventsCache[todayStr] && eventsCache[todayStr].notify) {
             // 이미 알림 보냈는지 로컬스토리지로 체크 (중복 방지)
             const logKey = `noti_${todayStr}`;
             if (!localStorage.getItem(logKey)) {
-                new Notification(`📅 오늘 일정: ${eventsCache[todayStr].title}`, {
+                notify(`📅 오늘 일정: ${eventsCache[todayStr].title}`, {
                     body: eventsCache[todayStr].desc || "잊지 마세요!",
                     icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png'
                 });
@@ -315,7 +328,7 @@ import { firebaseConfig } from "./scripts/chat/config.js";
         if (eventsCache[tomorrowStr] && eventsCache[tomorrowStr].notify) {
             const logKey = `noti_pre_${tomorrowStr}`;
             if (!localStorage.getItem(logKey)) {
-                new Notification(`🔔 내일 일정: ${eventsCache[tomorrowStr].title}`, {
+                notify(`🔔 내일 일정: ${eventsCache[tomorrowStr].title}`, {
                     body: "내일 일정이 있습니다. 준비해주세요!",
                     icon: 'https://cdn-icons-png.flaticon.com/512/2076/2076218.png'
                 });
