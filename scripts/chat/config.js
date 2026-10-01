@@ -33,9 +33,10 @@ export const STICKER_PACKS = [
 
 export const emojiList = ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","🥰","😍","😘","😊","🤣","😂","🥲","🥺","👍","👎","👏","🙏","🎉","🎂","🎁","💋","💍"];
 
-export const CURRENT_VERSION = "1.26";
-export const RELEASE_DATE = "2026/08/28";
+export const CURRENT_VERSION = "1.27";
+export const RELEASE_DATE = "2026/10/01";
 export const PATCH_NOTES = [
+    "사진을 누르면 새 창 대신 전체화면 뷰어로 열려요. 회전, 저장, 좌우로 넘기기, 두 손가락·두 번 탭 확대를 지원하고 뒤로가기나 아래로 쓸어내리기로 닫을 수 있어요.",
     "게임 탭에 승인된 두 사람만 참여하는 잰갱따리잰갱따를 추가했어요. 글자 수와 제한 시간을 바꾸고, 서버 사전 판정과 점점 빨라지는 턴을 지원합니다.",
     "기존 비밀번호 입장 방식을 없애고 Google 승인 로그인으로 바꿔, 허용한 계정만 채팅과 캘린더에 들어올 수 있게 했어요.",
     "별칭을 계정 프로필로 관리하고, 새 이미지/문서는 저장 URL 대신 storagePath만 저장하도록 바꿨어요.",
