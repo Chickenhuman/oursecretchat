@@ -1,6 +1,6 @@
 {
   "botName": "식단봇",
-  "updatedAt": "2026-10-01T23:59:10.555Z",
+  "updatedAt": "2026-10-02T08:43:38.630Z",
   "location": {
     "campus": "칠암캠퍼스",
     "restaurant": "학생식당",
@@ -40,7 +40,7 @@
   "menus": {
     "2026-09-21": {
       "weekday": "월",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-24",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-25",
       "breakfast": [
         "(천원의 아침밥)",
         "해물수제비",
@@ -68,7 +68,7 @@
     },
     "2026-09-22": {
       "weekday": "화",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-24",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-25",
       "breakfast": [
         "(천원의 아침밥)",
         "비벼먹는간장계란밥",
@@ -96,7 +96,7 @@
     },
     "2026-09-23": {
       "weekday": "수",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-24",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-25",
       "breakfast": [
         "(천원의 아침밥)",
         "닭곰탕",
@@ -124,7 +124,7 @@
     },
     "2026-09-24": {
       "weekday": "목",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-24",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-25",
       "breakfast": [
         "천원의 아침밥 사업 시행에 따라",
         "주말 및 공휴일에는 조식 제공을 하지",
@@ -140,7 +140,7 @@
     },
     "2026-09-25": {
       "weekday": "금",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-24",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-25",
       "breakfast": [
         "천원의 아침밥 사업 시행에 따라",
         "주말 및 공휴일에는 조식 제공을 하지",
@@ -156,7 +156,7 @@
     },
     "2026-09-26": {
       "weekday": "토",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-24",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-25",
       "breakfast": [
         "천원의 아침밥 사업 시행에 따라",
         "주말 및 공휴일에는 조식 제공을 하지",
@@ -172,7 +172,7 @@
     },
     "2026-09-27": {
       "weekday": "일",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-24",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-09-25",
       "breakfast": [
         "천원의 아침밥 사업 시행에 따라",
         "주말 및 공휴일에는 조식 제공을 하지",
@@ -188,7 +188,7 @@
     },
     "2026-09-28": {
       "weekday": "월",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-01",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-02",
       "breakfast": [
         "(천원의 아침밥)",
         "치즈콕콕함박",
@@ -216,7 +216,7 @@
     },
     "2026-09-29": {
       "weekday": "화",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-01",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-02",
       "breakfast": [
         "(천원의 아침밥)",
         "해물짬뽕밥",
@@ -244,7 +244,7 @@
     },
     "2026-09-30": {
       "weekday": "수",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-01",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-02",
       "breakfast": [
         "(천원의 아침밥)",
         "스페인돈까스",
@@ -272,7 +272,7 @@
     },
     "2026-10-01": {
       "weekday": "목",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-01",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-02",
       "breakfast": [
         "(천원의 아침밥)",
         "김치볶음밥",
@@ -300,7 +300,7 @@
     },
     "2026-10-02": {
       "weekday": "금",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-01",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-02",
       "breakfast": [
         "(천원의 아침밥)",
         "순대국밥",
@@ -328,7 +328,7 @@
     },
     "2026-10-03": {
       "weekday": "토",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-01",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-02",
       "breakfast": [
         "천원의 아침밥 사업 시행에 따라",
         "주말 및 공휴일에는 조식 제공을 하지",
@@ -338,7 +338,7 @@
       "lunch": [
         "쌀밥",
         "닭매운탕",
-        "임연수양념구이",
+        "임연수무조림",
         "비엔나야채볶음",
         "쑥갓무침",
         "포기김치",
@@ -356,7 +356,7 @@
     },
     "2026-10-04": {
       "weekday": "일",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-01",
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-02",
       "breakfast": [
         "천원의 아침밥 사업 시행에 따라",
         "주말 및 공휴일에는 조식 제공을 하지",
@@ -384,52 +384,193 @@
     },
     "2026-10-05": {
       "weekday": "월",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-08",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-09",
+      "breakfast": [
+        "대체공휴일"
+      ],
+      "lunch": [
+        "쌀밥",
+        "청양초어묵탕",
+        "해물부추전",
+        "비빔국수",
+        "잔멸치볶음",
+        "포기김치",
+        "캐플쥬스"
+      ],
+      "dinner": [
+        "쌀밥",
+        "부대찌개",
+        "가자미무조림",
+        "감자채볶음",
+        "톳두부무침",
+        "포기김치",
+        "청귤쥬스"
+      ]
     },
     "2026-10-06": {
       "weekday": "화",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-08",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-09",
+      "breakfast": [
+        "(천원의 아침밥)",
+        "사골떡국",
+        "김치전병",
+        "홍차아이스티"
+      ],
+      "lunch": [
+        "쌀밥",
+        "들깨수제비",
+        "오리고추장불고기",
+        "고로케/케찹",
+        "청매실절임",
+        "부추양파겉절이",
+        "포기김치/오미자"
+      ],
+      "dinner": [
+        "쌀밥",
+        "유부우동장국",
+        "청양크림고기산적",
+        "고구마맛탕",
+        "청경채나물",
+        "포기김치",
+        "건강한두유"
+      ]
     },
     "2026-10-07": {
       "weekday": "수",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-08",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-09",
+      "breakfast": [
+        "(천원의 아침밥)",
+        "베트남쌀국수",
+        "코코넛새우까스",
+        "다방커피"
+      ],
+      "lunch": [
+        "쌀밥",
+        "돈육김치찌개",
+        "오징어볶음",
+        "스틱너비아니/케찹",
+        "꽃맛살마요무침",
+        "열무된장나물",
+        "깍두기/피크닉"
+      ],
+      "dinner": [
+        "쌀밥",
+        "애호박고추장찌개",
+        "멘치까스",
+        "마카로니샐럿",
+        "오이지무침",
+        "포기김치",
+        "애플러스"
+      ]
     },
     "2026-10-08": {
       "weekday": "목",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-08",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-09",
+      "breakfast": [
+        "(천원의 아침밥)",
+        "매콤닭살볶음",
+        "오색모듬전",
+        "바나나우유"
+      ],
+      "lunch": [
+        "쌀밥",
+        "건새우무국",
+        "간장소불고기",
+        "명란군만두",
+        "청포묵김가루무침",
+        "오이무침",
+        "포기김치/쥬시쿨"
+      ],
+      "dinner": [
+        "쌀밥",
+        "방아된장국",
+        "마크니커리",
+        "불고기아란치니",
+        "단무지무침",
+        "포기김치",
+        "마이요구르트"
+      ]
     },
     "2026-10-09": {
       "weekday": "금",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-08",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-09",
+      "breakfast": [
+        "한글날"
+      ],
+      "lunch": [
+        "쌀밥",
+        "육개장",
+        "갈치양념구이",
+        "고추잡채",
+        "시금치나물",
+        "포기김치",
+        "블루베리쥬스"
+      ],
+      "dinner": [
+        "쌀밥",
+        "새알심미역국",
+        "들깨백닭갈비",
+        "고추장어묵볶음",
+        "참나물들기름무침",
+        "포기김치",
+        "과일랜드"
+      ]
     },
     "2026-10-10": {
       "weekday": "토",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-08",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-09",
+      "breakfast": [
+        "천원의 아침밥 사업 시행에 따라",
+        "주말 및 공휴일에는 조식 제공을 하지",
+        "않습니다. 이점 양해바랍니다.",
+        "(학기 중에는 평일 조식만 운영합니다.)"
+      ],
+      "lunch": [
+        "쌀밥",
+        "두부보탕국",
+        "간장돈육장조림",
+        "단호박튀김",
+        "무말랭이지",
+        "포기김치",
+        "스위플레드"
+      ],
+      "dinner": [
+        "쌀밥",
+        "순두부찌개",
+        "완자피망볶음",
+        "궁중떡볶이",
+        "수제양파절임",
+        "포기김치",
+        "미닛오렌지"
+      ]
     },
     "2026-10-11": {
       "weekday": "일",
-      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-08",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-10-09",
+      "breakfast": [
+        "천원의 아침밥 사업 시행에 따라",
+        "주말 및 공휴일에는 조식 제공을 하지",
+        "않습니다. 이점 양해바랍니다.",
+        "(학기 중에는 평일 조식만 운영합니다.)"
+      ],
+      "lunch": [
+        "쌀밥",
+        "옹심이만두국",
+        "로제소스떡갈비",
+        "베이컨양배추볶음",
+        "콩나물무침",
+        "포기김치",
+        "골드키위쥬스"
+      ],
+      "dinner": [
+        "쌀밥",
+        "감자맑은국",
+        "피쉬엔칩스",
+        "실곤약초무침",
+        "비타민겉절이",
+        "포기김치",
+        "연세두유"
+      ]
     }
   }
 }
