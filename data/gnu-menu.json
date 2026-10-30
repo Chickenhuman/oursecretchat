@@ -1,6 +1,6 @@
 {
   "botName": "식단봇",
-  "updatedAt": "2026-10-30T00:00:53.517Z",
+  "updatedAt": "2026-10-30T08:48:23.860Z",
   "location": {
     "campus": "칠암캠퍼스",
     "restaurant": "학생식당",
@@ -430,51 +430,198 @@
     "2026-11-02": {
       "weekday": "월",
       "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-11-06",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "breakfast": [
+        "(천원의 아침밥)",
+        "햄야채볶음밥",
+        "미니우동",
+        "카프리썬"
+      ],
+      "lunch": [
+        "쌀밥",
+        "계란파국",
+        "하이라이스",
+        "모듬강정",
+        "검정콩조림",
+        "마늘쫑무침",
+        "포기김치/미닛망고"
+      ],
+      "dinner": [
+        "쌀밥",
+        "감자맑은국",
+        "김치제육볶음",
+        "춘권튀김",
+        "상추/깻잎쌈",
+        "포기김치",
+        "얼라이브"
+      ]
     },
     "2026-11-03": {
       "weekday": "화",
       "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-11-06",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "breakfast": [
+        "(천원의 아침밥)",
+        "소고기버섯전골",
+        "데미소스함박",
+        "요거톡"
+      ],
+      "lunch": [
+        "쌀밥",
+        "참치고추장찌개",
+        "시즈닝너겟",
+        "매콤볶음짬뽕",
+        "감자범벅",
+        "치커리사과무침",
+        "포기김치/피크닉"
+      ],
+      "dinner": [
+        "쌀밥",
+        "두부보탕국",
+        "고기산적야채볶음",
+        "일미양배추무침",
+        "열무된장무침",
+        "포기김치",
+        "레드자몽에이드"
+      ]
     },
     "2026-11-04": {
       "weekday": "수",
       "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-11-06",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "breakfast": [
+        "(천원의 아침밥)",
+        "완자갈비탕",
+        "순대강정",
+        "허쉬초코"
+      ],
+      "lunch": [
+        "쌀밥",
+        "얼큰어묵탕",
+        "고추장오리불고기",
+        "새우링튀김",
+        "쌈무",
+        "부추양파무침",
+        "포기김치/오미자"
+      ],
+      "dinner": [
+        "쌀밥",
+        "일식팽이된장국",
+        "청양풍오징어볶음",
+        "야채고로케",
+        "청경채겉절이",
+        "포기김치",
+        "골드키위쥬스"
+      ]
     },
     "2026-11-05": {
       "weekday": "목",
       "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-11-06",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "breakfast": [
+        "(천원의 아침밥)",
+        "스페인돈까스",
+        "크림뇨끼",
+        "이오"
+      ],
+      "lunch": [
+        "쌀밥",
+        "청국장찌개",
+        "꽈리초갈비찜",
+        "스틱너비아니",
+        "두반장가지볶음",
+        "오복지",
+        "포기김치/바나나"
+      ],
+      "dinner": [
+        "쌀밥",
+        "유부우동장국",
+        "돈파이",
+        "비빔당면",
+        "오이지무침",
+        "포기김치",
+        "패션후르츠"
+      ]
     },
     "2026-11-06": {
       "weekday": "금",
       "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-11-06",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "breakfast": [
+        "(천원의 아침밥)",
+        "육개장칼국수",
+        "집게다리튀김",
+        "야채가득"
+      ],
+      "lunch": [
+        "쌀밥",
+        "들깨미역국",
+        "순살불닭",
+        "연근크로켓",
+        "도라지양파생채",
+        "숙주나물",
+        "포기김치/컵매실"
+      ],
+      "dinner": [
+        "쌀밥",
+        "순두부백탕",
+        "감자명태까스",
+        "어묵볶이",
+        "꼬시래기무침",
+        "포기김치",
+        "오디푸딩"
+      ]
     },
     "2026-11-07": {
       "weekday": "토",
       "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-11-06",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "breakfast": [
+        "천원의 아침밥 사업 시행에 따라",
+        "주말 및 공휴일에는 조식 제공을 하지",
+        "않습니다. 이점 양해바랍니다.",
+        "(학기 중에는 평일 조식만 운영합니다.)"
+      ],
+      "lunch": [
+        "쌀밥",
+        "해물짬뽕국",
+        "고추잡채/꽃빵",
+        "꿔바로우",
+        "궁채절임",
+        "포기김치",
+        "식혜"
+      ],
+      "dinner": [
+        "쌀밥",
+        "오징어무국",
+        "별완자볶음",
+        "통통고추튀김",
+        "무말랭이지",
+        "포기김치",
+        "달콤사과당근"
+      ]
     },
     "2026-11-08": {
       "weekday": "일",
       "sourceUrl": "https://www.gnu.ac.kr/main/ad/fm/foodmenu/selectFoodMenuView.do?schSysId=cdorm&mi=1342&restSeq=8&schDt=2026-11-06",
-      "breakfast": [],
-      "lunch": [],
-      "dinner": []
+      "breakfast": [
+        "천원의 아침밥 사업 시행에 따라",
+        "주말 및 공휴일에는 조식 제공을 하지",
+        "않습니다. 이점 양해바랍니다.",
+        "(학기 중에는 평일 조식만 운영합니다.)"
+      ],
+      "lunch": [
+        "쌀밥",
+        "감자수제비국",
+        "가자미무조림",
+        "김말이튀김",
+        "쑥갓유부무침",
+        "포기김치",
+        "캐플비타"
+      ],
+      "dinner": [
+        "쌀밥",
+        "꽃게탕",
+        "안동찜닭",
+        "납작만두/비빔야채",
+        "유자청무생채",
+        "포기김치",
+        "한라봉감귤"
+      ]
     }
   }
 }
